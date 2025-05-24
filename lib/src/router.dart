@@ -11,9 +11,15 @@ import 'platform_navigator.dart';
 class RouteBuilder {
   final String path;
   final bool preserve;
+  final bool transition;
   final Widget Function(BuildContext context, Widget? previous, Uri uri) builder;
 
-  const RouteBuilder({required this.path, this.preserve = true, required this.builder});
+  const RouteBuilder({
+    required this.path,
+    this.preserve = true,
+    this.transition = true,
+    required this.builder,
+  });
 }
 
 // RouteController to manage routing logic
@@ -144,10 +150,11 @@ class RouteController {
           ),
     );
 
-    final isPreserved = config.preserve;
+    final preserve = config.preserve;
+    final transition = config.transition;
 
     // If preserved route, create or retrieve widget for full URI
-    if (isPreserved && !_preservedWidgets.containsKey(currentRoute)) {
+    if (preserve && !_preservedWidgets.containsKey(currentRoute)) {
       _preservedWidgets[currentRoute] = DisposableWidget(
         builder: (context) => config.builder(context, _pictureWidget(context), uri),
         onDispose: () => print('Disposed: $currentRoute'),
@@ -159,7 +166,7 @@ class RouteController {
       child: Stack(
         children: [
           Offstage(
-            offstage: !isPreserved,
+            offstage: !preserve,
             child: IndexedStack(
               index: _preservedWidgets.keys.toList().indexOf(currentRoute),
               children:
@@ -170,15 +177,14 @@ class RouteController {
                   }).toList(),
             ),
           ),
-          Offstage(offstage: isPreserved, child: _buildNonPreservedScreen(context, currentRoute)),
+          Offstage(offstage: preserve, child: _buildNonPreservedScreen(context, currentRoute)),
         ],
       ),
     );
 
-    return KeyedSubtree(
-      key: UniqueKey(),
-      child: transitionBuilder!(a, prev: _pictureWidget(context)),
-    );
+    return transition
+        ? KeyedSubtree(key: UniqueKey(), child: transitionBuilder(a, prev: _pictureWidget(context)))
+        : a;
   }
 
   Widget _buildNonPreservedScreen(BuildContext context, String route) {

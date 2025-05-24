@@ -182,6 +182,7 @@ class MyApp extends StatelessWidget {
       RouteBuilder(
         path: '/home',
         preserve: false,
+        transition: false,
         builder: (context, prev, uri) {
           return HomeScreen(uri: uri);
         },
