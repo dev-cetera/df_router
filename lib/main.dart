@@ -1,76 +1,6 @@
+import 'package:df_router/src/capture_widget_picture.dart';
+import 'package:df_widgets/_common.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:df_widgets/df_widgets.dart';
-import 'dart:ui' as ui;
-
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'dart:ui' as ui;
-
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'dart:ui' as ui;
-
-Future<ui.Picture?> captureWidgetPicture({
-  required BuildContext context,
-  required GlobalKey repaintKey,
-  int maxRetries = 3,
-  Duration retryDelay = const Duration(milliseconds: 16),
-}) async {
-  for (int attempt = 0; attempt < maxRetries; attempt++) {
-    final renderObject = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (renderObject == null || renderObject.debugLayer == null) {
-      debugPrint('Attempt $attempt: RenderObject or debugLayer is null');
-      await Future.delayed(retryDelay);
-      continue;
-    }
-
-    // Force a repaint to update the PictureLayer
-    renderObject.markNeedsPaint();
-
-    // Wait for the next frame to ensure the Picture is ready
-    await Future.microtask(() {});
-    // Add a small delay to allow the pipeline to settle
-    await Future.delayed(const Duration(milliseconds: 1));
-
-    // Find the PictureLayer
-    final pictureLayer = findPictureLayer(renderObject.debugLayer);
-    if (pictureLayer == null || pictureLayer.picture == null) {
-      debugPrint('Attempt $attempt: No PictureLayer or Picture found');
-      await Future.delayed(retryDelay);
-      continue;
-    }
-
-    // Clone the Picture to avoid disposal issues
-    final pictureRecorder = ui.PictureRecorder();
-    final canvas = Canvas(pictureRecorder);
-    try {
-      canvas.drawPicture(pictureLayer.picture!);
-      final clonedPicture = pictureRecorder.endRecording();
-      return clonedPicture;
-    } catch (e) {
-      debugPrint('Attempt $attempt: Failed to clone picture: $e');
-      await Future.delayed(retryDelay);
-      continue;
-    }
-  }
-  debugPrint('Failed to capture picture after $maxRetries attempts');
-  return null;
-}
-
-PictureLayer? findPictureLayer(Layer? layer) {
-  if (layer == null) return null;
-  if (layer is PictureLayer && layer.picture != null) return layer;
-  if (layer is ContainerLayer) {
-    var child = layer.firstChild;
-    while (child != null) {
-      final pictureLayer = findPictureLayer(child);
-      if (pictureLayer != null) return pictureLayer;
-      child = child.nextSibling;
-    }
-  }
-  return null;
-}
 
 void main() {
   runApp(const MaterialApp(home: CaptureTest()));
@@ -85,7 +15,7 @@ class CaptureTest extends StatefulWidget {
 
 class _CaptureTestState extends State<CaptureTest> with SingleTickerProviderStateMixin {
   final GlobalKey _repaintKey = GlobalKey();
-  ui.Picture? _capturedPicture;
+  WidgetPicture? _capturedPicture;
   late AnimationController _controller;
 
   @override
@@ -101,15 +31,11 @@ class _CaptureTestState extends State<CaptureTest> with SingleTickerProviderStat
   }
 
   void _captureAndTransition() async {
-    final picture = await captureWidgetPicture(context: context, repaintKey: _repaintKey);
+    final picture = captureWidgetPicture(context: context, repaintKey: _repaintKey);
     if (picture != null) {
       setState(() {
         _capturedPicture = picture;
       });
-      // Simulate a transition (e.g., push a new route)
-      // Navigator.push(context, MaterialPageRoute(builder: (_) => NextScreen()));
-    } else {
-      debugPrint('Failed to capture picture');
     }
   }
 
@@ -121,47 +47,24 @@ class _CaptureTestState extends State<CaptureTest> with SingleTickerProviderStat
         children: [
           RepaintBoundary(
             key: _repaintKey,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Transform.rotate(
-                  angle: _controller.value * 2 * 3.1416,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    color: Colors.blue,
-                    child: const Center(
-                      child: Text('Capture this', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                );
-              },
+            child: Container(
+              width: 200,
+              height: 200,
+              color: Colors.blue,
+              child: Center(
+                child: BreatheAnimator(
+                  child: Text('Capture this', style: TextStyle(color: Colors.white)),
+                ),
+              ),
             ),
           ),
-          ElevatedButton(
-            onPressed: _captureAndTransition,
-            child: const Text('Capture & Transition'),
-          ),
+          ElevatedButton(onPressed: _captureAndTransition, child: const Text('Capture')),
           if (_capturedPicture != null)
-            CustomPaint(painter: PicturePainter(_capturedPicture!), size: const Size(200, 200)),
+            PictureWidget(picture: _capturedPicture, size: const Size(200, 200)),
         ],
       ),
     );
   }
-}
-
-class PicturePainter extends CustomPainter {
-  final ui.Picture picture;
-
-  PicturePainter(this.picture);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawPicture(picture);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // void main() {
