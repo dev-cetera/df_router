@@ -3,12 +3,12 @@ import 'get_platform_navigator.dart';
 import 'platform_navigator.dart';
 
 // RouteConfig (new builder signature)
-class RouteConfig {
+class RouteBuilder {
   final String path;
-  final bool maintainState;
-  final Widget Function(BuildContext context, Map<String, String>) builder;
+  final bool preserve;
+  final Widget Function(BuildContext context, Uri uri) builder;
 
-  RouteConfig({required this.path, required this.maintainState, required this.builder});
+  const RouteBuilder({required this.path, this.preserve = true, required this.builder});
 }
 
 // RouteController to manage routing logic
@@ -16,9 +16,9 @@ class RouteController {
   final ValueNotifier<String> _currentRoute;
   final Map<String, Widget> _preservedWidgets;
   final PlatformNavigator _platformNavigator;
-  final List<RouteConfig> _routes;
+  final List<RouteBuilder> _routes;
 
-  RouteController({required String initialRoute, required List<RouteConfig> routes})
+  RouteController({required String initialRoute, required List<RouteBuilder> routes})
     : _currentRoute = ValueNotifier<String>(getPlatformNavigator().getCurrentPath()),
       _preservedWidgets = {},
       _platformNavigator = getPlatformNavigator(),
@@ -27,17 +27,17 @@ class RouteController {
     final uri = Uri.parse(initialRoute);
     final basePath = uri.path;
     final config = _routes.firstWhere(
-      (r) => r.path == basePath && r.maintainState,
+      (r) => r.path == basePath && r.preserve,
       orElse:
-          () => RouteConfig(
+          () => RouteBuilder(
             path: basePath,
-            maintainState: false,
+            preserve: false,
             builder: (context, _) => const SizedBox.shrink(),
           ),
     );
-    if (config.maintainState) {
+    if (config.preserve) {
       _preservedWidgets[initialRoute] = DisposableWidget(
-        builder: (context) => config.builder(context, uri.queryParameters),
+        builder: (context) => config.builder(context, uri),
         onDispose: () => print('Disposed: $initialRoute'),
       );
     }
@@ -52,13 +52,24 @@ class RouteController {
 
   List<String> get preservedRoutes => _preservedWidgets.keys.toList();
 
+  /// Goes to the new route, without disposing any existing routes with
+  /// different query parameters.
   void goToNew(String route) {
     _platformNavigator.pushState(route);
     _currentRoute.value = route;
   }
 
+  /// Goes to the new route, disposing any existing routes with the same base
+  /// path.
   void goTo(String route) {
     disposeRoute(route);
+    goToNew(route);
+  }
+
+  /// Goes to the new route, disposing all existing routes even ones marked
+  /// as preserved.
+  void goToReset(String route) {
+    disposeAllRoutes();
     goToNew(route);
   }
 
@@ -85,23 +96,22 @@ class RouteController {
   Widget buildScreen(BuildContext context, String currentRoute) {
     final uri = Uri.parse(currentRoute);
     final basePath = uri.path;
-    final queryParams = uri.queryParameters;
     final config = _routes.firstWhere(
       (r) => r.path == basePath,
       orElse:
-          () => RouteConfig(
+          () => RouteBuilder(
             path: basePath,
-            maintainState: false,
+            preserve: false,
             builder: (context, _) => const SizedBox.shrink(),
           ),
     );
 
-    final isPreserved = config.maintainState;
+    final isPreserved = config.preserve;
 
     // If preserved route, create or retrieve widget for full URI
     if (isPreserved && !_preservedWidgets.containsKey(currentRoute)) {
       _preservedWidgets[currentRoute] = DisposableWidget(
-        builder: (context) => config.builder(context, queryParams),
+        builder: (context) => config.builder(context, uri),
         onDispose: () => print('Disposed: $currentRoute'),
       );
     }
@@ -128,17 +138,16 @@ class RouteController {
   Widget _buildNonPreservedScreen(BuildContext context, String route) {
     final uri = Uri.parse(route);
     final basePath = uri.path;
-    final queryParams = uri.queryParameters;
     final config = _routes.firstWhere(
-      (r) => r.path == basePath && !r.maintainState,
+      (r) => r.path == basePath && !r.preserve,
       orElse:
-          () => RouteConfig(
+          () => RouteBuilder(
             path: basePath,
-            maintainState: false,
+            preserve: false,
             builder: (context, _) => const SizedBox.shrink(),
           ),
     );
-    return config.builder(context, queryParams);
+    return config.builder(context, uri);
   }
 
   void dispose() {
@@ -169,7 +178,7 @@ class RouteControllerProvider extends InheritedWidget {
 
 class CustomRouter extends StatefulWidget {
   final String initialRoute;
-  final List<RouteConfig> routes;
+  final List<RouteBuilder> routes;
 
   const CustomRouter({super.key, required this.initialRoute, required this.routes});
 

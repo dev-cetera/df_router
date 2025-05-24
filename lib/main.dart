@@ -1,3 +1,4 @@
+import 'package:df_widgets/_common.dart';
 import 'package:flutter/material.dart';
 
 import 'src/router.dart';
@@ -13,25 +14,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final routes = [
-      RouteConfig(
-        path: '/home',
-        maintainState: false,
-        builder: (context, queryParams) => HomeScreen(queryParams: queryParams),
-      ),
-      RouteConfig(
+      RouteBuilder(path: '/home', preserve: false, builder: (context, uri) => HomeScreen(uri: uri)),
+
+      RouteBuilder(
         path: '/messages',
-        maintainState: true,
-        builder: (context, queryParams) => MessagesScreen(queryParams: queryParams),
+        preserve: true,
+        builder: (context, uri) => MessagesScreen(uri: uri),
       ),
-      RouteConfig(
-        path: '/chat',
-        maintainState: false,
-        builder: (context, queryParams) => ChatScreen(queryParams: queryParams),
-      ),
-      RouteConfig(
+      RouteBuilder(path: '/chat', preserve: false, builder: (context, uri) => ChatScreen(uri: uri)),
+      RouteBuilder(
         path: '/home/1',
-        maintainState: false,
-        builder: (context, queryParams) => HomeDetailScreen(queryParams: queryParams),
+        preserve: false,
+        builder: (context, uri) => HomeDetailScreen(uri: uri),
       ),
     ];
 
@@ -43,9 +37,9 @@ class MyApp extends StatelessWidget {
 }
 
 class MessagesScreen extends StatefulWidget {
-  final Map<String, String> queryParams;
+  final Uri uri;
 
-  const MessagesScreen({Key? key, this.queryParams = const {}}) : super(key: key);
+  const MessagesScreen({Key? key, required this.uri}) : super(key: key);
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
@@ -57,12 +51,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   void initState() {
     super.initState();
-    print('INIT STATE MESSAGES - Params: ${widget.queryParams}');
+    print('INIT STATE MESSAGES - Params: ${widget.uri}');
   }
 
   @override
   void dispose() {
-    print('MessagesScreen disposed - Params: ${widget.queryParams}');
+    print('MessagesScreen disposed - Params: ${widget.uri}');
     super.dispose();
   }
 
@@ -71,15 +65,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final controller = RouteController.of(context);
     final fullRoute =
         '/messages' +
-        (widget.queryParams.isEmpty ? '' : '?${Uri(queryParameters: widget.queryParams).query}');
+        (widget.uri.queryParameters.isEmpty
+            ? ''
+            : '?${Uri(queryParameters: widget.uri.queryParameters).query}');
     return Container(
+      color: Colors.lightGreen,
       child: Center(
         child: Column(
           spacing: 8.0,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('Messages Screen - Counter: $counter'),
-            Text('Query Params: ${widget.queryParams.toString()}'),
+            Text('Query Params: ${widget.uri.toString()}'),
             FilledButton(
               onPressed: () => setState(() => counter++),
               child: const Text('Increment'),
@@ -89,7 +86,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.goTo('/messages'),
+              onPressed: () => controller.goToNew('/messages'),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
@@ -116,21 +113,22 @@ class _MessagesScreenState extends State<MessagesScreen> {
 }
 
 class HomeScreen extends StatelessWidget {
-  final Map<String, String> queryParams;
+  final Uri uri;
 
-  const HomeScreen({Key? key, required this.queryParams}) : super(key: key);
+  const HomeScreen({Key? key, required this.uri}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final controller = RouteController.of(context);
     print('INIT STATE HOME');
     return Container(
+      color: Colors.yellow,
       child: Center(
         child: Column(
           spacing: 8.0,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Home Screen - Params: ${queryParams.toString()}'),
+            Text('Home Screen - Params: ${uri.toString()}'),
             FilledButton(
               onPressed: () => controller.goToNew('/messages'),
               child: const Text('Go to Messages (No Query)'),
@@ -159,9 +157,9 @@ class HomeScreen extends StatelessWidget {
 }
 
 class ChatScreen extends StatefulWidget {
-  final Map<String, String> queryParams;
+  final Uri uri;
 
-  const ChatScreen({Key? key, this.queryParams = const {}}) : super(key: key);
+  const ChatScreen({Key? key, required this.uri}) : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -171,12 +169,12 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    print('INIT STATE CHAT - Params: ${widget.queryParams}');
+    print('INIT STATE CHAT - Params: ${widget.uri}');
   }
 
   @override
   void dispose() {
-    print('ChatScreen disposed - Params: ${widget.queryParams}');
+    print('ChatScreen disposed - Params: ${widget.uri}');
     super.dispose();
   }
 
@@ -185,14 +183,17 @@ class _ChatScreenState extends State<ChatScreen> {
     final controller = RouteController.of(context);
     final fullRoute =
         '/chat' +
-        (widget.queryParams.isEmpty ? '' : '?${Uri(queryParameters: widget.queryParams).query}');
+        (widget.uri.queryParameters.isEmpty
+            ? ''
+            : '?${Uri(queryParameters: widget.uri.queryParameters).query}');
     return Container(
+      color: Colors.blue,
       child: Center(
         child: Column(
           spacing: 8.0,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Chat Screen - ID: ${widget.queryParams['id'] ?? 'None'}'),
+            Text('Chat Screen - ID: ${widget.uri.queryParameters['id'] ?? 'None'}'),
             FilledButton(
               onPressed: () => controller.goToNew('/home'),
               child: const Text('Go to Home'),
@@ -217,21 +218,22 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class HomeDetailScreen extends StatelessWidget {
-  final Map<String, String> queryParams;
+  final Uri uri;
 
-  const HomeDetailScreen({Key? key, required this.queryParams}) : super(key: key);
+  const HomeDetailScreen({Key? key, required this.uri}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final controller = RouteController.of(context);
     print('INIT STATE HOME DETAIL');
     return Container(
+      color: Colors.green,
       child: Center(
         child: Column(
           spacing: 8.0,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Home Detail Screen - Params: ${queryParams.toString()}'),
+            Text('Home Detail Screen - Params: ${uri.toString()}'),
             FilledButton(
               onPressed: () => controller.goToNew('/home'),
               child: const Text('Back to Home'),
