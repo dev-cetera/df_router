@@ -1,46 +1,60 @@
-import 'dart:ui' show Picture;
+import 'dart:ui';
 
-import 'package:flutter/rendering.dart';
+import 'package:df_router/src/capture_widget_picture.dart';
 import 'package:flutter/widgets.dart';
 import 'get_platform_navigator.dart';
 import 'platform_navigator.dart';
 
-// RouteConfig
+// RouteConfig (new builder signature)
 class RouteBuilder {
   final String path;
   final bool preserve;
-  final Widget Function(BuildContext context, Uri uri) builder;
+  final Widget Function(BuildContext context, Widget? previous, Uri uri) builder;
 
   const RouteBuilder({required this.path, this.preserve = true, required this.builder});
 }
 
-// PicturePainter
-class PicturePainter extends CustomPainter {
-  final Picture picture;
-
-  PicturePainter(this.picture);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawPicture(picture);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// RouteController
+// RouteController to manage routing logic
 class RouteController {
   final ValueNotifier<String> _currentRoute;
   final Map<String, Widget> _preservedWidgets;
   final PlatformNavigator _platformNavigator;
   final List<RouteBuilder> _routes;
+  final bool enableCapturing;
+  final bool lowerPicture;
 
-  RouteController({required String initialRoute, required List<RouteBuilder> routes})
-    : _currentRoute = ValueNotifier<String>(getPlatformNavigator().getCurrentPath()),
-      _preservedWidgets = {},
-      _platformNavigator = getPlatformNavigator(),
-      _routes = routes {
+  GlobalKey? _repaintKey;
+  Picture? _picture;
+
+  Widget? _pictureWidget(BuildContext context) {
+    if (_picture == null) {
+      return null;
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+        return PictureWidget(picture: _picture, size: size);
+      },
+    );
+  }
+
+  void _maybeCapture() {
+    if (enableCapturing) {
+      _repaintKey ??= GlobalKey();
+      _picture = captureWidgetPicture(_repaintKey!);
+    }
+  }
+
+  RouteController({
+    required String initialRoute,
+    required List<RouteBuilder> routes,
+    this.enableCapturing = true,
+    this.lowerPicture = false,
+  }) : _currentRoute = ValueNotifier<String>(getPlatformNavigator().getCurrentPath()),
+       _preservedWidgets = {},
+       _platformNavigator = getPlatformNavigator(),
+       _routes = routes {
+    // Add initial route if preserved
     final uri = Uri.parse(initialRoute);
     final basePath = uri.path;
     final config = _routes.firstWhere(
@@ -49,15 +63,17 @@ class RouteController {
           () => RouteBuilder(
             path: basePath,
             preserve: false,
-            builder: (context, _) => const SizedBox.shrink(),
+            builder: (_, __, ___) => const SizedBox.shrink(),
           ),
     );
     if (config.preserve) {
       _preservedWidgets[initialRoute] = DisposableWidget(
-        builder: (context) => config.builder(context, uri),
+        builder: (context) => config.builder(context, _pictureWidget(context), uri),
         onDispose: () => print('Disposed: $initialRoute'),
       );
     }
+
+    // Listen for platform navigation events
     _platformNavigator.addPopStateListener((path) {
       _currentRoute.value = path;
     });
@@ -67,17 +83,24 @@ class RouteController {
 
   List<String> get preservedRoutes => _preservedWidgets.keys.toList();
 
+  /// Goes to the new route, without disposing any existing routes with
+  /// different query parameters.
   void goToNew(String route) {
+    _maybeCapture();
     _platformNavigator.pushState(route);
     _currentRoute.value = route;
   }
 
+  /// Goes to the new route, disposing any existing routes with the same base
+  /// path.
   void goTo(String route) {
     disposeRoute(route);
     goToNew(route);
   }
 
-  void goToOnly(String route) {
+  /// Goes to the new route, disposing all existing routes even ones marked
+  /// as preserved.
+  void goToReset(String route) {
     disposeAllRoutes();
     goToNew(route);
   }
@@ -102,7 +125,7 @@ class RouteController {
     return uri.queryParameters;
   }
 
-  Widget buildScreen(BuildContext context, String currentRoute, GlobalKey repaintKey) {
+  Widget buildScreen(BuildContext context, String currentRoute) {
     final uri = Uri.parse(currentRoute);
     final basePath = uri.path;
     final config = _routes.firstWhere(
@@ -111,35 +134,54 @@ class RouteController {
           () => RouteBuilder(
             path: basePath,
             preserve: false,
-            builder: (context, _) => const SizedBox.shrink(),
+            builder: (_, __, ___) => const SizedBox.shrink(),
           ),
     );
 
     final isPreserved = config.preserve;
 
+    // If preserved route, create or retrieve widget for full URI
     if (isPreserved && !_preservedWidgets.containsKey(currentRoute)) {
       _preservedWidgets[currentRoute] = DisposableWidget(
-        builder: (context) => config.builder(context, uri),
+        builder: (context) => config.builder(context, _pictureWidget(context), uri),
         onDispose: () => print('Disposed: $currentRoute'),
       );
     }
 
-    final index = _preservedWidgets.keys.toList().indexOf(currentRoute);
-    final children =
-        _preservedWidgets.entries.map((entry) {
-          final fullRoute = entry.key;
-          final widget = entry.value;
-          return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
-        }).toList();
-
-    return RepaintBoundary(
-      key: repaintKey,
-      child: Stack(
-        children: [
-          Offstage(offstage: !isPreserved, child: IndexedStack(index: index, children: children)),
-          Offstage(offstage: isPreserved, child: _buildNonPreservedScreen(context, currentRoute)),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+        return Stack(
+          children: [
+            if (enableCapturing && lowerPicture)
+              PictureWidget(picture: _picture, size: Size(width, height)),
+            RepaintBoundary(
+              key: _repaintKey,
+              child: Stack(
+                children: [
+                  Offstage(
+                    offstage: !isPreserved,
+                    child: IndexedStack(
+                      index: _preservedWidgets.keys.toList().indexOf(currentRoute),
+                      children:
+                          _preservedWidgets.entries.map((entry) {
+                            final fullRoute = entry.key;
+                            final widget = entry.value;
+                            return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
+                          }).toList(),
+                    ),
+                  ),
+                  Offstage(
+                    offstage: isPreserved,
+                    child: _buildNonPreservedScreen(context, currentRoute),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -152,10 +194,10 @@ class RouteController {
           () => RouteBuilder(
             path: basePath,
             preserve: false,
-            builder: (context, _) => const SizedBox.shrink(),
+            builder: (_, __, ___) => const SizedBox.shrink(),
           ),
     );
-    return config.builder(context, uri);
+    return config.builder(context, _pictureWidget(context), uri);
   }
 
   void dispose() {
@@ -164,6 +206,7 @@ class RouteController {
     _preservedWidgets.clear();
   }
 
+  // Static method to access RouteController
   static RouteController of(BuildContext context) {
     final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
@@ -173,7 +216,7 @@ class RouteController {
   }
 }
 
-// InheritedWidget
+// InheritedWidget to provide RouteController
 class RouteControllerProvider extends InheritedWidget {
   final RouteController controller;
 
@@ -183,92 +226,45 @@ class RouteControllerProvider extends InheritedWidget {
   bool updateShouldNotify(RouteControllerProvider oldWidget) => controller != oldWidget.controller;
 }
 
-// CustomRouter
-class CustomRouter extends StatefulWidget {
+class RouteManager extends StatefulWidget {
   final String initialRoute;
   final List<RouteBuilder> routes;
 
-  const CustomRouter({super.key, required this.initialRoute, required this.routes});
+  const RouteManager({super.key, required this.initialRoute, required this.routes});
 
   @override
-  State<CustomRouter> createState() => _CustomRouterState();
+  State<RouteManager> createState() => _RouteManagerState();
 }
 
-class _CustomRouterState extends State<CustomRouter> with SingleTickerProviderStateMixin {
+class _RouteManagerState extends State<RouteManager> {
   late final RouteController _controller;
-  final GlobalKey _repaintKey = GlobalKey();
-  Picture? _previousPicture;
-  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _controller = RouteController(initialRoute: widget.initialRoute, routes: widget.routes);
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _controller.currentRoute.addListener(_onRouteChanged);
-  }
-
-  void _onRouteChanged() {
-    captureCurrentPicture();
-    if (_previousPicture != null) {
-      _animationController.forward(from: 0.0).then((_) {
-        setState(() {
-          _previousPicture?.dispose();
-          _previousPicture = null;
-        });
-      });
-    }
-  }
-
-  void captureCurrentPicture() {
-    final renderObject = _repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (renderObject != null && renderObject.debugLayer != null) {
-      if (renderObject.debugLayer is PictureLayer) {
-        final pictureLayer = renderObject.debugLayer as PictureLayer;
-        _previousPicture = pictureLayer.picture;
-      } else {
-        print(
-          'Error: debugLayer is not a PictureLayer, found: ${renderObject.debugLayer.runtimeType}',
-        );
-      }
-    }
   }
 
   @override
   void dispose() {
-    _controller.currentRoute.removeListener(_onRouteChanged);
-    _animationController.dispose();
     _controller.dispose();
-    _previousPicture?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    print(_previousPicture);
     return RouteControllerProvider(
       controller: _controller,
       child: ValueListenableBuilder<String>(
         valueListenable: _controller.currentRoute,
         builder: (context, currentRoute, child) {
-          final newWidget = _controller.buildScreen(context, currentRoute, _repaintKey);
-          return Stack(
-            children: [
-              if (_previousPicture != null)
-                Positioned.fill(child: CustomPaint(painter: PicturePainter(_previousPicture!))),
-              newWidget,
-            ],
-          );
+          return _controller.buildScreen(context, currentRoute);
         },
       ),
     );
   }
 }
 
-// DisposableWidget
 class DisposableWidget extends StatefulWidget {
   final WidgetBuilder builder;
   final void Function()? onDispose;

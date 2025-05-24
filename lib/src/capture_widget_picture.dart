@@ -5,7 +5,7 @@ import 'dart:ui' as ui;
 
 typedef WidgetPicture = ui.Picture;
 
-ui.Picture? captureWidgetPicture({required BuildContext context, required GlobalKey repaintKey}) {
+ui.Picture? captureWidgetPicture(GlobalKey repaintKey) {
   final renderObject = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
   if (renderObject == null || renderObject.debugLayer == null) {
     debugPrint('RenderObject or debugLayer is null');
@@ -59,13 +59,17 @@ class PicturePainter extends CustomPainter {
 
 class PictureWidget extends StatelessWidget {
   final WidgetPicture? picture;
-  final Size size;
+  final Size? size;
 
-  const PictureWidget({super.key, required this.picture, required this.size});
+  const PictureWidget({super.key, required this.picture, this.size});
 
   @override
   Widget build(BuildContext context) {
     if (picture == null) return const SizedBox.shrink();
-    return CustomPaint(size: size, painter: PicturePainter(picture!));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return CustomPaint(size: constraints.biggest, painter: PicturePainter(picture!));
+      },
+    );
   }
 }
