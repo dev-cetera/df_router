@@ -4,7 +4,11 @@ import 'platform_navigator.dart';
 class WebNavigator implements PlatformNavigator {
   @override
   String getCurrentPath() {
-    return web.window.location.href;
+    final href = web.window.location.href;
+    if (href.endsWith('/')) {
+      return href.substring(0, href.length - 1);
+    }
+    return href;
   }
 
   @override
