@@ -1,6 +1,8 @@
 import 'dart:ui';
 
 import 'package:df_router/src/capture_widget_picture.dart';
+import 'package:df_router/src/slides/cupertino_screen_transition.dart';
+import 'package:df_widgets/_common.dart';
 import 'package:flutter/widgets.dart';
 import 'get_platform_navigator.dart';
 import 'platform_navigator.dart';
@@ -16,12 +18,13 @@ class RouteBuilder {
 
 // RouteController to manage routing logic
 class RouteController {
-  final ValueNotifier<String> _currentRoute;
-  final Map<String, Widget> _preservedWidgets;
-  final PlatformNavigator _platformNavigator;
-  final List<RouteBuilder> _routes;
-  final bool enableCapturing;
-  final bool lowerPicture;
+  late final ValueNotifier<String> _currentRoute;
+  late final Map<String, Widget> _preservedWidgets;
+  late final PlatformNavigator _platformNavigator;
+  late final List<RouteBuilder> _routes;
+  final bool enablePrevsCapturing;
+  final bool drawPrevAtStackBottom;
+  final Widget Function(Widget current, {Widget? prev, Duration duration}) transitionBuilder;
 
   GlobalKey? _repaintKey;
   Picture? _picture;
@@ -39,23 +42,31 @@ class RouteController {
   }
 
   void _maybeCapture() {
-    if (enableCapturing) {
+    if (enablePrevsCapturing) {
       _repaintKey ??= GlobalKey();
       _picture = captureWidgetPicture(_repaintKey!);
     }
   }
 
   RouteController({
-    required String initialRoute,
+    String? initialRoute,
     required List<RouteBuilder> routes,
-    this.enableCapturing = true,
-    this.lowerPicture = false,
-  }) : _currentRoute = ValueNotifier<String>(getPlatformNavigator().getCurrentPath()),
-       _preservedWidgets = {},
-       _platformNavigator = getPlatformNavigator(),
-       _routes = routes {
+    this.enablePrevsCapturing = true,
+    this.drawPrevAtStackBottom = false,
+    required this.transitionBuilder,
+  }) {
+    final platformNavigator = getPlatformNavigator();
+    _currentRoute = ValueNotifier<String>(initialRoute ?? platformNavigator.getCurrentPath());
+
+    _platformNavigator = platformNavigator;
+
+    _preservedWidgets = {};
+    _routes = routes;
+
     // Add initial route if preserved
-    final uri = Uri.parse(initialRoute);
+    final uri = Uri.parse(_currentRoute.value);
+
+    // platformNavigator.pushState(_currentRoute.value);
     final basePath = uri.path;
     final config = _routes.firstWhere(
       (r) => r.path == basePath && r.preserve,
@@ -67,9 +78,9 @@ class RouteController {
           ),
     );
     if (config.preserve) {
-      _preservedWidgets[initialRoute] = DisposableWidget(
+      _preservedWidgets[_currentRoute.value] = DisposableWidget(
         builder: (context) => config.builder(context, _pictureWidget(context), uri),
-        onDispose: () => print('Disposed: $initialRoute'),
+        onDispose: () => print('Disposed: ${_currentRoute.value}'),
       );
     }
 
@@ -120,11 +131,6 @@ class RouteController {
     _preservedWidgets.clear();
   }
 
-  Map<String, String> _parseQueryParams(String route) {
-    final uri = Uri.parse(route);
-    return uri.queryParameters;
-  }
-
   Widget buildScreen(BuildContext context, String currentRoute) {
     final uri = Uri.parse(currentRoute);
     final basePath = uri.path;
@@ -148,40 +154,30 @@ class RouteController {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final height = constraints.maxHeight;
-        return Stack(
-          children: [
-            if (enableCapturing && lowerPicture)
-              PictureWidget(picture: _picture, size: Size(width, height)),
-            RepaintBoundary(
-              key: _repaintKey,
-              child: Stack(
-                children: [
-                  Offstage(
-                    offstage: !isPreserved,
-                    child: IndexedStack(
-                      index: _preservedWidgets.keys.toList().indexOf(currentRoute),
-                      children:
-                          _preservedWidgets.entries.map((entry) {
-                            final fullRoute = entry.key;
-                            final widget = entry.value;
-                            return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
-                          }).toList(),
-                    ),
-                  ),
-                  Offstage(
-                    offstage: isPreserved,
-                    child: _buildNonPreservedScreen(context, currentRoute),
-                  ),
-                ],
-              ),
+    final a = RepaintBoundary(
+      key: _repaintKey,
+      child: Stack(
+        children: [
+          Offstage(
+            offstage: !isPreserved,
+            child: IndexedStack(
+              index: _preservedWidgets.keys.toList().indexOf(currentRoute),
+              children:
+                  _preservedWidgets.entries.map((entry) {
+                    final fullRoute = entry.key;
+                    final widget = entry.value;
+                    return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
+                  }).toList(),
             ),
-          ],
-        );
-      },
+          ),
+          Offstage(offstage: isPreserved, child: _buildNonPreservedScreen(context, currentRoute)),
+        ],
+      ),
+    );
+
+    return KeyedSubtree(
+      key: UniqueKey(),
+      child: transitionBuilder!(a, prev: _pictureWidget(context)),
     );
   }
 
@@ -227,10 +223,10 @@ class RouteControllerProvider extends InheritedWidget {
 }
 
 class RouteManager extends StatefulWidget {
-  final String initialRoute;
+  final String? initialRoute;
   final List<RouteBuilder> routes;
 
-  const RouteManager({super.key, required this.initialRoute, required this.routes});
+  const RouteManager({super.key, this.initialRoute, required this.routes});
 
   @override
   State<RouteManager> createState() => _RouteManagerState();
@@ -242,7 +238,11 @@ class _RouteManagerState extends State<RouteManager> {
   @override
   void initState() {
     super.initState();
-    _controller = RouteController(initialRoute: widget.initialRoute, routes: widget.routes);
+    _controller = RouteController(
+      initialRoute: widget.initialRoute,
+      routes: widget.routes,
+      transitionBuilder: CupertinoScreenTransition.transition,
+    );
   }
 
   @override

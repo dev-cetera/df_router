@@ -183,7 +183,7 @@ class MyApp extends StatelessWidget {
         path: '/home',
         preserve: false,
         builder: (context, prev, uri) {
-          return MaterialScreenTransition.transition(HomeScreen(uri: uri), prev: prev);
+          return HomeScreen(uri: uri);
         },
       ),
 
@@ -191,14 +191,14 @@ class MyApp extends StatelessWidget {
         path: '/messages',
         preserve: true,
         builder: (context, prev, uri) {
-          return CupertinoScreenTransition.transition(MessagesScreen(uri: uri), prev: prev);
+          return MessagesScreen(uri: uri);
         },
       ),
       RouteBuilder(
         path: '/chat',
         preserve: false,
         builder: (context, prev, uri) {
-          return CupertinoScreenTransition.transition(ChatScreen(uri: uri), prev: prev);
+          return ChatScreen(uri: uri);
         },
       ),
       RouteBuilder(
@@ -210,7 +210,7 @@ class MyApp extends StatelessWidget {
 
     return WidgetsApp(
       color: const Color(0xFF000000),
-      builder: (context, _) => RouteManager(initialRoute: '/home', routes: routes),
+      builder: (context, _) => RouteManager(routes: routes),
     );
   }
 }
@@ -252,7 +252,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('Messages Screen - Counter: $counter'),
-            Text('Query Params: ${widget.uri.toString()}'),
+            Text('Query Params: ${widget.uri.queryParameters}'),
             FilledButton(
               onPressed: () => setState(() => counter++),
               child: const Text('Increment'),

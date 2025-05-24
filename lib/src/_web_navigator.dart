@@ -4,7 +4,7 @@ import 'platform_navigator.dart';
 class WebNavigator implements PlatformNavigator {
   @override
   String getCurrentPath() {
-    return web.window.location.pathname;
+    return web.window.location.href;
   }
 
   @override
