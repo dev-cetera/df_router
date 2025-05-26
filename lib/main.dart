@@ -162,6 +162,7 @@ class _CaptureTestState extends State<CaptureTest> with SingleTickerProviderStat
 //   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 // }
 
+import 'package:df_router/src/platform_navigator.dart';
 import 'package:df_router/src/slides/cupertino_screen_transition.dart';
 import 'package:df_router/src/slides/material_screen_transition.dart';
 import 'package:df_widgets/_common.dart';
@@ -180,32 +181,44 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final routes = [
       RouteBuilder(
-        path: '/home',
-        preserve: false,
-        transition: false,
-        builder: (context, prev, uri) {
-          return HomeScreen(uri: uri);
+        basePath: '/home',
+        preserveWidget: false,
+        enableTransition: false,
+        builder: (context, prev, pathQuery) {
+          return HomeScreen(uri: Uri.parse(pathQuery));
         },
       ),
 
       RouteBuilder(
-        path: '/messages',
-        preserve: true,
-        builder: (context, prev, uri) {
-          return MessagesScreen(uri: uri);
+        basePath: '/messages',
+        preserveWidget: true,
+        builder: (context, prev, pathQuery) {
+          return ValueListenableBuilder(
+            valueListenable: RouteController.of(context).pCurrentPathQuery,
+            builder: (context, value, child) {
+              print(value);
+              return FadeAnimator(key: UniqueKey(), layer2: child!);
+            },
+            child: Builder(
+              builder: (context) {
+                return MessagesScreen(uri: Uri.parse(pathQuery));
+              },
+            ),
+          );
         },
       ),
       RouteBuilder(
-        path: '/chat',
-        preserve: false,
-        builder: (context, prev, uri) {
-          return ChatScreen(uri: uri);
+        basePath: '/chat',
+        preserveWidget: false,
+        prebuildWidget: true,
+        builder: (context, prev, pathQuery) {
+          return ChatScreen(uri: Uri.parse(pathQuery));
         },
       ),
       RouteBuilder(
-        path: '/home/1',
-        preserve: false,
-        builder: (context, _, uri) => HomeDetailScreen(uri: uri),
+        basePath: '/home/1',
+        preserveWidget: false,
+        builder: (context, prev, pathQuery) => HomeDetailScreen(uri: Uri.parse(pathQuery)),
       ),
     ];
 
@@ -259,27 +272,27 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Increment'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/home'),
+              onPressed: () => controller.push('/home'),
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/messages'),
+              onPressed: () => controller.push('/messages'),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/messages?key1=value1'),
+              onPressed: () => controller.push('/messages?key1=value1'),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.disposeFullRoute('/messages?key1=value1'),
+              onPressed: () => controller.disposeExactRoute('/messages?key1=value1'),
               child: const Text('DISPOSE Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/messages?key2=value2'),
+              onPressed: () => controller.push('/messages?key2=value2'),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed: () => controller.disposeFullRoute(fullRoute),
+              onPressed: () => controller.disposeExactRoute(fullRoute),
               child: const Text('Dispose This Route'),
             ),
           ],
@@ -307,23 +320,23 @@ class HomeScreen extends StatelessWidget {
           children: [
             Text('Home Screen - Params: ${uri.toString()}'),
             FilledButton(
-              onPressed: () => controller.goToNew('/messages'),
+              onPressed: () => controller.push('/messages'),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/messages?key1=value1'),
+              onPressed: () => controller.push('/messages?key1=value1'),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/messages?key2=value2'),
+              onPressed: () => controller.push('/messages?key2=value2'),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/home/1?detail=true'),
+              onPressed: () => controller.push('/home/1?detail=true'),
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/chat'),
+              onPressed: () => controller.push('/chat'),
               child: const Text('Go to Chat'),
             ),
           ],
@@ -369,19 +382,19 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Text('Chat Screen - ID: ${widget.uri.queryParameters['id'] ?? 'None'}'),
             FilledButton(
-              onPressed: () => controller.goToNew('/home'),
+              onPressed: () => controller.push('/home'),
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/chat'),
+              onPressed: () => controller.push('/chat'),
               child: const Text('Go to Chat (No ID)'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/chat?id=123'),
+              onPressed: () => controller.push('/chat?id=123'),
               child: const Text('Go to Chat (ID=123)'),
             ),
             FilledButton(
-              onPressed: () => controller.disposeFullRoute(fullRoute),
+              onPressed: () => controller.disposeExactRoute(fullRoute),
               child: const Text('Dispose This Route'),
             ),
           ],
@@ -409,16 +422,56 @@ class HomeDetailScreen extends StatelessWidget {
           children: [
             Text('Home Detail Screen - Params: ${uri.toString()}'),
             FilledButton(
-              onPressed: () => controller.goToNew('/home'),
+              onPressed: () => controller.push('/home'),
               child: const Text('Back to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.goToNew('/messages'),
+              onPressed: () => controller.push('/messages'),
               child: const Text('Go to Messages'),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class AnimationWrapper extends StatefulWidget {
+  final Widget prev;
+  final Widget current;
+
+  const AnimationWrapper({super.key, required this.prev, required this.current});
+
+  @override
+  State<AnimationWrapper> createState() => _AnimationWrapperState();
+}
+
+class _AnimationWrapperState extends State<AnimationWrapper> {
+  late final Widget _current;
+  late final ReanimateController _reanimateController;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = widget.current; // Store stable MessagesScreen
+    _reanimateController = ReanimateController();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: RouteController.of(context).pCurrentPathQuery,
+      builder: (context, value, child) {
+        print('CHANGE!!!');
+        //_reanimateController.reanimate(); // Trigger animation
+        return MaterialScreenTransition(
+          controller: _reanimateController,
+          prev: widget.prev,
+          current: child!, // Stable MessagesScreen
+          duration: Durations.medium3,
+        );
+      },
+      child: _current,
     );
   }
 }

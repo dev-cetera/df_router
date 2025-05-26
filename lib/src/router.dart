@@ -3,29 +3,31 @@ import 'dart:ui';
 import 'package:df_router/src/capture_widget_picture.dart';
 import 'package:df_router/src/slides/cupertino_screen_transition.dart';
 import 'package:df_widgets/_common.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'get_platform_navigator.dart';
 import 'platform_navigator.dart';
+import 'slides/material_screen_transition.dart';
 
-// RouteConfig (new builder signature)
 class RouteBuilder {
-  final String path;
-  final bool preserve;
-  final bool transition;
-  final Widget Function(BuildContext context, Widget? previous, Uri uri) builder;
+  final String basePath;
+  final bool preserveWidget;
+  final bool enableTransition;
+  final bool prebuildWidget;
+  final Widget Function(BuildContext context, Widget? previous, String pathQuery) builder;
 
   const RouteBuilder({
-    required this.path,
-    this.preserve = true,
-    this.transition = true,
+    required this.basePath,
+    this.preserveWidget = true,
+    this.enableTransition = true,
+    this.prebuildWidget = false,
     required this.builder,
   });
 }
 
 // RouteController to manage routing logic
 class RouteController {
-  late final ValueNotifier<String> _currentRoute;
-  late final Map<String, Widget> _preservedWidgets;
+  late final ValueNotifier<String> _pCurrentPathQuery; // todo change to pod
+  var _widgetCache = <String, Widget>{};
   late final PlatformNavigator _platformNavigator;
   late final List<RouteBuilder> _routes;
   final bool enablePrevsCapturing;
@@ -47,10 +49,12 @@ class RouteController {
     );
   }
 
+  BuildContext? _captureContext;
+
   void _maybeCapture() {
     if (enablePrevsCapturing) {
       _repaintKey ??= GlobalKey();
-      _picture = captureWidgetPicture(_repaintKey!);
+      _picture = captureWidgetPicture(_captureContext!);
     }
   }
 
@@ -62,150 +66,191 @@ class RouteController {
     required this.transitionBuilder,
   }) {
     final platformNavigator = getPlatformNavigator();
-    _currentRoute = ValueNotifier<String>(initialRoute ?? platformNavigator.getCurrentPath());
+    _pCurrentPathQuery = ValueNotifier<String>(
+      initialRoute ?? platformNavigator.getCurrentPath() ?? '/home',
+    );
 
     _platformNavigator = platformNavigator;
 
-    _preservedWidgets = {};
-    _routes = routes;
-
-    // Add initial route if preserved
-    final uri = Uri.parse(_currentRoute.value);
-
-    // platformNavigator.pushState(_currentRoute.value);
-    final basePath = uri.path;
-    final config = _routes.firstWhere(
-      (r) => r.path == basePath && r.preserve,
-      orElse:
-          () => RouteBuilder(
-            path: basePath,
-            preserve: false,
-            builder: (_, __, ___) => const SizedBox.shrink(),
+    _widgetCache = Map.fromEntries(
+      routes
+          .where((route) => route.prebuildWidget)
+          .map(
+            (e) => MapEntry(
+              e.basePath,
+              Builder(
+                builder: (context) {
+                  return e.builder(context, _pictureWidget(context), e.basePath);
+                },
+              ),
+            ),
           ),
     );
-    if (config.preserve) {
-      _preservedWidgets[_currentRoute.value] = DisposableWidget(
-        builder: (context) => config.builder(context, _pictureWidget(context), uri),
-        onDispose: () => print('Disposed: ${_currentRoute.value}'),
-      );
-    }
+    _routes = routes;
+
+    // // Add initial route if preserved
+    // final uri = Uri.parse(_currentRoute.value);
+
+    // // platformNavigator.pushState(_currentRoute.value);
+    // final basePath = uri.path;
+    // final config = _routes.firstWhere(
+    //   (r) => r.path == basePath && r.preserveWidget,
+    //   orElse:
+    //       () => RouteBuilder(
+    //         path: basePath,
+    //         preserveWidget: false,
+    //         builder: (_, __, ___) => const SizedBox.shrink(),
+    //       ),
+    // );
+    // if (config.preserveWidget) {
+    //   _preservedWidgets[_currentRoute.value] = Builder(
+    //     builder: (context) => config.builder(context, _pictureWidget(context), uri),
+    //   );
+    // }
 
     // Listen for platform navigation events
     _platformNavigator.addPopStateListener((path) {
-      _currentRoute.value = path;
+      _pCurrentPathQuery.value = path!;
     });
   }
 
-  ValueNotifier<String> get currentRoute => _currentRoute;
+  ValueNotifier<String> get pCurrentPathQuery => _pCurrentPathQuery;
 
-  List<String> get preservedRoutes => _preservedWidgets.keys.toList();
+  void repush(String route) {
+    disposeExactRoute(route);
+    push(route);
+  }
 
-  /// Goes to the new route, without disposing any existing routes with
-  /// different query parameters.
-  void goToNew(String route) {
+  void only(String route) {
+    disposeAllRoutes();
+    push(route);
+  }
+
+  void push(String route) {
     _maybeCapture();
     _platformNavigator.pushState(route);
-    _currentRoute.value = route;
+    _pCurrentPathQuery.value = route;
+    _cleanupStaleRoutes();
   }
 
-  /// Goes to the new route, disposing any existing routes with the same base
-  /// path.
-  void goTo(String route) {
-    disposeRoute(route);
-    goToNew(route);
+  void disposeExactRoute(String pathQuery) {
+    _widgetCache.removeWhere((pq, _) => pq == pathQuery);
   }
 
-  /// Goes to the new route, disposing all existing routes even ones marked
-  /// as preserved.
-  void goToReset(String route) {
-    disposeAllRoutes();
-    goToNew(route);
-  }
-
-  void disposeFullRoute(String fullRoute) {
-    if (_preservedWidgets.containsKey(fullRoute)) {
-      _preservedWidgets.remove(fullRoute);
-    }
-  }
-
-  void disposeRoute(String route) {
-    final basePath = Uri.parse(route).path;
-    _preservedWidgets.removeWhere((key, _) => key.startsWith(basePath));
+  void disposeMatchingRoutes(String path) {
+    _widgetCache.removeWhere((pq, _) => _matchesBaseRoute(path, pq));
   }
 
   void disposeAllRoutes() {
-    _preservedWidgets.clear();
+    _widgetCache.clear();
   }
 
-  Widget buildScreen(BuildContext context, String currentRoute) {
-    final uri = Uri.parse(currentRoute);
-    final basePath = uri.path;
-    final config = _routes.firstWhere(
-      (r) => r.path == basePath,
-      orElse:
-          () => RouteBuilder(
-            path: basePath,
-            preserve: false,
-            builder: (_, __, ___) => const SizedBox.shrink(),
-          ),
-    );
+  void _cleanupStaleRoutes() {
+    final stale = _routes.where((e) => e.preserveWidget == false).map((e) => e.basePath);
+    _widgetCache.removeWhere((pq, _) => stale.any((e) => e == pq));
+  }
 
-    final preserve = config.preserve;
-    final transition = config.transition;
+  bool _matchesBaseRoute(String path, String pathQuery) {
+    return pathQuery == path || pathQuery.startsWith('$path?');
+  }
 
-    // If preserved route, create or retrieve widget for full URI
-    if (preserve && !_preservedWidgets.containsKey(currentRoute)) {
-      _preservedWidgets[currentRoute] = DisposableWidget(
-        builder: (context) => config.builder(context, _pictureWidget(context), uri),
-        onDispose: () => print('Disposed: $currentRoute'),
-      );
+  Widget buildScreen(BuildContext context, String currentPathQuery) {
+    final config = _routes.firstWhereOrNull((r) => _matchesBaseRoute(r.basePath, currentPathQuery));
+
+    if (config == null) {
+      return const SizedBox.shrink();
     }
 
-    final a = RepaintBoundary(
-      key: _repaintKey,
-      child: Stack(
-        children: [
-          Offstage(
-            offstage: !preserve,
-            child: IndexedStack(
-              index: _preservedWidgets.keys.toList().indexOf(currentRoute),
-              children:
-                  _preservedWidgets.entries.map((entry) {
-                    final fullRoute = entry.key;
-                    final widget = entry.value;
-                    return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
-                  }).toList(),
-            ),
-          ),
-          Offstage(offstage: preserve, child: _buildNonPreservedScreen(context, currentRoute)),
-        ],
-      ),
+    _widgetCache[currentPathQuery] ??= Builder(
+      builder: (context) => config.builder(context, _pictureWidget(context), currentPathQuery),
     );
 
-    return transition
-        ? KeyedSubtree(key: UniqueKey(), child: transitionBuilder(a, prev: _pictureWidget(context)))
-        : a;
+    final a = Builder(
+      builder: (context) {
+        _captureContext = context;
+
+        return RepaintBoundary(
+          child: Builder(
+            builder: (context) {
+              return IndexedStack(
+                index: _widgetCache.keys.toList().indexOf(currentPathQuery),
+                children:
+                    _widgetCache.entries.map((entry) {
+                      final fullRoute = entry.key;
+                      final widget = entry.value;
+                      return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
+                    }).toList(),
+              );
+            },
+          ),
+        );
+      },
+    );
+    return a;
   }
 
-  Widget _buildNonPreservedScreen(BuildContext context, String route) {
-    final uri = Uri.parse(route);
-    final basePath = uri.path;
-    final config = _routes.firstWhere(
-      (r) => r.path == basePath && !r.preserve,
-      orElse:
-          () => RouteBuilder(
-            path: basePath,
-            preserve: false,
-            builder: (_, __, ___) => const SizedBox.shrink(),
-          ),
-    );
-    return config.builder(context, _pictureWidget(context), uri);
-  }
+  // Widget buildScreen(BuildContext context, String currentRoute) {
+  //   final uri = Uri.parse(currentRoute);
+  //   final basePath = uri.path;
+  //   final config = _routes.firstWhereOrNull((r) => r.path == basePath);
+
+  //   if (config == null) {
+  //     return const SizedBox.shrink();
+  //   }
+
+  //   final isPrebuilt = config.prebuildWidget;
+  //   final isPreserved = config.preserveWidget;
+
+  //   // Determine if the widget should be cached
+  //   final shouldCache = isPrebuilt || isPreserved;
+
+  //   // Populate cache for preserved or prebuilt routes
+  //   if (shouldCache) {
+  //     _widgetCache[currentRoute] ??= Builder(
+  //       builder: (context) => config.builder(context, _pictureWidget(context), uri),
+  //     );
+  //   }
+
+  //   final a = RepaintBoundary(
+  //     key: _repaintKey,
+  //     child: Stack(
+  //       children: [
+  //         Offstage(
+  //           offstage: !shouldCache,
+  //           child: IndexedStack(
+  //             index: _widgetCache.keys.toList().indexOf(currentRoute),
+  //             children:
+  //                 _widgetCache.entries.map((entry) {
+  //                   final fullRoute = entry.key;
+  //                   final widget = entry.value;
+  //                   return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
+  //                 }).toList(),
+  //           ),
+  //         ),
+  //         Offstage(offstage: shouldCache, child: _buildNonCachedWidget(context, currentRoute)),
+  //       ],
+  //     ),
+  //   );
+
+  //   return a;
+  // }
+
+  // Widget? _buildNonCachedWidget(BuildContext context, String route) {
+  //   final uri = Uri.parse(route);
+  //   final basePath = uri.path;
+  //   final config = _routes.firstWhereOrNull(
+  //     (r) => r.pathQuery == basePath && !r.preserveWidget && !r.prebuildWidget,
+  //   );
+  //   if (config == null) {
+  //     return null;
+  //   }
+  //   return Builder(builder: (context) => config.builder(context, _pictureWidget(context), uri));
+  // }
 
   void dispose() {
-    _platformNavigator.removePopStateListener((path) => _currentRoute.value = path);
-    _currentRoute.dispose();
-    _preservedWidgets.clear();
+    _platformNavigator.removePopStateListener((path) => _pCurrentPathQuery.value = path!);
+    _pCurrentPathQuery.dispose();
+    _widgetCache.clear();
   }
 
   // Static method to access RouteController
@@ -262,34 +307,11 @@ class _RouteManagerState extends State<RouteManager> {
     return RouteControllerProvider(
       controller: _controller,
       child: ValueListenableBuilder<String>(
-        valueListenable: _controller.currentRoute,
+        valueListenable: _controller.pCurrentPathQuery,
         builder: (context, currentRoute, child) {
           return _controller.buildScreen(context, currentRoute);
         },
       ),
     );
-  }
-}
-
-class DisposableWidget extends StatefulWidget {
-  final WidgetBuilder builder;
-  final void Function()? onDispose;
-
-  const DisposableWidget({super.key, required this.builder, this.onDispose});
-
-  @override
-  State<DisposableWidget> createState() => _DisposableWidgetState();
-}
-
-class _DisposableWidgetState extends State<DisposableWidget> {
-  @override
-  void dispose() {
-    widget.onDispose?.call();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.builder(context);
   }
 }

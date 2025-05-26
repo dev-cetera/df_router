@@ -3,12 +3,8 @@ import 'platform_navigator.dart';
 
 class WebNavigator implements PlatformNavigator {
   @override
-  String getCurrentPath() {
-    final href = web.window.location.href;
-    if (href.endsWith('/')) {
-      return href.substring(0, href.length - 1);
-    }
-    return href;
+  String? getCurrentPath() {
+    return normalizePathQuery(web.window.location.href);
   }
 
   @override
@@ -19,8 +15,7 @@ class WebNavigator implements PlatformNavigator {
   @override
   void addPopStateListener(PopStateCallback callback) {
     web.window.onPopState.listen((event) {
-      final path = web.window.location.pathname;
-      callback(path);
+      callback(getCurrentPath());
     });
   }
 

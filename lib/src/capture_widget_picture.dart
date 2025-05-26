@@ -5,8 +5,8 @@ import 'dart:ui' as ui;
 
 typedef WidgetPicture = ui.Picture;
 
-ui.Picture? captureWidgetPicture(GlobalKey repaintKey) {
-  final renderObject = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+ui.Picture? captureWidgetPicture(BuildContext context) {
+  final renderObject = context.findRenderObject() as RenderRepaintBoundary?;
   if (renderObject == null || renderObject.debugLayer == null) {
     debugPrint('RenderObject or debugLayer is null');
     return null;
