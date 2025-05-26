@@ -193,18 +193,7 @@ class MyApp extends StatelessWidget {
         basePath: '/messages',
         preserveWidget: true,
         builder: (context, prev, pathQuery) {
-          return ValueListenableBuilder(
-            valueListenable: RouteController.of(context).pCurrentPathQuery,
-            builder: (context, value, child) {
-              print(value);
-              return FadeAnimator(key: UniqueKey(), layer2: child!);
-            },
-            child: Builder(
-              builder: (context) {
-                return MessagesScreen(uri: Uri.parse(pathQuery));
-              },
-            ),
-          );
+          return MessagesScreen(uri: Uri.parse(pathQuery));
         },
       ),
       RouteBuilder(

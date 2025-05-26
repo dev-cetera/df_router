@@ -129,8 +129,9 @@ class RouteController {
   void push(String route) {
     _maybeCapture();
     _platformNavigator.pushState(route);
+    _prevRoute = _pCurrentPathQuery.value;
     _pCurrentPathQuery.value = route;
-    _cleanupStaleRoutes();
+    _cleanUpPrevRoute(_prevRoute);
   }
 
   void disposeExactRoute(String pathQuery) {
@@ -145,9 +146,16 @@ class RouteController {
     _widgetCache.clear();
   }
 
-  void _cleanupStaleRoutes() {
-    final stale = _routes.where((e) => e.preserveWidget == false).map((e) => e.basePath);
-    _widgetCache.removeWhere((pq, _) => stale.any((e) => e == pq));
+  String? _prevRoute;
+
+  void _cleanUpPrevRoute(String? prevRoute) {
+    if (prevRoute == null) return;
+    final prevIsStale = _routes.any(
+      (e) => (e.prebuildWidget || !e.preserveWidget) && _matchesBaseRoute(e.basePath, _prevRoute!),
+    );
+    if (prevIsStale) {
+      _widgetCache.remove(_prevRoute)!;
+    }
   }
 
   bool _matchesBaseRoute(String path, String pathQuery) {
