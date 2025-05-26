@@ -218,6 +218,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+final _a = SlideWidgetController();
+
 class MessagesScreen extends StatefulWidget {
   final Uri uri;
 
@@ -425,42 +427,99 @@ class HomeDetailScreen extends StatelessWidget {
   }
 }
 
-class AnimationWrapper extends StatefulWidget {
-  final Widget prev;
-  final Widget current;
+class SlideWidgetController {
+  VoidCallback? $reanimate;
 
-  const AnimationWrapper({super.key, required this.prev, required this.current});
+  void reanimate() {
+    Future.microtask(() {
+      $reanimate?.call();
+    });
+  }
 
-  @override
-  State<AnimationWrapper> createState() => _AnimationWrapperState();
+  void clear() {
+    $reanimate = null;
+  }
 }
 
-class _AnimationWrapperState extends State<AnimationWrapper> {
-  late final Widget _current;
-  late final ReanimateController _reanimateController;
+class SlideWidget extends StatefulWidget {
+  final Widget child;
+  final Widget? prev;
+  final SlideWidgetController controller;
+  final Duration duration;
+
+  const SlideWidget({
+    super.key,
+    required this.child,
+    this.prev,
+    required this.controller,
+    this.duration = const Duration(milliseconds: 300),
+  });
+
+  @override
+  State<SlideWidget> createState() => _SlideWidgetState();
+}
+
+class _SlideWidgetState extends State<SlideWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<Offset> _slide;
+  late Animation<Offset> _prevSlide;
+  late Animation<double> _fade;
 
   @override
   void initState() {
     super.initState();
-    _current = widget.current; // Store stable MessagesScreen
-    _reanimateController = ReanimateController();
+
+    _animationController = AnimationController(vsync: this, duration: widget.duration);
+
+    // Start not animated.
+    _animationController.value = 1.0;
+
+    _slide = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: const Offset(0.0, 0.0),
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+
+    _prevSlide = Tween<Offset>(
+      begin: const Offset(0.0, 0.0),
+      end: const Offset(-0.33, 0.0),
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+
+    _fade = Tween<double>(
+      begin: 1.0,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+
+    widget.controller.$reanimate = () {
+      _animationController.reset();
+      _animationController.forward();
+    };
+
+    // Start the animation initially
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    widget.controller.clear();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: RouteController.of(context).pCurrentPathQuery,
-      builder: (context, value, child) {
-        print('CHANGE!!!');
-        //_reanimateController.reanimate(); // Trigger animation
-        return MaterialScreenTransition(
-          controller: _reanimateController,
-          prev: widget.prev,
-          current: child!, // Stable MessagesScreen
-          duration: Durations.medium3,
-        );
-      },
-      child: _current,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (widget.prev != null)
+          SlideTransition(
+            position: _prevSlide,
+            child: FadeTransition(opacity: _fade, child: widget.prev!),
+          ),
+        SlideTransition(
+          position: _slide,
+          child: KeyedSubtree(key: const ValueKey('slide_child'), child: widget.child),
+        ),
+      ],
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:df_router/main.dart';
 import 'package:flutter/material.dart';
 
 import 'screen_transition_mixin.dart';
@@ -6,27 +7,30 @@ class CupertinoScreenTransition extends StatefulWidget with ScreenTransitionMixi
   @override
   final Widget prev;
   @override
-  final Widget current;
+  final Widget child;
   @override
   final Duration duration;
+
+  final SlideWidgetController controller;
 
   const CupertinoScreenTransition({
     super.key,
     required this.prev,
-    required this.current,
+    required this.child,
     required this.duration,
+    required this.controller,
   });
 
-  static Widget transition(
-    Widget current, {
-    Widget? prev,
-    Duration duration = const Duration(milliseconds: 300),
-  }) {
-    if (prev == null) {
-      return current;
-    }
-    return CupertinoScreenTransition(prev: prev, current: current, duration: duration);
-  }
+  // static Widget transition(
+  //   Widget child, {
+  //   Widget? prev,
+  //   Duration duration = const Duration(milliseconds: 300),
+  // }) {
+  //   if (prev == null) {
+  //     return child;
+  //   }
+  //   return CupertinoScreenTransition(prev: prev, duration: duration, child: child);
+  // }
 
   @override
   State<CupertinoScreenTransition> createState() => _CupertinoScreenTransitionState();
@@ -72,6 +76,11 @@ class _CupertinoScreenTransitionState extends State<CupertinoScreenTransition>
       }
     });
 
+    widget.controller.$reanimate = () {
+      _controller.reset();
+      _controller.forward();
+    };
+
     // Start the animation
     _controller.forward();
   }
@@ -79,6 +88,7 @@ class _CupertinoScreenTransitionState extends State<CupertinoScreenTransition>
   @override
   void dispose() {
     _controller.dispose();
+    widget.controller.clear();
     super.dispose();
   }
 
@@ -86,7 +96,7 @@ class _CupertinoScreenTransitionState extends State<CupertinoScreenTransition>
   Widget build(BuildContext context) {
     // After completion, return only the current widget
     if (_isCompleted) {
-      return widget.current;
+      return widget.child;
     }
 
     // During transition, show the animated stack
@@ -108,7 +118,7 @@ class _CupertinoScreenTransitionState extends State<CupertinoScreenTransition>
           builder: (context, child) {
             return Transform.translate(
               offset: Offset(_currentSlide.value * MediaQuery.of(context).size.width, 0),
-              child: widget.current,
+              child: KeyedSubtree(key: const ValueKey('slide_child'), child: widget.child),
             );
           },
         ),

@@ -2,51 +2,30 @@ import 'package:flutter/material.dart';
 
 import 'screen_transition_mixin.dart';
 
-class ReanimateController {
-  VoidCallback? _reanimate;
-
-  void reanimate() {
-    _reanimate?.call();
-  }
-
-  // Internal method to set the reanimate callback
-  void _setReanimate(VoidCallback callback) {
-    _reanimate = callback;
-  }
-}
-
 class MaterialScreenTransition extends StatefulWidget with ScreenTransitionMixin {
   @override
   final Widget prev;
   @override
-  final Widget current;
+  final Widget child;
   @override
   final Duration duration;
-  final ReanimateController? controller;
 
   const MaterialScreenTransition({
     super.key,
     required this.prev,
-    required this.current,
+    required this.child,
     required this.duration,
-    this.controller,
   });
 
   static Widget transition(
-    Widget current, {
+    Widget child, {
     Widget? prev,
     Duration duration = const Duration(milliseconds: 300),
-    ReanimateController? controller,
   }) {
     if (prev == null) {
-      return current;
+      return child;
     }
-    return MaterialScreenTransition(
-      prev: prev,
-      current: current,
-      duration: duration,
-      controller: controller,
-    );
+    return MaterialScreenTransition(prev: prev, duration: duration, child: child);
   }
 
   @override
@@ -97,13 +76,6 @@ class _MaterialScreenTransitionState extends State<MaterialScreenTransition>
       }
     });
 
-    // Set up reanimate callback
-    widget.controller?._setReanimate(() {
-      if (_controller.status != AnimationStatus.forward) {
-        _controller.forward(from: 0.0);
-      }
-    });
-
     // Start the animation
     _controller.forward();
   }
@@ -118,7 +90,7 @@ class _MaterialScreenTransitionState extends State<MaterialScreenTransition>
   Widget build(BuildContext context) {
     // After completion, return only the current widget
     if (_isCompleted) {
-      return widget.current;
+      return widget.child;
     }
 
     // During transition, show the animated stack
@@ -143,7 +115,7 @@ class _MaterialScreenTransitionState extends State<MaterialScreenTransition>
               child: child,
             );
           },
-          child: widget.current, // Pass current as child to prevent rebuild
+          child: widget.child, // Pass current as child to prevent rebuild
         ),
       ],
     );

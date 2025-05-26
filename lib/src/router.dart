@@ -1,12 +1,12 @@
 import 'dart:ui';
 
+import 'package:df_router/main.dart';
 import 'package:df_router/src/capture_widget_picture.dart';
-import 'package:df_router/src/slides/cupertino_screen_transition.dart';
 import 'package:df_widgets/_common.dart';
+
 import 'package:flutter/material.dart';
 import 'get_platform_navigator.dart';
 import 'platform_navigator.dart';
-import 'slides/material_screen_transition.dart';
 
 class RouteBuilder {
   final String basePath;
@@ -88,26 +88,6 @@ class RouteController {
     );
     _routes = routes;
 
-    // // Add initial route if preserved
-    // final uri = Uri.parse(_currentRoute.value);
-
-    // // platformNavigator.pushState(_currentRoute.value);
-    // final basePath = uri.path;
-    // final config = _routes.firstWhere(
-    //   (r) => r.path == basePath && r.preserveWidget,
-    //   orElse:
-    //       () => RouteBuilder(
-    //         path: basePath,
-    //         preserveWidget: false,
-    //         builder: (_, __, ___) => const SizedBox.shrink(),
-    //       ),
-    // );
-    // if (config.preserveWidget) {
-    //   _preservedWidgets[_currentRoute.value] = Builder(
-    //     builder: (context) => config.builder(context, _pictureWidget(context), uri),
-    //   );
-    // }
-
     // Listen for platform navigation events
     _platformNavigator.addPopStateListener((path) {
       _pCurrentPathQuery.value = path!;
@@ -126,12 +106,17 @@ class RouteController {
     push(route);
   }
 
-  void push(String route) {
+  void push(String route, {bool skipCurrent = true}) {
+    if (skipCurrent && _pCurrentPathQuery.value == route) {
+      return;
+    }
+
     _maybeCapture();
     _platformNavigator.pushState(route);
     _prevRoute = _pCurrentPathQuery.value;
     _pCurrentPathQuery.value = route;
-    _cleanUpPrevRoute(_prevRoute);
+    _cleanUpRoute(_prevRoute);
+    _controller.reanimate();
   }
 
   void disposeExactRoute(String pathQuery) {
@@ -146,15 +131,34 @@ class RouteController {
     _widgetCache.clear();
   }
 
+  void pushBack() {
+    if (_prevRoute != null) {
+      push(_prevRoute!);
+    }
+  }
+
+  void onlyBack() {
+    if (_prevRoute != null) {
+      only(_prevRoute!);
+    }
+  }
+
+  void repushBack() {
+    if (_prevRoute != null) {
+      repush(_prevRoute!);
+    }
+  }
+
   String? _prevRoute;
 
-  void _cleanUpPrevRoute(String? prevRoute) {
-    if (prevRoute == null) return;
-    final prevIsStale = _routes.any(
-      (e) => (e.prebuildWidget || !e.preserveWidget) && _matchesBaseRoute(e.basePath, _prevRoute!),
-    );
-    if (prevIsStale) {
-      _widgetCache.remove(_prevRoute)!;
+  void _cleanUpRoute(String? route) {
+    if (route == null) return;
+    final a = _routes.firstWhereOrNull((e) => _matchesBaseRoute(e.basePath, route));
+    if (a == null) return;
+    if (a.prebuildWidget && !a.preserveWidget) {
+      print("STALE: $route");
+      _widgetCache[route] =
+          const SizedBox.shrink(); // repalce with empty widget instead of removing it to avoid strange state changes
     }
   }
 
@@ -169,14 +173,38 @@ class RouteController {
       return const SizedBox.shrink();
     }
 
-    _widgetCache[currentPathQuery] ??= Builder(
+    _widgetCache[currentPathQuery] = Builder(
       builder: (context) => config.builder(context, _pictureWidget(context), currentPathQuery),
     );
 
-    final a = Builder(
+    final a = SlideWidget(
+      prev: _pictureWidget(context) ?? const SizedBox.shrink(),
+      controller: _controller,
+      duration: Durations.medium3,
+      child: Builder(
+        builder: (context) {
+          _captureContext = context;
+          return RepaintBoundary(
+            child: Builder(
+              builder: (context) {
+                return IndexedStack(
+                  index: _widgetCache.keys.toList().indexOf(currentPathQuery),
+                  children:
+                      _widgetCache.entries.map((entry) {
+                        final fullRoute = entry.key;
+                        final widget = entry.value;
+                        return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
+                      }).toList(),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+    return Builder(
       builder: (context) {
         _captureContext = context;
-
         return RepaintBoundary(
           child: Builder(
             builder: (context) {
@@ -194,8 +222,9 @@ class RouteController {
         );
       },
     );
-    return a;
   }
+
+  final _controller = SlideWidgetController();
 
   // Widget buildScreen(BuildContext context, String currentRoute) {
   //   final uri = Uri.parse(currentRoute);
@@ -259,6 +288,7 @@ class RouteController {
     _platformNavigator.removePopStateListener((path) => _pCurrentPathQuery.value = path!);
     _pCurrentPathQuery.dispose();
     _widgetCache.clear();
+    _controller.clear();
   }
 
   // Static method to access RouteController
@@ -300,7 +330,7 @@ class _RouteManagerState extends State<RouteManager> {
     _controller = RouteController(
       initialRoute: widget.initialRoute,
       routes: widget.routes,
-      transitionBuilder: CupertinoScreenTransition.transition,
+      transitionBuilder: (Widget a, {Duration duration = Durations.medium3, Widget? prev}) => a,
     );
   }
 
