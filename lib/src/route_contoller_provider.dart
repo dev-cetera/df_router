@@ -19,8 +19,13 @@ import '_src.g.dart';
 class RouteControllerProvider extends InheritedWidget {
   final RouteController controller;
 
-  const RouteControllerProvider({super.key, required this.controller, required super.child});
+  const RouteControllerProvider({
+    super.key,
+    required this.controller,
+    required super.child,
+  });
 
   @override
-  bool updateShouldNotify(RouteControllerProvider oldWidget) => controller != oldWidget.controller;
+  bool updateShouldNotify(RouteControllerProvider oldWidget) =>
+      controller != oldWidget.controller;
 }

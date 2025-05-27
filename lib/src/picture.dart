@@ -88,7 +88,10 @@ class PictureWidget extends StatelessWidget {
     if (picture == null) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) {
-        return CustomPaint(size: constraints.biggest, painter: PicturePainter(picture!));
+        return CustomPaint(
+          size: constraints.biggest,
+          painter: PicturePainter(picture!),
+        );
       },
     );
   }
