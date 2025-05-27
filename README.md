@@ -8,43 +8,79 @@ Dart & Flutter Packages by dev-cetera.com & contributors.
 
 ## Summary
 
-A package that provides a practical Debouncer for optimizing performance by controlling the frequency of function calls in response to rapid events.
+Just another router, with a focus on ease of use and effective state management.
 
 For a full feature set, please refer to the [API reference](https://pub.dev/documentation/df_router/).
 
 ## Usage Example
 
 ```dart
-// Create a debouncer to automatically save a form to the database after some delay.
-late final _autosave = Debouncer(
-  delay: const Duration(milliseconds: 500),
-   onStart: () {
-      print('Saving form...');
-    },
-  onWaited: () {
-    final name = _nameController.text;
-    final email = _emailController.text;
-    print('Form saved to database: {"name": "$name", "email": "$email"}');
-  },
-  onCall: () {
-    print('Form changed!');
-  },
-);
+class App extends StatelessWidget {
+  const App({super.key});
 
-// Tigger the autosave when the form changes.
-TextField(
-  controller: _emailController,
-  decoration: const InputDecoration(
-    labelText: 'Email:',
-   ),
-  onChanged: (_) => _autosave(),
-),
+  @override
+  Widget build(BuildContext context) {
+    return WidgetsApp(
+      color: Colors.white,
+      builder:
+          (context, _) => RouteManager(
+            fallbackRoute: '/home',
+            transitionBuilder: (context, params) {
+              // For iOS.
+              return HorizontalSlideFadeTransition(
+                prev: params.prev ?? const SizedBox.shrink(),
+                controller: params.controller,
+                duration: const Duration(milliseconds: 300),
+                child: params.child,
+              );
+              // For Android.
+              // return VerticalSlideFadeTransition(
+              //   prev: params.prev ?? const SizedBox.shrink(),
+              //   controller: params.controller,
+              //   duration: const Duration(milliseconds: 300),
+              //   child: params.child,
+              // );
+            },
+            routes: [
+              RouteBuilder(
+                basePath: '/home',
+                // Does not dispose the route when navigating away.
+                shouldPreserve: false,
+                // Animates the transition when navigating to this route.
+                shouldAnimate: false,
+                builder: (context, prev, pathQuery) {
+                  return HomeScreen(pathQuery: pathQuery);
+                },
+              ),
 
-// Immediately save the form to the database when the page is closed.
-@override
-void dispose() {
-  _autosave.finalize();
-  super.dispose();
+              RouteBuilder(
+                basePath: '/messages',
+                shouldPreserve: true,
+                shouldAnimate: true,
+                builder: (context, prev, pathQuery) {
+                  return MessagesScreen(pathQuery: pathQuery);
+                },
+              ),
+              RouteBuilder(
+                basePath: '/chat',
+                shouldPreserve: false,
+                // Builds the widget even if the route is not on the stack.
+                shouldPrebuild: true,
+                builder: (context, prev, pathQuery) {
+                  return ChatScreen(pathQuery: pathQuery);
+                },
+              ),
+              RouteBuilder(
+                basePath: '/detail',
+                shouldPreserve: false,
+                builder: (context, prev, pathQuery) {
+                  return HomeDetailScreen(pathQuery: pathQuery);
+                },
+              ),
+            ],
+          ),
+    );
+  }
 }
 ```
 
