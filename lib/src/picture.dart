@@ -1,11 +1,25 @@
-import 'package:df_widgets/_common.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+//.title
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+//
+// Dart/Flutter (DF) Packages by dev-cetera.com & contributors. The use of this
+// source code is governed by an MIT-style license described in the LICENSE
+// file located in this project's root directory.
+//
+// See: https://opensource.org/license/mit
+//
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+//.title~
+
 import 'dart:ui' as ui;
 
-typedef WidgetPicture = ui.Picture;
+import 'package:flutter/widgets.dart';
+import 'package:flutter/rendering.dart';
 
-ui.Picture? captureWidgetPicture(BuildContext context) {
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+typedef Picture = ui.Picture;
+
+Picture? captureWidgetPicture(BuildContext context) {
   final renderObject = context.findRenderObject() as RenderRepaintBoundary?;
   if (renderObject == null || renderObject.debugLayer == null) {
     debugPrint('RenderObject or debugLayer is null');
@@ -29,6 +43,8 @@ ui.Picture? captureWidgetPicture(BuildContext context) {
   }
 }
 
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
 PictureLayer? findPictureLayer(Layer? layer) {
   if (layer == null) return null;
   if (layer is PictureLayer && layer.picture != null) return layer;
@@ -42,6 +58,8 @@ PictureLayer? findPictureLayer(Layer? layer) {
   }
   return null;
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class PicturePainter extends CustomPainter {
   final ui.Picture picture;
@@ -57,8 +75,10 @@ class PicturePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
 class PictureWidget extends StatelessWidget {
-  final WidgetPicture? picture;
+  final Picture? picture;
   final Size? size;
 
   const PictureWidget({super.key, required this.picture, this.size});

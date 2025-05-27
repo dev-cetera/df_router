@@ -10,31 +10,19 @@
 ## ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 ##.title~
 
-name: df_router
-description: Just another router, with a focus on ease and effective state management.
-version: 0.1.0
-repository: https://github.com/dev-cetera/df_router
-funding:
-  - https://www.buymeacoffee.com/dev_cetera
-topics:
-  - router
-  - navigation
-  - state-management
-
-environment:
-  sdk: ^3.7.2
+name: Publish to pub.dev
 
 ## -----------------------------------------------------------------------------
 
-dependencies:
-  flutter:
-    sdk: flutter
-  df_pwa_utils:
-    path: ../df_pwa_utils
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
 
 ## -----------------------------------------------------------------------------
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^5.0.0
+jobs:
+  publish:
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
