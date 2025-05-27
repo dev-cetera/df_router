@@ -1,6 +1,6 @@
 {
-    "name": "go_router_test",
-    "short_name": "go_router_test",
+    "name": "df_router",
+    "short_name": "df_router",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
