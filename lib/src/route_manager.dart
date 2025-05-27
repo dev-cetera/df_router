@@ -20,12 +20,14 @@ class RouteManager extends StatelessWidget {
   final String? initialRoute;
   final String fallbackRoute;
   final List<RouteBuilder> routes;
+  final TTransitionBuilder? transitionBuilder;
 
   const RouteManager({
     super.key,
     this.initialRoute,
     required this.fallbackRoute,
     required this.routes,
+    this.transitionBuilder,
   });
 
   @override
@@ -34,16 +36,18 @@ class RouteManager extends StatelessWidget {
       initialRoute: initialRoute,
       fallbackRoute: fallbackRoute,
       routes: routes,
-      transitionBuilder: (context, controller, shouldAnimate, prev, child) {
-        if (!shouldAnimate) {
-          controller.end();
+      transitionBuilder: (context, params) {
+        // ignore: invalid_use_of_protected_member
+        if (!params.shouldAnimate) {
+          params.controller.end();
         }
-        return HorizontalSlideFadeTransition(
-          prev: prev ?? const SizedBox.shrink(),
-          controller: controller,
-          duration: const Duration(milliseconds: 300),
-          child: child,
-        );
+        return transitionBuilder?.call(context, params) ??
+            HorizontalSlideFadeTransition(
+              prev: params.prev ?? const SizedBox.shrink(),
+              controller: params.controller,
+              duration: const Duration(milliseconds: 300),
+              child: params.child,
+            );
       },
     );
     return RouteControllerProvider(

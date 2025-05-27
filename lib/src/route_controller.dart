@@ -34,7 +34,7 @@ class RouteController {
 
   Picture? _picture;
   BuildContext? _captureContext;
-  String? _prevRoute;
+  String? _prevPathQuery;
   final _controller = TransitionController();
 
   //
@@ -125,9 +125,9 @@ class RouteController {
     }
     _maybeCapture();
     platformNavigator.pushState(route);
-    _prevRoute = _pCurrentPathQuery.value;
+    _prevPathQuery = _pCurrentPathQuery.value;
     _pCurrentPathQuery.value = route;
-    _cleanUpRoute(_prevRoute);
+    _cleanUpRoute(_prevPathQuery);
 
     Future.microtask(() {
       _controller.reset1();
@@ -163,8 +163,8 @@ class RouteController {
   //
 
   void pushBack() {
-    if (_prevRoute != null) {
-      push(_prevRoute!);
+    if (_prevPathQuery != null) {
+      push(_prevPathQuery!);
     }
   }
 
@@ -173,8 +173,8 @@ class RouteController {
   //
 
   void onlyBack() {
-    if (_prevRoute != null) {
-      only(_prevRoute!);
+    if (_prevPathQuery != null) {
+      only(_prevPathQuery!);
     }
   }
 
@@ -183,8 +183,8 @@ class RouteController {
   //
 
   void repushBack() {
-    if (_prevRoute != null) {
-      repush(_prevRoute!);
+    if (_prevPathQuery != null) {
+      repush(_prevPathQuery!);
     }
   }
 
@@ -225,28 +225,32 @@ class RouteController {
     );
     return transitionBuilder(
       context,
-      _controller,
-      config.shouldAnimate,
-      _pictureWidget(context),
-      Builder(
-        builder: (context) {
-          _captureContext = context;
-          return RepaintBoundary(
-            child: Builder(
-              builder: (context) {
-                return IndexedStack(
-                  index: _widgetCache.keys.toList().indexOf(currentPathQuery),
-                  children:
-                      _widgetCache.entries.map((entry) {
-                        final fullRoute = entry.key;
-                        final widget = entry.value;
-                        return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
-                      }).toList(),
-                );
-              },
-            ),
-          );
-        },
+      TransitionBuilderParams(
+        controller: _controller,
+        shouldAnimate: config.shouldAnimate,
+        prevPathQuery: _prevPathQuery,
+        pathQuery: currentPathQuery,
+        prev: _pictureWidget(context),
+        child: Builder(
+          builder: (context) {
+            _captureContext = context;
+            return RepaintBoundary(
+              child: Builder(
+                builder: (context) {
+                  return IndexedStack(
+                    index: _widgetCache.keys.toList().indexOf(currentPathQuery),
+                    children:
+                        _widgetCache.entries.map((entry) {
+                          final fullRoute = entry.key;
+                          final widget = entry.value;
+                          return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
+                        }).toList(),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

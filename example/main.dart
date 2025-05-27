@@ -1,55 +1,82 @@
 import 'package:flutter/material.dart';
 
-import 'src/_src.g.dart';
+import '../lib/df_router.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final routes = [
-      RouteBuilder(
-        basePath: '/home',
-        shouldPreserve: false,
-        shouldAnimate: false,
-        builder: (context, prev, pathQuery) {
-          return HomeScreen(pathQuery: pathQuery);
-        },
-      ),
-
-      RouteBuilder(
-        basePath: '/messages',
-        shouldPreserve: true,
-        shouldAnimate: true,
-        builder: (context, prev, pathQuery) {
-          return MessagesScreen(pathQuery: pathQuery);
-        },
-      ),
-      RouteBuilder(
-        basePath: '/chat',
-        shouldPreserve: false,
-        shouldPrebuild: true,
-        builder: (context, prev, pathQuery) {
-          return ChatScreen(pathQuery: pathQuery);
-        },
-      ),
-      RouteBuilder(
-        basePath: '/detail',
-        shouldPreserve: false,
-        builder: (context, prev, pathQuery) => HomeDetailScreen(pathQuery: pathQuery),
-      ),
-    ];
-
     return WidgetsApp(
-      color: const Color(0xFF000000),
-      builder: (context, _) => RouteManager(routes: routes, fallbackRoute: '/home'),
+      color: Colors.white,
+      builder:
+          (context, _) => RouteManager(
+            fallbackRoute: '/home',
+            transitionBuilder: (context, params) {
+              // For iOS.
+              return HorizontalSlideFadeTransition(
+                prev: params.prev ?? const SizedBox.shrink(),
+                controller: params.controller,
+                duration: const Duration(milliseconds: 300),
+                child: params.child,
+              );
+              // For Android.
+              // return VerticalSlideFadeTransition(
+              //   prev: params.prev ?? const SizedBox.shrink(),
+              //   controller: params.controller,
+              //   duration: const Duration(milliseconds: 300),
+              //   child: params.child,
+              // );
+            },
+            routes: [
+              RouteBuilder(
+                basePath: '/home',
+                // Does not dispose the route when navigating away.
+                shouldPreserve: false,
+                // Animates the transition when navigating to this route.
+                shouldAnimate: false,
+                builder: (context, prev, pathQuery) {
+                  return HomeScreen(pathQuery: pathQuery);
+                },
+              ),
+
+              RouteBuilder(
+                basePath: '/messages',
+                shouldPreserve: true,
+                shouldAnimate: true,
+                builder: (context, prev, pathQuery) {
+                  return MessagesScreen(pathQuery: pathQuery);
+                },
+              ),
+              RouteBuilder(
+                basePath: '/chat',
+                shouldPreserve: false,
+                // Builds the widget even if the route is not on the stack.
+                shouldPrebuild: true,
+                builder: (context, prev, pathQuery) {
+                  return ChatScreen(pathQuery: pathQuery);
+                },
+              ),
+              RouteBuilder(
+                basePath: '/detail',
+                shouldPreserve: false,
+                builder: (context, prev, pathQuery) {
+                  return HomeDetailScreen(pathQuery: pathQuery);
+                },
+              ),
+            ],
+          ),
     );
   }
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class MessagesScreen extends StatefulWidget {
   final String pathQuery;
@@ -121,6 +148,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 }
 
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
 class HomeScreen extends StatelessWidget {
   final String pathQuery;
 
@@ -163,6 +192,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class ChatScreen extends StatefulWidget {
   final String pathQuery;
@@ -218,6 +249,8 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class HomeDetailScreen extends StatelessWidget {
   final String pathQuery;
