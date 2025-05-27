@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../lib/df_router.dart';
+import 'package:df_router/df_router.dart';
 
 void main() {
   runApp(const App());
@@ -15,62 +15,63 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return WidgetsApp(
       color: Colors.white,
-      builder: (context, _) => RouteManager(
-        fallbackRoute: '/home',
-        transitionBuilder: (context, params) {
-          // For iOS.
-          return HorizontalSlideFadeTransition(
-            prev: params.prev ?? const SizedBox.shrink(),
-            controller: params.controller,
-            duration: const Duration(milliseconds: 300),
-            child: params.child,
-          );
-          // For Android.
-          // return VerticalSlideFadeTransition(
-          //   prev: params.prev ?? const SizedBox.shrink(),
-          //   controller: params.controller,
-          //   duration: const Duration(milliseconds: 300),
-          //   child: params.child,
-          // );
-        },
-        routes: [
-          RouteBuilder(
-            basePath: '/home',
-            // Does not dispose the route when navigating away.
-            shouldPreserve: false,
-            // Animates the transition when navigating to this route.
-            shouldAnimate: false,
-            builder: (context, prev, pathQuery) {
-              return HomeScreen(pathQuery: pathQuery);
+      builder:
+          (context, _) => RouteManager(
+            fallbackRoute: '/home',
+            transitionBuilder: (context, params) {
+              // For iOS.
+              return HorizontalSlideFadeTransition(
+                prev: params.prev ?? const SizedBox.shrink(),
+                controller: params.controller,
+                duration: const Duration(milliseconds: 300),
+                child: params.child,
+              );
+              // For Android.
+              // return VerticalSlideFadeTransition(
+              //   prev: params.prev ?? const SizedBox.shrink(),
+              //   controller: params.controller,
+              //   duration: const Duration(milliseconds: 300),
+              //   child: params.child,
+              // );
             },
-          ),
+            routes: [
+              RouteBuilder(
+                basePath: '/home',
+                // Does not dispose the route when navigating away.
+                shouldPreserve: false,
+                // Animates the transition when navigating to this route.
+                shouldAnimate: false,
+                builder: (context, prev, pathQuery) {
+                  return HomeScreen(pathQuery: pathQuery);
+                },
+              ),
 
-          RouteBuilder(
-            basePath: '/messages',
-            shouldPreserve: true,
-            shouldAnimate: true,
-            builder: (context, prev, pathQuery) {
-              return MessagesScreen(pathQuery: pathQuery);
-            },
+              RouteBuilder(
+                basePath: '/messages',
+                shouldPreserve: true,
+                shouldAnimate: true,
+                builder: (context, prev, pathQuery) {
+                  return MessagesScreen(pathQuery: pathQuery);
+                },
+              ),
+              RouteBuilder(
+                basePath: '/chat',
+                shouldPreserve: false,
+                // Builds the widget even if the route is not on the stack.
+                shouldPrebuild: true,
+                builder: (context, prev, pathQuery) {
+                  return ChatScreen(pathQuery: pathQuery);
+                },
+              ),
+              RouteBuilder(
+                basePath: '/detail',
+                shouldPreserve: false,
+                builder: (context, prev, pathQuery) {
+                  return HomeDetailScreen(pathQuery: pathQuery);
+                },
+              ),
+            ],
           ),
-          RouteBuilder(
-            basePath: '/chat',
-            shouldPreserve: false,
-            // Builds the widget even if the route is not on the stack.
-            shouldPrebuild: true,
-            builder: (context, prev, pathQuery) {
-              return ChatScreen(pathQuery: pathQuery);
-            },
-          ),
-          RouteBuilder(
-            basePath: '/detail',
-            shouldPreserve: false,
-            builder: (context, prev, pathQuery) {
-              return HomeDetailScreen(pathQuery: pathQuery);
-            },
-          ),
-        ],
-      ),
     );
   }
 }
@@ -92,12 +93,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   void initState() {
     super.initState();
-    print('INIT STATE MESSAGES - Params: ${widget.pathQuery}');
+    debugPrint('INIT STATE MESSAGES - Params: ${widget.pathQuery}');
   }
 
   @override
   void dispose() {
-    print('MessagesScreen disposed - Params: ${widget.pathQuery}');
+    debugPrint('MessagesScreen disposed - Params: ${widget.pathQuery}');
     super.dispose();
   }
 
@@ -129,8 +130,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.disposeExactRoute('/messages?key1=value1'),
+              onPressed: () => controller.disposeExactRoute('/messages?key1=value1'),
               child: const Text('DISPOSE Messages (key1=value1)'),
             ),
             FilledButton(
@@ -158,7 +158,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = RouteController.of(context);
-    print('INIT STATE HOME');
+    debugPrint('INIT STATE HOME');
     return Container(
       color: Colors.yellow,
       child: Center(
@@ -208,12 +208,12 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    print('INIT STATE CHAT - Params: ${widget.pathQuery}');
+    debugPrint('INIT STATE CHAT - Params: ${widget.pathQuery}');
   }
 
   @override
   void dispose() {
-    print('ChatScreen disposed - Params: ${widget.pathQuery}');
+    debugPrint('ChatScreen disposed - Params: ${widget.pathQuery}');
     super.dispose();
   }
 
@@ -260,7 +260,7 @@ class HomeDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = RouteController.of(context);
-    print('INIT STATE HOME DETAIL');
+    debugPrint('INIT STATE HOME DETAIL');
     return Container(
       color: Colors.green,
       child: Center(
