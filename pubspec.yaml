@@ -11,7 +11,7 @@
 ##.title~
 
 name: df_router
-description: Just another router, with a focus on ease and effective state management.
+description: Just another router, with a focus on ease of use and effective state management.
 version: 0.1.0
 repository: https://github.com/dev-cetera/df_router
 funding:
@@ -29,8 +29,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  df_pwa_utils:
-    path: ../df_pwa_utils
+  df_pwa_utils: ^0.1.0
 
 ## -----------------------------------------------------------------------------
 
