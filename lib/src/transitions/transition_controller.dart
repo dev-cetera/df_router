@@ -9,7 +9,7 @@ class TransitionController {
   @protected
   VoidCallback? endAnimation;
 
-  void reset1() {
+  void reset() {
     resetAnimation?.call();
   }
 

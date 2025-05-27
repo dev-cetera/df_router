@@ -10,6 +10,7 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
+import 'package:df_pod/df_pod.dart';
 import 'package:df_pwa_utils/df_pwa_utils.dart';
 import 'package:flutter/foundation.dart';
 
@@ -24,7 +25,7 @@ class RouteController {
   //
   //
 
-  late final ValueNotifier<String> _pCurrentPathQuery;
+  late final Pod<String> _pCurrentPathQuery;
   ValueListenable<String> get pCurrentPathQuery => _pCurrentPathQuery;
 
   var _widgetCache = <String, Widget>{};
@@ -36,6 +37,9 @@ class RouteController {
   BuildContext? _captureContext;
   String? _prevPathQuery;
   final _controller = TransitionController();
+  final String? errorRoute;
+
+  bool? _shouldAnimateOverride;
 
   //
   //
@@ -43,13 +47,14 @@ class RouteController {
 
   RouteController({
     String? initialRoute,
+    this.errorRoute,
     required String fallbackRoute,
     required this.routes,
     this.enablePrevsCapturing = true,
     required this.transitionBuilder,
   }) {
     final pathQuery = initialRoute ?? platformNavigator.getCurrentPath() ?? fallbackRoute;
-    _pCurrentPathQuery = ValueNotifier<String>(pathQuery);
+    _pCurrentPathQuery = Pod<String>(pathQuery);
 
     _widgetCache = Map.fromEntries(
       routes
@@ -66,9 +71,15 @@ class RouteController {
           ),
     );
 
-    platformNavigator.addStateCallback((path) {
-      _pCurrentPathQuery.value = path;
-    });
+    platformNavigator.addStateCallback(_onStateChange);
+  }
+
+  //
+  //
+  //
+
+  void _onStateChange(String pathQuery) {
+    _pCurrentPathQuery.set(pathQuery);
   }
 
   //
@@ -119,19 +130,48 @@ class RouteController {
   //
   //
 
-  void push(String route, {bool skipCurrent = true}) {
+  void push(String route, {bool skipCurrent = true, bool? shouldAnimate}) {
+    _shouldAnimateOverride = shouldAnimate;
     if (skipCurrent && _pCurrentPathQuery.value == route) {
       return;
     }
+    if (!routeExists(route)) {
+      if (errorRoute != null) {
+        push(errorRoute!);
+      }
+      return;
+    }
+
+    final canProceed = _getBuilder(route)?.condition?.call() != false;
+
+    if (!canProceed) {
+      if (errorRoute != null) {
+        push(errorRoute!);
+      }
+      return;
+    }
+
     _maybeCapture();
     platformNavigator.pushState(route);
     _prevPathQuery = _pCurrentPathQuery.value;
-    _pCurrentPathQuery.value = route;
+    _pCurrentPathQuery.set(route);
     _cleanUpRoute(_prevPathQuery);
 
     Future.microtask(() {
-      _controller.reset1();
+      _controller.reset();
     });
+  }
+
+  //
+  //
+  //
+
+  bool routeExists(String pathQuery) {
+    return routes.map((e) => e.basePath).any((e) => _matchesBaseRoute(e, pathQuery));
+  }
+
+  RouteBuilder? _getBuilder(String pathQuery) {
+    return routes.where((route) => _matchesBaseRoute(route.basePath, pathQuery)).firstOrNull;
   }
 
   //
@@ -164,7 +204,7 @@ class RouteController {
 
   void pushBack() {
     if (_prevPathQuery != null) {
-      push(_prevPathQuery!);
+      push(_prevPathQuery!, shouldAnimate: false);
     }
   }
 
@@ -215,18 +255,25 @@ class RouteController {
   //
 
   Widget buildScreen(BuildContext context, String currentPathQuery) {
-    final config = routes.where((r) => _matchesBaseRoute(r.basePath, currentPathQuery)).firstOrNull;
+    var config = routes.where((r) => _matchesBaseRoute(r.basePath, currentPathQuery)).firstOrNull;
+    if (config == null) {
+      return const SizedBox.shrink();
+    }
+    if (errorRoute != null) {
+      config = routes.where((r) => _matchesBaseRoute(r.basePath, errorRoute!)).firstOrNull;
+    }
     if (config == null) {
       return const SizedBox.shrink();
     }
     _widgetCache[currentPathQuery] = Builder(
-      builder: (context) => config.builder(context, _pictureWidget(context), currentPathQuery),
+      builder: (context) => config!.builder(context, _pictureWidget(context), currentPathQuery),
     );
+    print('!!!');
     return transitionBuilder(
       context,
       TransitionBuilderParams(
         controller: _controller,
-        shouldAnimate: config.shouldAnimate,
+        shouldAnimate: _shouldAnimateOverride ?? config.shouldAnimate,
         prevPathQuery: _prevPathQuery,
         pathQuery: currentPathQuery,
         prev: _pictureWidget(context),
@@ -259,7 +306,7 @@ class RouteController {
   //
 
   void dispose() {
-    platformNavigator.removeStateCallback((path) => _pCurrentPathQuery.value = path);
+    platformNavigator.removeStateCallback(_onStateChange);
     _pCurrentPathQuery.dispose();
     _widgetCache.clear();
     _controller.clear();
