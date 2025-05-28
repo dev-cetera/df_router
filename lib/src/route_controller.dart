@@ -110,7 +110,7 @@ class RouteController {
   //
   //
 
-  void repush(String route, {bool skipCurrent = true, bool shouldAnimate = true}) {
+  void repush(String route, {bool skipCurrent = true, bool shouldAnimate = false}) {
     disposeExactRoute(route);
     push(route, skipCurrent: skipCurrent, shouldAnimate: shouldAnimate);
   }
@@ -119,7 +119,7 @@ class RouteController {
   //
   //
 
-  void only(String route, {bool skipCurrent = true, bool shouldAnimate = true}) {
+  void only(String route, {bool skipCurrent = true, bool shouldAnimate = false}) {
     disposeAllRoutes();
     push(route, skipCurrent: skipCurrent, shouldAnimate: shouldAnimate);
   }
@@ -128,7 +128,7 @@ class RouteController {
   //
   //
 
-  void push(String route, {bool skipCurrent = true, bool shouldAnimate = true}) {
+  void push(String route, {bool skipCurrent = true, bool shouldAnimate = false}) {
     if (skipCurrent && _pCurrentPathQuery.value == route) {
       return;
     }
