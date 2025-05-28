@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:df_router/df_router.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,59 +14,122 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       color: Colors.white,
-      builder: (context, child) => RouteManager(
-        fallbackRoute: '/home',
-        transitionBuilder: (context, params) {
-          // For iOS.
-          return HorizontalSlideFadeTransition(
-            // Prev is a capture of the previous page.
-            prev: params.prev,
-            controller: params.controller,
-            duration: const Duration(milliseconds: 300),
-            child: params.child,
-          );
-          // For Android.
-          // return VerticalSlideFadeTransition(
-          //   prev: params.prev,
-          //   controller: params.controller,
-          //   duration: const Duration(milliseconds: 300),
-          //   child: params.child,
-          // );
-        },
-        routes: [
-          RouteBuilder(
-            basePath: '/home',
-            builder: (context, prev, pathQuery) {
-              return HomeScreen(pathQuery: pathQuery);
+      builder: (context, child) {
+        return Material(
+          child: RouteManager(
+            fallbackState: Uri.parse('/home'),
+            wrapper: (context, child) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Persistent app header.
+                  Container(
+                    color: Colors.blueGrey,
+                    padding: const EdgeInsets.all(16.0),
+                    child: const Text(
+                      'df_router Example',
+                      style: TextStyle(color: Colors.white, fontSize: 24.0),
+                    ),
+                  ),
+                  // Main content area.
+                  Expanded(child: child),
+                  // Persistent app footer with navigation buttons.
+                  Container(
+                    color: Colors.indigo,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            final controller = RouteController.of(context);
+                            controller.push(Uri.parse('/home'));
+                          },
+                          icon: Icon(
+                            Icons.home,
+                            color:
+                                RouteController.of(context).state.path == '/home'
+                                    ? Colors.grey
+                                    : Colors.white,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            final controller = RouteController.of(context);
+                            controller.push(Uri.parse('/chat'));
+                          },
+                          icon: Icon(
+                            Icons.chat,
+                            color:
+                                RouteController.of(context).state.path == '/chat'
+                                    ? Colors.grey
+                                    : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
             },
-          ),
-          RouteBuilder(
-            basePath: '/messages',
-            // Preserves the route when navigating away. This means it will
-            // be kept in memory and not disposed until manually disposed.
-            shouldPreserve: true,
-            builder: (context, prev, pathQuery) {
-              return MessagesScreen(pathQuery: pathQuery);
+            transitionBuilder: (context, params) {
+              // For iOS.
+              return Column(
+                children: [
+                  Expanded(
+                    child: HorizontalSlideFadeTransition(
+                      // Prev is a capture of the previous page.
+                      prev: params.prev,
+                      controller: params.controller,
+                      duration: const Duration(milliseconds: 300),
+                      child: params.child,
+                    ),
+                  ),
+                ],
+              );
+              // For Android.
+              // return VerticalSlideFadeTransition(
+              //   prev: params.prev,
+              //   controller: params.controller,
+              //   duration: const Duration(milliseconds: 300),
+              //   child: params.child,
+              // );
             },
+            routes: [
+              RouteBuilder(
+                path: '/home',
+                builder: (context, prev, state) {
+                  return HomeScreen(state: state);
+                },
+              ),
+              RouteBuilder(
+                path: '/messages',
+                // Preserves the route when navigating away. This means it will
+                // be kept in memory and not disposed until manually disposed.
+                shouldPreserve: true,
+                builder: (context, prev, state) {
+                  return MessagesScreen(state: state);
+                },
+              ),
+              RouteBuilder(
+                path: '/chat',
+                // Pre-builds the widget even if the route is not at the top of
+                // the stack. This is useful for routes that are frequently
+                // navigated to or that takes some time to build.
+                shouldPrebuild: true,
+                builder: (context, prev, state) {
+                  return ChatScreen(state: state);
+                },
+              ),
+              RouteBuilder(
+                path: '/detail',
+                builder: (context, prev, state) {
+                  return HomeDetailScreen(state: state);
+                },
+              ),
+            ],
           ),
-          RouteBuilder(
-            basePath: '/chat',
-            // Pre-builds the widget even if the route is not at the top of
-            // the stack. This is useful for routes that are frequently
-            // navigated to or that takes some time to build.
-            shouldPrebuild: true,
-            builder: (context, prev, pathQuery) {
-              return ChatScreen(pathQuery: pathQuery);
-            },
-          ),
-          RouteBuilder(
-            basePath: '/detail',
-            builder: (context, prev, pathQuery) {
-              return HomeDetailScreen(pathQuery: pathQuery);
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -74,9 +137,9 @@ class MyApp extends StatelessWidget {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class MessagesScreen extends StatefulWidget {
-  final String pathQuery;
+  final Uri state;
 
-  const MessagesScreen({super.key, required this.pathQuery});
+  const MessagesScreen({super.key, required this.state});
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
@@ -88,12 +151,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('INIT STATE MESSAGES - Params: ${widget.pathQuery}');
+    debugPrint('INIT STATE MESSAGES - Params: ${widget.state}');
   }
 
   @override
   void dispose() {
-    debugPrint('MessagesScreen disposed - Params: ${widget.pathQuery}');
+    debugPrint('MessagesScreen disposed - Params: ${widget.state}');
     super.dispose();
   }
 
@@ -113,31 +176,29 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Increment'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/home'),
+              onPressed: () => controller.push(Uri.parse('/home')),
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/messages', shouldAnimate: true),
+              onPressed: () => controller.push(Uri.parse('/messages'), shouldAnimate: true),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/messages?key1=value1', shouldAnimate: true),
+              onPressed:
+                  () => controller.push(Uri.parse('/messages?key1=value1'), shouldAnimate: true),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.disposeExactRoute('/messages?key1=value1'),
+              onPressed: () => controller.disposeState(Uri.parse('/messages?key1=value1')),
               child: const Text('DISPOSE Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/messages?key2=value2', shouldAnimate: true),
+              onPressed:
+                  () => controller.push(Uri.parse('/messages?key2=value2'), shouldAnimate: true),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed: () => controller.disposeExactRoute(widget.pathQuery),
+              onPressed: () => controller.disposeState(widget.state),
               child: const Text('Dispose This Route'),
             ),
           ],
@@ -150,9 +211,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class HomeScreen extends StatelessWidget {
-  final String pathQuery;
+  final Uri state;
 
-  const HomeScreen({super.key, required this.pathQuery});
+  const HomeScreen({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
@@ -166,23 +227,23 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FilledButton(
-              onPressed: () => controller.push('/messages'),
+              onPressed: () => controller.push(Uri.parse('/messages')),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages?key1=value1'),
+              onPressed: () => controller.push(Uri.parse('/messages?key1=value1')),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages?key2=value2'),
+              onPressed: () => controller.push(Uri.parse('/messages?key2=value2')),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/detail'),
+              onPressed: () => controller.push(Uri.parse('/detail')),
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/chat'),
+              onPressed: () => controller.push(Uri.parse('/chat')),
               child: const Text('Go to Chat'),
             ),
           ],
@@ -195,9 +256,9 @@ class HomeScreen extends StatelessWidget {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class ChatScreen extends StatefulWidget {
-  final String pathQuery;
+  final Uri state;
 
-  const ChatScreen({super.key, required this.pathQuery});
+  const ChatScreen({super.key, required this.state});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -207,12 +268,12 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('INIT STATE CHAT - Params: ${widget.pathQuery}');
+    debugPrint('INIT STATE CHAT - Params: ${widget.state}');
   }
 
   @override
   void dispose() {
-    debugPrint('ChatScreen disposed - Params: ${widget.pathQuery}');
+    debugPrint('ChatScreen disposed - Params: ${widget.state}');
     super.dispose();
   }
 
@@ -227,19 +288,19 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FilledButton(
-              onPressed: () => controller.push('/home'),
+              onPressed: () => controller.push(Uri.parse('/home')),
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/chat'),
+              onPressed: () => controller.push(Uri.parse('/chat')),
               child: const Text('Go to Chat (No ID)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/chat?id=123'),
+              onPressed: () => controller.push(Uri.parse('/chat?id=123')),
               child: const Text('Go to Chat (ID=123)'),
             ),
             FilledButton(
-              onPressed: () => controller.disposeExactRoute(widget.pathQuery),
+              onPressed: () => controller.disposeState(widget.state),
               child: const Text('Dispose This Route'),
             ),
           ],
@@ -252,9 +313,9 @@ class _ChatScreenState extends State<ChatScreen> {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class HomeDetailScreen extends StatelessWidget {
-  final String pathQuery;
+  final Uri state;
 
-  const HomeDetailScreen({super.key, required this.pathQuery});
+  const HomeDetailScreen({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
@@ -268,11 +329,11 @@ class HomeDetailScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FilledButton(
-              onPressed: () => controller.push('/home'),
+              onPressed: () => controller.push(Uri.parse('/home')),
               child: const Text('Back to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages'),
+              onPressed: () => controller.push(Uri.parse('/messages')),
               child: const Text('Go to Messages'),
             ),
           ],

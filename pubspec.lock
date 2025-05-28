@@ -44,10 +44,9 @@ packages:
   df_pwa_utils:
     dependency: "direct main"
     description:
-      name: df_pwa_utils
-      sha256: "7eb9ed40fd93139c0b1ebfab4166708c8341c651e44bb97de710e43cd881ae38"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../df_pwa_utils"
+      relative: true
+    source: path
     version: "0.1.0"
   fake_async:
     dependency: transitive

@@ -15,19 +15,14 @@ import 'package:flutter/widgets.dart';
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class RouteBuilder {
-  final String basePath;
+  final String path;
   final bool shouldPreserve;
   final bool shouldPrebuild;
-  final Widget Function(
-    BuildContext context,
-    Widget? previous,
-    String pathQuery,
-  )
-  builder;
+  final Widget Function(BuildContext context, Widget? previous, Uri state) builder;
   final TConditionFunction? condition;
 
   const RouteBuilder({
-    required this.basePath,
+    required this.path,
     this.shouldPreserve = false,
     this.shouldPrebuild = false,
     required this.builder,
