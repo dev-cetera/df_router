@@ -10,7 +10,6 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
-import 'package:df_pod/df_pod.dart';
 import 'package:flutter/widgets.dart';
 
 import '_src.g.dart';
@@ -49,10 +48,10 @@ class RouteManager extends StatelessWidget {
     );
     return RouteControllerProvider(
       controller: controller,
-      child: PodBuilder<String>(
-        pod: controller.pCurrentPathQuery,
-        builder: (context, snapshot) {
-          return controller.buildScreen(context, snapshot.value!);
+      child: ValueListenableBuilder<String>(
+        valueListenable: controller.pCurrentPathQuery,
+        builder: (context, value, snapshot) {
+          return controller.buildScreen(context, value);
         },
       ),
     );

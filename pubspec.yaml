@@ -31,7 +31,6 @@ dependencies:
     sdk: flutter
   df_pwa_utils:
     path: ../df_pwa_utils
-  df_pod: ^0.16.9
 
 ## -----------------------------------------------------------------------------
 

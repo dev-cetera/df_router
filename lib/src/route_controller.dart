@@ -10,7 +10,6 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
-import 'package:df_pod/df_pod.dart';
 import 'package:df_pwa_utils/df_pwa_utils.dart';
 import 'package:flutter/foundation.dart';
 
@@ -25,7 +24,7 @@ class RouteController {
   //
   //
 
-  late final Pod<String> _pCurrentPathQuery;
+  late final ValueNotifier<String> _pCurrentPathQuery;
   ValueListenable<String> get pCurrentPathQuery => _pCurrentPathQuery;
 
   var _widgetCache = <String, Widget>{};
@@ -52,7 +51,7 @@ class RouteController {
     required this.transitionBuilder,
   }) {
     final pathQuery = initialRoute ?? platformNavigator.getCurrentPath() ?? fallbackRoute;
-    _pCurrentPathQuery = Pod<String>(pathQuery);
+    _pCurrentPathQuery = ValueNotifier<String>(pathQuery);
 
     platformNavigator.addStateCallback(_onStateChange);
     platformNavigator.pushState(pathQuery);
@@ -78,7 +77,7 @@ class RouteController {
   //
 
   void _onStateChange(String pathQuery) {
-    _pCurrentPathQuery.set(pathQuery);
+    _pCurrentPathQuery.value = pathQuery;
   }
 
   //
@@ -152,7 +151,7 @@ class RouteController {
     _maybeCapture();
     platformNavigator.pushState(route);
     _prevPathQuery = _pCurrentPathQuery.value;
-    _pCurrentPathQuery.set(route);
+    _pCurrentPathQuery.value = route;
     _cleanUpRoute(_prevPathQuery);
 
     if (shouldAnimate) {
