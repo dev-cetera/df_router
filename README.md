@@ -8,7 +8,7 @@ Dart & Flutter Packages by dev-cetera.com & contributors.
 
 ## Summary
 
-Just another router, with a focus on ease of use and effective state management. This package is still in early development, but it is simple and should be safe to use in production.
+A lightweight router designed for ease of use and efficient state management. This package is in early development but remains simple and production-ready. It supports deep linking. For simplicity, this router does not support nested routes, which are unnecessary for most applications.
 
 For a full feature set, please refer to the [API reference](https://pub.dev/documentation/df_router/).
 
@@ -50,15 +50,14 @@ class MyApp extends StatelessWidget {
             routes: [
               RouteBuilder(
                 basePath: '/home',
-                // Does not dispose the route when navigating away.
-                shouldPreserve: false,
                 builder: (context, prev, pathQuery) {
                   return HomeScreen(pathQuery: pathQuery);
                 },
               ),
-
               RouteBuilder(
                 basePath: '/messages',
+                // Preserves the route when navigating away. This means it will
+                // be kept in memory and not disposed until manually disposed.
                 shouldPreserve: true,
                 builder: (context, prev, pathQuery) {
                   return MessagesScreen(pathQuery: pathQuery);
@@ -66,8 +65,9 @@ class MyApp extends StatelessWidget {
               ),
               RouteBuilder(
                 basePath: '/chat',
-                shouldPreserve: false,
-                // Builds the widget even if the route is not on the stack.
+                // Pre-builds the widget even if the route is not at the top of
+                // the stack. This is useful for routes that are frequently
+                // navigated to or that takes some time to build.
                 shouldPrebuild: true,
                 builder: (context, prev, pathQuery) {
                   return ChatScreen(pathQuery: pathQuery);
@@ -75,7 +75,6 @@ class MyApp extends StatelessWidget {
               ),
               RouteBuilder(
                 basePath: '/detail',
-                shouldPreserve: false,
                 builder: (context, prev, pathQuery) {
                   return HomeDetailScreen(pathQuery: pathQuery);
                 },

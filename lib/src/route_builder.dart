@@ -18,17 +18,12 @@ class RouteBuilder {
   final String basePath;
   final bool shouldPreserve;
   final bool shouldPrebuild;
-  final Widget Function(
-    BuildContext context,
-    Widget? previous,
-    String pathQuery,
-  )
-  builder;
+  final Widget Function(BuildContext context, Widget? previous, String pathQuery) builder;
   final TConditionFunction? condition;
 
   const RouteBuilder({
     required this.basePath,
-    this.shouldPreserve = true,
+    this.shouldPreserve = false,
     this.shouldPrebuild = false,
     required this.builder,
     this.condition,
