@@ -17,7 +17,6 @@ import 'package:flutter/widgets.dart';
 class RouteBuilder {
   final String basePath;
   final bool shouldPreserve;
-  final bool shouldAnimate;
   final bool shouldPrebuild;
   final Widget Function(BuildContext context, Widget? previous, String pathQuery) builder;
   final TConditionFunction? condition;
@@ -25,7 +24,6 @@ class RouteBuilder {
   const RouteBuilder({
     required this.basePath,
     this.shouldPreserve = true,
-    this.shouldAnimate = true,
     this.shouldPrebuild = false,
     required this.builder,
     this.condition,

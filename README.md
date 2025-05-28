@@ -8,46 +8,50 @@ Dart & Flutter Packages by dev-cetera.com & contributors.
 
 ## Summary
 
-Just another router, with a focus on ease of use and effective state management.
+Just another router, with a focus on ease of use and effective state management. This package is still in early development, but it is simple and should be safe to use in production.
 
 For a full feature set, please refer to the [API reference](https://pub.dev/documentation/df_router/).
 
 ## Usage Example
 
+Define `RouteManager` somewhere in your app, typically at the root of your widget tree. This is where you will define your routes and their behaviors.
+
 ```dart
-class App extends StatelessWidget {
-  const App({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return WidgetsApp(
+    return MaterialApp(
       color: Colors.white,
       builder:
-          (context, _) => RouteManager(
+          (context, child) => RouteManager(
             fallbackRoute: '/home',
+            // Define how the pages should transition. You can use these
+            // or create your own by extending `TransitionMixin`.
             transitionBuilder: (context, params) {
               // For iOS.
               return HorizontalSlideFadeTransition(
-                prev: params.prev ?? const SizedBox.shrink(),
+                // Prev is a capture of the previous page.
+                prev: params.prev,
                 controller: params.controller,
                 duration: const Duration(milliseconds: 300),
                 child: params.child,
               );
               // For Android.
               // return VerticalSlideFadeTransition(
-              //   prev: params.prev ?? const SizedBox.shrink(),
+              //   prev: params.prev,
               //   controller: params.controller,
               //   duration: const Duration(milliseconds: 300),
               //   child: params.child,
               // );
             },
+            // Define your routes here.
             routes: [
               RouteBuilder(
                 basePath: '/home',
                 // Does not dispose the route when navigating away.
                 shouldPreserve: false,
-                // Animates the transition when navigating to this route.
-                shouldAnimate: false,
                 builder: (context, prev, pathQuery) {
                   return HomeScreen(pathQuery: pathQuery);
                 },
@@ -56,7 +60,6 @@ class App extends StatelessWidget {
               RouteBuilder(
                 basePath: '/messages',
                 shouldPreserve: true,
-                shouldAnimate: true,
                 builder: (context, prev, pathQuery) {
                   return MessagesScreen(pathQuery: pathQuery);
                 },
@@ -82,6 +85,19 @@ class App extends StatelessWidget {
     );
   }
 }
+```
+
+Navigate to a route or go back to the previous route:
+
+```dart
+// Push a new route with some parameters.
+RouteManager.of(context).push('/messages?id=123&name=John');
+
+// Push a new route with the defined transition animation.
+RouteManager.of(context).push('/home', shouldAnimate: true);
+
+// Push to the previous route.
+RouteManager.of(context).pushBack();
 ```
 
 ---

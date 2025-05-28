@@ -3,32 +3,33 @@ import 'package:flutter/material.dart';
 import 'df_router.dart';
 
 void main() {
-  runApp(const App());
+  runApp(const MyApp());
 }
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class App extends StatelessWidget {
-  const App({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return WidgetsApp(
+    return MaterialApp(
       color: Colors.white,
       builder:
-          (context, _) => RouteManager(
+          (context, child) => RouteManager(
             fallbackRoute: '/home',
             transitionBuilder: (context, params) {
               // For iOS.
               return HorizontalSlideFadeTransition(
-                prev: params.prev ?? const SizedBox.shrink(),
+                // Prev is a capture of the previous page.
+                prev: params.prev,
                 controller: params.controller,
                 duration: const Duration(milliseconds: 300),
                 child: params.child,
               );
               // For Android.
               // return VerticalSlideFadeTransition(
-              //   prev: params.prev ?? const SizedBox.shrink(),
+              //   prev: params.prev,
               //   controller: params.controller,
               //   duration: const Duration(milliseconds: 300),
               //   child: params.child,
@@ -39,8 +40,6 @@ class App extends StatelessWidget {
                 basePath: '/home',
                 // Does not dispose the route when navigating away.
                 shouldPreserve: false,
-                // Animates the transition when navigating to this route.
-                shouldAnimate: false,
                 builder: (context, prev, pathQuery) {
                   return HomeScreen(pathQuery: pathQuery);
                 },
@@ -49,7 +48,6 @@ class App extends StatelessWidget {
               RouteBuilder(
                 basePath: '/messages',
                 shouldPreserve: true,
-                shouldAnimate: true,
                 builder: (context, prev, pathQuery) {
                   return MessagesScreen(pathQuery: pathQuery);
                 },
@@ -122,11 +120,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages'),
+              onPressed: () => controller.push('/messages', shouldAnimate: true),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages?key1=value1'),
+              onPressed: () => controller.push('/messages?key1=value1', shouldAnimate: true),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
@@ -134,7 +132,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('DISPOSE Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages?key2=value2'),
+              onPressed: () => controller.push('/messages?key2=value2', shouldAnimate: true),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
