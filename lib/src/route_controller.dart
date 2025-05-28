@@ -39,8 +39,6 @@ class RouteController {
   final _controller = TransitionController();
   final String? errorRoute;
 
-  bool? _shouldAnimateOverride;
-
   //
   //
   //
@@ -56,6 +54,9 @@ class RouteController {
     final pathQuery = initialRoute ?? platformNavigator.getCurrentPath() ?? fallbackRoute;
     _pCurrentPathQuery = Pod<String>(pathQuery);
 
+    platformNavigator.addStateCallback(_onStateChange);
+    platformNavigator.pushState(pathQuery);
+
     _widgetCache = Map.fromEntries(
       routes
           .where((route) => route.shouldPrebuild)
@@ -70,8 +71,6 @@ class RouteController {
             ),
           ),
     );
-
-    platformNavigator.addStateCallback(_onStateChange);
   }
 
   //
@@ -112,26 +111,25 @@ class RouteController {
   //
   //
 
-  void repush(String route) {
+  void repush(String route, {bool skipCurrent = true, bool shouldAnimate = true}) {
     disposeExactRoute(route);
-    push(route);
+    push(route, skipCurrent: skipCurrent, shouldAnimate: shouldAnimate);
   }
 
   //
   //
   //
 
-  void only(String route) {
+  void only(String route, {bool skipCurrent = true, bool shouldAnimate = true}) {
     disposeAllRoutes();
-    push(route);
+    push(route, skipCurrent: skipCurrent, shouldAnimate: shouldAnimate);
   }
 
   //
   //
   //
 
-  void push(String route, {bool skipCurrent = true, bool? shouldAnimate}) {
-    _shouldAnimateOverride = shouldAnimate;
+  void push(String route, {bool skipCurrent = true, bool shouldAnimate = true}) {
     if (skipCurrent && _pCurrentPathQuery.value == route) {
       return;
     }
@@ -157,9 +155,11 @@ class RouteController {
     _pCurrentPathQuery.set(route);
     _cleanUpRoute(_prevPathQuery);
 
-    Future.microtask(() {
-      _controller.reset();
-    });
+    if (shouldAnimate) {
+      Future.microtask(() {
+        _controller.reset();
+      });
+    }
   }
 
   //
@@ -268,12 +268,10 @@ class RouteController {
     _widgetCache[currentPathQuery] = Builder(
       builder: (context) => config!.builder(context, _pictureWidget(context), currentPathQuery),
     );
-    print('!!!');
     return transitionBuilder(
       context,
       TransitionBuilderParams(
         controller: _controller,
-        shouldAnimate: _shouldAnimateOverride ?? config.shouldAnimate,
         prevPathQuery: _prevPathQuery,
         pathQuery: currentPathQuery,
         prev: _pictureWidget(context),

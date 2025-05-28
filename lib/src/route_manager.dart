@@ -38,10 +38,6 @@ class RouteManager extends StatelessWidget {
       fallbackRoute: fallbackRoute,
       routes: routes,
       transitionBuilder: (context, params) {
-        // ignore: invalid_use_of_protected_member
-        if (!params.shouldAnimate) {
-          params.controller.end();
-        }
         return transitionBuilder?.call(context, params) ??
             HorizontalSlideFadeTransition(
               prev: params.prev ?? const SizedBox.shrink(),

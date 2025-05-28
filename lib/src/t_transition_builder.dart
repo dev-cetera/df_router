@@ -22,7 +22,6 @@ typedef TTransitionBuilder =
 class TransitionBuilderParams {
   final TransitionController controller;
   @protected
-  final bool shouldAnimate;
   final String? prevPathQuery;
   final String? pathQuery;
   final Widget? prev;
@@ -30,7 +29,6 @@ class TransitionBuilderParams {
 
   TransitionBuilderParams({
     required this.controller,
-    required this.shouldAnimate,
     required this.prevPathQuery,
     required this.pathQuery,
     required this.prev,

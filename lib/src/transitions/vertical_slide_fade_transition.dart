@@ -22,12 +22,10 @@ class VerticalSlideFadeTransition extends StatefulWidget with TransitionMixin {
   });
 
   @override
-  State<VerticalSlideFadeTransition> createState() =>
-      _VerticalSlideFadeTransitionState();
+  State<VerticalSlideFadeTransition> createState() => _VerticalSlideFadeTransitionState();
 }
 
-class _VerticalSlideFadeTransitionState
-    extends State<VerticalSlideFadeTransition>
+class _VerticalSlideFadeTransitionState extends State<VerticalSlideFadeTransition>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<Offset> _slide;
@@ -38,53 +36,28 @@ class _VerticalSlideFadeTransitionState
   void initState() {
     super.initState();
 
-    _animationController = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _animationController = AnimationController(vsync: this, duration: widget.duration, value: 1.0);
 
-    // Start not animated.
-    _animationController.value = 1.0;
+    _slide = Tween<Offset>(
+      begin: const Offset(0.0, 1.0),
+      end: const Offset(0.0, 0.0),
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
 
-    _slide =
-        Tween<Offset>(
-          begin: const Offset(0.0, 1.0),
-          end: const Offset(0.0, 0.0),
-        ).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeInOut,
-          ),
-        );
+    _prevSlide = Tween<Offset>(
+      begin: const Offset(0.0, 0.0),
+      end: const Offset(0.0, -0.33),
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
 
-    _prevSlide =
-        Tween<Offset>(
-          begin: const Offset(0.0, 0.0),
-          end: const Offset(0.0, -0.33),
-        ).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeInOut,
-          ),
-        );
-
-    _fade = Tween<double>(begin: 1.0, end: 0.7).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _fade = Tween<double>(
+      begin: 1.0,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
 
     // ignore: invalid_use_of_protected_member
     widget.controller.resetAnimation = () {
       _animationController.reset();
       _animationController.forward();
     };
-
-    // ignore: invalid_use_of_protected_member
-    widget.controller.endAnimation = () {
-      _animationController.value = 1.0;
-    };
-
-    // Start the animation initially
-    _animationController.forward();
   }
 
   @override
