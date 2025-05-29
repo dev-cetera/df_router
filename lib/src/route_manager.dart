@@ -19,7 +19,7 @@ import '_src.g.dart';
 class RouteStateManager extends StatelessWidget {
   final RouteState? initialState;
   final RouteState fallbackState;
-  final List<RouteBuilder> RouteStates;
+  final List<RouteBuilder> states;
   final TTransitionBuilder? transitionBuilder;
 
   /// Use this builder for wrapping the main content of the app. This is useful
@@ -31,7 +31,7 @@ class RouteStateManager extends StatelessWidget {
     super.key,
     this.initialState,
     required this.fallbackState,
-    required this.RouteStates,
+    required this.states,
     this.transitionBuilder,
     this.wrapper,
   });
@@ -41,7 +41,7 @@ class RouteStateManager extends StatelessWidget {
     final controller = RouteStateController(
       initialState: initialState,
       fallbackState: fallbackState,
-      RouteStateBuilders: RouteStates,
+      RouteStateBuilders: states,
       transitionBuilder: (context, params) {
         return transitionBuilder?.call(context, params) ??
             HorizontalSlideFadeTransition(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'df_router.dart';
+import '../lib/df_router.dart';
 
 void main() {
   runApp(const MyApp());
@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
                     color: Colors.blueGrey,
                     padding: const EdgeInsets.all(16.0),
                     child: const Text(
-                      'df_RouteStater Example',
+                      'df_router Example',
                       style: TextStyle(color: Colors.white, fontSize: 24.0),
                     ),
                   ),
@@ -111,7 +111,7 @@ class MyApp extends StatelessWidget {
                 child: params.child,
               );
             },
-            RouteStates: [
+            states: [
               RouteBuilder(
                 state: HomeRouteState(),
                 builder: (context, prev, state) {

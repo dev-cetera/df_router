@@ -1,7 +1,9 @@
 // example.dart
 
-import 'package:df_router/df_router.dart'; // Ensure this matches your package structure
+//import 'package:df_router/df_router.dart'; // Ensure this matches your package structure
 import 'package:flutter/material.dart';
+
+import '../lib/df_router.dart';
 
 void main() {
   runApp(const MyApp());

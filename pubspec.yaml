@@ -10,14 +10,14 @@
 ## ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 ##.title~
 
-name: df_RouteStater
-description: A lightweight RouteStater designed for ease of use and efficient state management. 
+name: df_router
+description: A lightweight router designed for ease of use and efficient state management. 
 version: 0.3.0
-repository: https://github.com/dev-cetera/df_RouteStater
+repository: https://github.com/dev-cetera/df_router
 funding:
   - https://www.buymeacoffee.com/dev_cetera
 topics:
-  - RouteStater
+  - router
   - navigation
   - state-management
 
@@ -29,8 +29,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  df_pwa_utils:
-    path: ../df_pwa_utils
+  df_pwa_utils: ^0.2.0
   equatable: ^2.0.7
 
 ## -----------------------------------------------------------------------------
