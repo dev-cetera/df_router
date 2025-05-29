@@ -63,7 +63,7 @@ class RouteStateController {
           RouteState(uri),
           Builder(
             builder: (context) {
-              return e.builder(context, _pictureWidget(context), state);
+              return e.builder(context, state);
             },
           ),
         );
@@ -281,7 +281,7 @@ class RouteStateController {
       return const SizedBox.shrink();
     }
     _widgetCache[state] = Builder(
-      builder: (context) => config!.builder(context, _pictureWidget(context), state),
+      builder: (context) => config!.builder(context, state),
     );
     return transitionBuilder(
       context,

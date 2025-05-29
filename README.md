@@ -106,24 +106,24 @@ class MyApp extends StatelessWidget {
             },
 
             // List of all available routes and their builders
-            states: [
+            builders: [
               RouteBuilder(
                 state: HomeRouteState(), // The base state for this route
-                builder: (context, prev, state) {
+                builder: (context, state) {
                   return HomeScreen(state: state); // Your screen widget
                 },
               ),
               RouteBuilder(
                 state: MessagesRouteState(),
                 shouldPreserve: true, // Keep this widget's state when navigating away
-                builder: (context, prev, state) {
+                builder: (context, state) {
                   return MessagesScreen(state: state);
                 },
               ),
               RouteBuilder<String>( // Specify the type for 'extra' if used
                 state: RouteState<String>.parse('/chat'), // Generic RouteState for paths
                 shouldPrebuild: true, // Build this widget proactively
-                builder: (context, prev, state) {
+                builder: (context, state) {
                   // state is RouteState<String?> here
                   return ChatScreen(state: state);
                 },
@@ -326,7 +326,7 @@ controller.disposeState(MessagesRouteState()); // If it matches a cached one
 
 - `initialState`: (Optional) The RouteState to display when the app first loads. If not provided, it tries to infer from the platform's current URL or uses fallbackState.
 
-- `states`: A list of RouteBuilder instances defining all navigable routes.
+- `builders`: A list of RouteBuilder instances defining all navigable routes.
 
 - `wrapper`: A builder function (context, child) => Widget to wrap around the current route's widget. Ideal for persistent headers, footers, or sidebars.
 

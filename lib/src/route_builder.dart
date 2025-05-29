@@ -30,8 +30,7 @@ class RouteBuilder<TExtra extends Object?> {
     required TRouteWidgetBuilder<TExtra> builder,
     this.condition,
   }) {
-    this.builder = (context, previous, state) =>
-        builder(context, previous, state.cast<TExtra>());
+    this.builder = (context, state) => builder(context, state.cast<TExtra>());
   }
 }
 
@@ -42,6 +41,5 @@ typedef TConditionFunction = bool Function();
 typedef TRouteWidgetBuilder<TExtra extends Object?> =
     RouteWidgetMixin<TExtra> Function(
       BuildContext context,
-      Widget? previous,
       RouteState<TExtra?> state,
     );

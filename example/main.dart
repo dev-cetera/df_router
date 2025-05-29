@@ -86,17 +86,16 @@ class MyApp extends StatelessWidget {
             },
 
             // List of all available routes
-            states: [
+            builders: [
               RouteBuilder<String>(
                 state: HomeRouteState(),
-                shouldPrebuild:
-                    true, // Prebuild this route for better performance
+                shouldPrebuild: true, // Prebuild this route for better performance
                 shouldPreserve: true, // Preserve this route in the widget cache
-                builder: (context, prev, state) => HomeScreen(state: state),
+                builder: (context, state) => HomeScreen(state: state),
               ),
               RouteBuilder<int>(
                 state: ProfileRouteState(),
-                builder: (context, prev, state) => ProfileScreen(state: state),
+                builder: (context, state) => ProfileScreen(state: state),
               ),
               // Example with typed extra data:
               // RouteBuilder<String>(
@@ -146,10 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Home Screen',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text('Home Screen', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
             Text('Current Path: ${widget.state.path}'),
             const SizedBox(height: 8),
@@ -158,9 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('Extra: ${widget.state.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => controller.pushState(
-                ProfileRouteState().copyWith(shouldAnimate: true),
-              ),
+              onPressed:
+                  () => controller.pushState(ProfileRouteState().copyWith(shouldAnimate: true)),
               child: const Text('Go to Profile'),
             ),
           ],
@@ -172,9 +167,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class ProfileScreen extends StatefulWidget with RouteWidgetMixin<int> {
   @override
-  final RouteState<int?> state;
+  final RouteState<int?>? state;
 
-  const ProfileScreen({super.key, required this.state});
+  const ProfileScreen({super.key, this.state});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -203,21 +198,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Profile Screen',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text('Profile Screen', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
-            Text('Current Path: ${widget.state.path}'),
+            Text('Current Path: ${widget.state?.path}'),
             const SizedBox(height: 8),
-            Text('Query Parameters: ${widget.state.uri.queryParameters}'),
+            Text('Query Parameters: ${widget.state?.uri.queryParameters}'),
             const SizedBox(height: 8),
-            Text('Extra: ${widget.state.extra}'),
+            Text('Extra: ${widget.state?.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => controller.pushState(
-                HomeRouteState().copyWith(shouldAnimate: true),
-              ),
+              onPressed: () => controller.pushState(HomeRouteState().copyWith(shouldAnimate: true)),
               child: const Text('Go to Home'),
             ),
           ],

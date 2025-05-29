@@ -111,10 +111,10 @@ class MyApp extends StatelessWidget {
                 child: params.child,
               );
             },
-            states: [
+            builders: [
               RouteBuilder(
                 state: HomeRouteState(),
-                builder: (context, prev, state) {
+                builder: (context, state) {
                   return HomeScreen(state: state);
                 },
               ),
@@ -123,7 +123,7 @@ class MyApp extends StatelessWidget {
                 // Preserves the RouteState when navigating away. This means it will
                 // be kept in memory and not disposed until manually disposed.
                 shouldPreserve: true,
-                builder: (context, prev, state) {
+                builder: (context, state) {
                   return MessagesScreen(state: state);
                 },
               ),
@@ -133,13 +133,13 @@ class MyApp extends StatelessWidget {
                 // the stack. This is useful for RouteStates that are frequently
                 // navigated to or that takes some time to build.
                 shouldPrebuild: true,
-                builder: (context, prev, state) {
+                builder: (context, state) {
                   return ChatScreen(state: state);
                 },
               ),
               RouteBuilder(
                 state: RouteState.parse('/detail'),
-                builder: (context, prev, state) {
+                builder: (context, state) {
                   return HomeDetailScreen(state: state);
                 },
               ),
@@ -345,9 +345,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
 class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
   @override
-  final RouteState state;
+  final RouteState? state;
 
-  const HomeDetailScreen({super.key, required this.state});
+  const HomeDetailScreen({super.key, this.state});
 
   @override
   Widget build(BuildContext context) {
