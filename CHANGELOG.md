@@ -4,6 +4,7 @@
 
 - Released @ 5/2025 (UTC)
 - breaking: Lots of major updates
+- chore: Update readme for clarity
 
 ## [0.2.1]
 
