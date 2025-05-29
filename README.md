@@ -109,6 +109,10 @@ class MyApp extends StatelessWidget {
             builders: [
               RouteBuilder(
                 state: HomeRouteState(), // The base state for this route
+                condition: () {
+                  // Check if the user is logged in or any other condition.
+                  return true;
+                },
                 builder: (context, state) {
                   return HomeScreen(state: state); // Your screen widget
                 },
