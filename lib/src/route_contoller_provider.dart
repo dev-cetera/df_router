@@ -19,7 +19,11 @@ import '_src.g.dart';
 class RouteStateControllerProvider extends InheritedWidget {
   final RouteStateController controller;
 
-  const RouteStateControllerProvider({super.key, required this.controller, required super.child});
+  const RouteStateControllerProvider({
+    super.key,
+    required this.controller,
+    required super.child,
+  });
 
   @override
   bool updateShouldNotify(RouteStateControllerProvider oldWidget) =>

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 import 'transition_mixin.dart';
 
-class HorizontalSlideFadeTransition extends StatefulWidget with TransitionMixin {
+class HorizontalSlideFadeTransition extends StatefulWidget
+    with TransitionMixin {
   @override
   final Duration duration;
   @override
@@ -22,10 +23,12 @@ class HorizontalSlideFadeTransition extends StatefulWidget with TransitionMixin 
   });
 
   @override
-  State<HorizontalSlideFadeTransition> createState() => HorizontalSlideFadeTransitionState();
+  State<HorizontalSlideFadeTransition> createState() =>
+      HorizontalSlideFadeTransitionState();
 }
 
-class HorizontalSlideFadeTransitionState extends State<HorizontalSlideFadeTransition>
+class HorizontalSlideFadeTransitionState
+    extends State<HorizontalSlideFadeTransition>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<Offset> _slide;
@@ -36,22 +39,37 @@ class HorizontalSlideFadeTransitionState extends State<HorizontalSlideFadeTransi
   void initState() {
     super.initState();
 
-    _animationController = AnimationController(vsync: this, duration: widget.duration, value: 1.0);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+      value: 1.0,
+    );
 
-    _slide = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: const Offset(0.0, 0.0),
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+    _slide =
+        Tween<Offset>(
+          begin: const Offset(1.0, 0.0),
+          end: const Offset(0.0, 0.0),
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
+          ),
+        );
 
-    _prevSlide = Tween<Offset>(
-      begin: const Offset(0.0, 0.0),
-      end: const Offset(-0.33, 0.0),
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+    _prevSlide =
+        Tween<Offset>(
+          begin: const Offset(0.0, 0.0),
+          end: const Offset(-0.33, 0.0),
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOut,
+          ),
+        );
 
-    _fade = Tween<double>(
-      begin: 1.0,
-      end: 0.7,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+    _fade = Tween<double>(begin: 1.0, end: 0.7).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
     // ignore: invalid_use_of_protected_member
     widget.controller.resetAnimation = () {

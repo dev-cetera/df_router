@@ -30,7 +30,8 @@ class RouteBuilder<TExtra extends Object?> {
     required TRouteWidgetBuilder<TExtra> builder,
     this.condition,
   }) {
-    this.builder = (context, previous, state) => builder(context, previous, state.cast<TExtra>());
+    this.builder = (context, previous, state) =>
+        builder(context, previous, state.cast<TExtra>());
   }
 }
 

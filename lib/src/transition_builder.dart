@@ -16,7 +16,8 @@ import '_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-typedef TTransitionBuilder = Widget Function(BuildContext context, TransitionBuilderParams params);
+typedef TTransitionBuilder =
+    Widget Function(BuildContext context, TransitionBuilderParams params);
 
 class TransitionBuilderParams {
   final TransitionController controller;

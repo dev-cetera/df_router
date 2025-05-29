@@ -75,7 +75,8 @@ class RouteState<TExtra extends Object?> extends Equatable {
     );
   }
 
-  RouteState<X?> cast<X extends Object?>() => RouteState<X?>(uri, extra: extra as X?);
+  RouteState<X?> cast<X extends Object?>() =>
+      RouteState<X?>(uri, extra: extra as X?);
 
   bool matchPath(RouteState other) => uri.path == other.uri.path;
 

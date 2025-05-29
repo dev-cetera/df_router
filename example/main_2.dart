@@ -91,7 +91,8 @@ class MyApp extends StatelessWidget {
             states: [
               RouteBuilder<String>(
                 state: HomeRouteState(),
-                shouldPrebuild: true, // Prebuild this route for better performance
+                shouldPrebuild:
+                    true, // Prebuild this route for better performance
                 shouldPreserve: true, // Preserve this route in the widget cache
                 builder: (context, prev, state) => HomeScreen(state: state),
               ),
@@ -147,7 +148,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Home Screen', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              'Home Screen',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const SizedBox(height: 8),
             Text('Current Path: ${widget.state.path}'),
             const SizedBox(height: 8),
@@ -156,8 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('Extra: ${widget.state.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed:
-                  () => controller.pushState(ProfileRouteState().copyWith(shouldAnimate: true)),
+              onPressed: () => controller.pushState(
+                ProfileRouteState().copyWith(shouldAnimate: true),
+              ),
               child: const Text('Go to Profile'),
             ),
           ],
@@ -200,7 +205,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Profile Screen', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              'Profile Screen',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const SizedBox(height: 8),
             Text('Current Path: ${widget.state.path}'),
             const SizedBox(height: 8),
@@ -209,7 +217,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text('Extra: ${widget.state.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => controller.pushState(HomeRouteState().copyWith(shouldAnimate: true)),
+              onPressed: () => controller.pushState(
+                HomeRouteState().copyWith(shouldAnimate: true),
+              ),
               child: const Text('Go to Home'),
             ),
           ],
