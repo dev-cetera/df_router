@@ -9,7 +9,7 @@
 
 export './route_state.dart';
 export './picture.dart';
-export './transition_builder.dart';
+export 'route_transition_builder.dart';
 export './route_manager.dart';
 export './route_builder.dart';
 export './route_controller.dart';

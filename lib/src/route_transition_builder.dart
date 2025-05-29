@@ -16,10 +16,10 @@ import '_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-typedef TTransitionBuilder =
-    Widget Function(BuildContext context, TransitionBuilderParams params);
+typedef TRouteTransitionBuilder =
+    Widget Function(BuildContext context, RouteTransitionBuilderParams params);
 
-class TransitionBuilderParams {
+class RouteTransitionBuilderParams {
   final TransitionController controller;
   @protected
   final RouteState? prevState;
@@ -27,7 +27,7 @@ class TransitionBuilderParams {
   final Widget prev;
   final Widget child;
 
-  TransitionBuilderParams({
+  const RouteTransitionBuilderParams({
     required this.controller,
     required this.prevState,
     required this.state,

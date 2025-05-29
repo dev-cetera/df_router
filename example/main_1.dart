@@ -21,8 +21,7 @@ final class MessagesRouteState1 extends RouteState {
 }
 
 final class MessagesRouteState2 extends RouteState {
-  MessagesRouteState2()
-    : super.parse('/messages?key1=value1', queryParameters: {'key2': 'value2'});
+  MessagesRouteState2() : super.parse('/messages?key1=value1', queryParameters: {'key2': 'value2'});
 }
 
 class MyApp extends StatelessWidget {
@@ -34,8 +33,8 @@ class MyApp extends StatelessWidget {
       color: Colors.white,
       builder: (context, child) {
         return Material(
-          child: RouteStateManager(
-            fallbackState: HomeRouteState(),
+          child: RouteManager(
+            fallbackState: () => HomeRouteState(),
             wrapper: (context, child) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -59,34 +58,31 @@ class MyApp extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () {
-                            final controller = RouteStateController.of(context);
+                            final controller = RouteController.of(context);
                             controller.pushState(HomeRouteState());
                           },
                           icon: Text(
                             'HOME',
                             style: TextStyle(
                               color:
-                                  RouteStateController.of(
-                                    context,
-                                  ).state.matchPath(HomeRouteState())
-                                  ? Colors.grey
-                                  : Colors.white,
+                                  RouteController.of(context).state.matchPath(HomeRouteState())
+                                      ? Colors.grey
+                                      : Colors.white,
                             ),
                           ),
                         ),
                         IconButton(
                           onPressed: () {
-                            final controller = RouteStateController.of(context);
+                            final controller = RouteController.of(context);
                             controller.push('/chat');
                           },
                           icon: Text(
                             'CHAT',
                             style: TextStyle(
                               color:
-                                  RouteStateController.of(context).state.path ==
-                                      '/chat'
-                                  ? Colors.grey
-                                  : Colors.white,
+                                  RouteController.of(context).state.path == '/chat'
+                                      ? Colors.grey
+                                      : Colors.white,
                             ),
                           ),
                         ),
@@ -117,34 +113,34 @@ class MyApp extends StatelessWidget {
             },
             builders: [
               RouteBuilder(
-                state: HomeRouteState(),
+                routeState: HomeRouteState(),
                 builder: (context, state) {
-                  return HomeScreen(state: state);
+                  return HomeScreen(routeState: state);
                 },
               ),
               RouteBuilder(
-                state: MessagesRouteState(),
+                routeState: MessagesRouteState(),
                 // Preserves the RouteState when navigating away. This means it will
                 // be kept in memory and not disposed until manually disposed.
                 shouldPreserve: true,
                 builder: (context, state) {
-                  return MessagesScreen(state: state);
+                  return MessagesScreen(routeState: state);
                 },
               ),
               RouteBuilder<String>(
-                state: RouteState<String>.parse('/chat'),
+                routeState: RouteState<String>.parse('/chat'),
                 // Pre-builds the widget even if the RouteState is not at the top of
                 // the stack. This is useful for RouteStates that are frequently
                 // navigated to or that takes some time to build.
                 shouldPrebuild: true,
                 builder: (context, state) {
-                  return ChatScreen(state: state);
+                  return ChatScreen(routeState: state);
                 },
               ),
               RouteBuilder(
-                state: RouteState.parse('/detail'),
+                routeState: RouteState.parse('/detail'),
                 builder: (context, state) {
-                  return HomeDetailScreen(state: state);
+                  return HomeDetailScreen(routeState: state);
                 },
               ),
             ],
@@ -159,9 +155,9 @@ class MyApp extends StatelessWidget {
 
 class MessagesScreen extends StatefulWidget with RouteWidgetMixin {
   @override
-  final RouteState state;
+  final RouteState routeState;
 
-  const MessagesScreen({super.key, required this.state});
+  const MessagesScreen({super.key, required this.routeState});
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
@@ -173,18 +169,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('INIT STATE MESSAGES - Params: ${widget.state}');
+    debugPrint('INIT STATE MESSAGES - Params: ${widget.routeState}');
   }
 
   @override
   void dispose() {
-    debugPrint('MessagesScreen disposed - Params: ${widget.state}');
+    debugPrint('MessagesScreen disposed - Params: ${widget.routeState}');
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteStateController.of(context);
+    final controller = RouteController.of(context);
     return Container(
       color: Colors.lightGreen,
       child: Center(
@@ -192,7 +188,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           spacing: 8.0,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Extra: ${widget.state.extra}'),
+            Text('Extra: ${widget.routeState.extra}'),
             Text(counter.toString()),
             FilledButton(
               onPressed: () => setState(() => counter++),
@@ -207,8 +203,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/messages?key1=value1', shouldAnimate: true),
+              onPressed: () => controller.push('/messages?key1=value1', shouldAnimate: true),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
@@ -216,16 +211,17 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('DISPOSE Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.pushState(
-                MessagesRouteState2().copyWith(
-                  extra: 'HELLO THERE HOW ARE YOU?',
-                  shouldAnimate: true,
-                ),
-              ),
+              onPressed:
+                  () => controller.pushState(
+                    MessagesRouteState2().copyWith(
+                      extra: 'HELLO THERE HOW ARE YOU?',
+                      shouldAnimate: true,
+                    ),
+                  ),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed: () => controller.disposeState(widget.state),
+              onPressed: () => controller.disposeState(widget.routeState),
               child: const Text('Dispose This RouteState'),
             ),
           ],
@@ -239,13 +235,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
 class HomeScreen extends StatelessWidget with RouteWidgetMixin {
   @override
-  final RouteState state;
+  final RouteState routeState;
 
-  const HomeScreen({super.key, required this.state});
+  const HomeScreen({super.key, required this.routeState});
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteStateController.of(context);
+    final controller = RouteController.of(context);
     debugPrint('INIT STATE HOME');
     return Container(
       color: Colors.yellow,
@@ -271,8 +267,7 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/chat', extra: 'Hello from Home!'),
+              onPressed: () => controller.push('/chat', extra: 'Hello from Home!'),
               child: const Text('Go to Chat'),
             ),
           ],
@@ -286,9 +281,9 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
 
 class ChatScreen extends StatefulWidget with RouteWidgetMixin<String> {
   @override
-  final RouteState<String?> state;
+  final RouteState<String?> routeState;
 
-  const ChatScreen({super.key, required this.state});
+  const ChatScreen({super.key, required this.routeState});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -298,18 +293,18 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('INIT STATE CHAT - Params: ${widget.state}');
+    debugPrint('INIT STATE CHAT - Params: ${widget.routeState}');
   }
 
   @override
   void dispose() {
-    debugPrint('ChatScreen disposed - Params: ${widget.state}');
+    debugPrint('ChatScreen disposed - Params: ${widget.routeState}');
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteStateController.of(context);
+    final controller = RouteController.of(context);
     return Container(
       color: Colors.blue,
       child: Center(
@@ -317,26 +312,26 @@ class _ChatScreenState extends State<ChatScreen> {
           spacing: 8.0,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(widget.state.extra.toString()),
+            Text(widget.routeState.extra.toString()),
             FilledButton(
               onPressed: () => controller.push('/home'),
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/chat', extra: 'Hello from Chat!'),
+              onPressed: () => controller.push('/chat', extra: 'Hello from Chat!'),
               child: const Text('Go to Chat (No ID)'),
             ),
             FilledButton(
-              onPressed: () => controller.push(
-                '/chat?id=123',
-                queryParameters: {'dude': '22'},
-                extra: 'Hello from Chat!',
-              ),
+              onPressed:
+                  () => controller.push(
+                    '/chat?id=123',
+                    queryParameters: {'dude': '22'},
+                    extra: 'Hello from Chat!',
+                  ),
               child: const Text('Go to Chat (ID=123)'),
             ),
             FilledButton(
-              onPressed: () => controller.disposeState(widget.state),
+              onPressed: () => controller.disposeState(widget.routeState),
               child: const Text('Dispose This RouteState'),
             ),
           ],
@@ -350,13 +345,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
 class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
   @override
-  final RouteState? state;
+  final RouteState? routeState;
 
-  const HomeDetailScreen({super.key, this.state});
+  const HomeDetailScreen({super.key, this.routeState});
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteStateController.of(context);
+    final controller = RouteController.of(context);
     debugPrint('INIT STATE HOME DETAIL');
     return Container(
       color: Colors.green,

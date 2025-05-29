@@ -16,32 +16,39 @@ import '_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteStateManager extends StatelessWidget {
-  final RouteState? initialState;
-  final RouteState fallbackState;
+class RouteManager extends StatelessWidget {
+  final RouteState Function()? initialState;
+  final RouteState Function() fallbackState;
+  final RouteState<Enum> Function()? errorState;
+  final void Function(RouteController controller)? onControllerCreated;
   final List<RouteBuilder> builders;
-  final TTransitionBuilder? transitionBuilder;
+
+  final TRouteTransitionBuilder? transitionBuilder;
 
   /// Use this builder for wrapping the main content of the app. This is useful
   /// to add common widgets like a navigation bar, drawer, or any other
   /// widget that should be present on all screens.
-  final Widget Function(BuildContext context, Widget child)? wrapper;
+  final TRouteWrapperFn? wrapper;
 
-  const RouteStateManager({
+  const RouteManager({
     super.key,
     this.initialState,
     required this.fallbackState,
+    this.errorState,
+    this.onControllerCreated,
     required this.builders,
     this.transitionBuilder,
+
     this.wrapper,
   });
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteStateController(
-      initialState: initialState,
-      fallbackState: fallbackState,
-      RouteStateBuilders: builders,
+    final controller = RouteController(
+      initialState: initialState?.call(),
+      fallbackState: fallbackState(),
+      errorState: errorState,
+      builders: builders,
       transitionBuilder: (context, params) {
         return transitionBuilder?.call(context, params) ??
             HorizontalSlideFadeTransition(
@@ -53,7 +60,8 @@ class RouteStateManager extends StatelessWidget {
       },
     );
 
-    return RouteStateControllerProvider(
+    onControllerCreated?.call(controller);
+    return RouteControllerProvider(
       controller: controller,
       child: ValueListenableBuilder(
         valueListenable: controller.pState,
@@ -65,3 +73,5 @@ class RouteStateManager extends StatelessWidget {
     );
   }
 }
+
+typedef TRouteWrapperFn = Widget Function(BuildContext context, Widget child);

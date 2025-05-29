@@ -19,7 +19,7 @@ import '_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteStateController {
+class RouteController {
   //
   //
   //
@@ -29,26 +29,26 @@ class RouteStateController {
   RouteState get state => _pState.value;
 
   var _widgetCache = <RouteState, Widget>{};
-  late final List<RouteBuilder> RouteStateBuilders;
-  final bool enablePrevsCapturing;
-  final TTransitionBuilder transitionBuilder;
+  late final List<RouteBuilder> builders;
+  final bool shouldCapture;
+  final TRouteTransitionBuilder transitionBuilder;
 
   Picture? _picture;
   BuildContext? _captureContext;
   RouteState? _prevState;
   final _controller = TransitionController();
-  final RouteState<Enum>? errorState;
+  final RouteState<Enum> Function()? errorState;
 
   //
   //
   //
 
-  RouteStateController({
+  RouteController({
     RouteState? initialState,
     this.errorState,
     required RouteState fallbackState,
-    required this.RouteStateBuilders,
-    this.enablePrevsCapturing = true,
+    required this.builders,
+    this.shouldCapture = true,
     required this.transitionBuilder,
   }) {
     final state = initialState ?? _navigatorState ?? fallbackState;
@@ -56,8 +56,8 @@ class RouteStateController {
     platformNavigator.addStateCallback(_onStateChange);
     platformNavigator.pushState(state.uri);
     _widgetCache = Map.fromEntries(
-      RouteStateBuilders.where((state) => state.shouldPrebuild).map((e) {
-        final uri = e.state.uri;
+      builders.where((state) => state.shouldPrebuild).map((e) {
+        final uri = e.routeState.uri;
         final state = RouteState(uri);
         return MapEntry(
           RouteState(uri),
@@ -112,7 +112,7 @@ class RouteStateController {
   //
 
   void _maybeCapture() {
-    if (enablePrevsCapturing) {
+    if (shouldCapture) {
       _picture = captureWidgetPicture(_captureContext!);
     }
   }
@@ -124,12 +124,17 @@ class RouteStateController {
   void pushBack() {
     if (_prevState != null) {
       final uri = _prevState!.uri;
-      push(
-        uri.path,
-        queryParameters: uri.queryParameters,
-        shouldAnimate: false,
-      );
+      push(uri.path, queryParameters: uri.queryParameters, shouldAnimate: false);
     }
+  }
+
+  //
+  //
+  //
+
+  void setState<TExtra extends Object?>(RouteState<TExtra> state) {
+    clearCache();
+    pushState(state);
   }
 
   //
@@ -143,6 +148,7 @@ class RouteStateController {
       extra: state.extra,
       skipCurrent: state.skipCurrent,
       shouldAnimate: state.shouldAnimate,
+      condition: state.condition,
     );
   }
 
@@ -156,6 +162,7 @@ class RouteStateController {
     TExtra? extra,
     bool skipCurrent = true,
     bool shouldAnimate = false,
+    TRouteConditionFn? condition,
   }) {
     var uri = Uri.parse(path);
     final qp = {...uri.queryParameters, ...?queryParameters};
@@ -166,9 +173,8 @@ class RouteStateController {
     if (_checkExtraTypeMismatch<TExtra>(uri) == false) {
       if (errorState != null) {
         push(
-          errorState!.uri.path,
-          queryParameters: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH
-              .toQueryParameters(),
+          errorState!().uri.path,
+          queryParameters: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH.toQueryParameters(),
           extra: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH,
         );
       }
@@ -177,20 +183,33 @@ class RouteStateController {
     if (!pathExists(uri)) {
       if (errorState != null) {
         push(
-          errorState!.uri.path,
-          queryParameters: RouteStateControllerErrorType
-              .RouteState_NOT_FOUND.toQueryParameters(),
+          errorState!().uri.path,
+          queryParameters: RouteStateControllerErrorType.RouteState_NOT_FOUND.toQueryParameters(),
           extra: RouteStateControllerErrorType.RouteState_NOT_FOUND,
         );
       }
       throw RouteStateNotFoundError(uri: uri);
     }
-    if (!(_getBuilderByPath(uri)?.condition?.call() != false)) {
+    // Condition 1.
+    final a = condition == null || condition();
+    if (!a) {
       if (errorState != null) {
         push(
-          errorState!.uri.path,
-          queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET
-              .toQueryParameters(),
+          errorState!().uri.path,
+          queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET.toQueryParameters(),
+          extra: RouteStateControllerErrorType.CONDITION_NOT_MET,
+        );
+      }
+      throw CondtionNotMetError(uri: uri);
+    }
+    // Ccndition 2.
+    final condition2 = _getBuilderByPath(uri)?.condition;
+    final b = condition2 == null || condition2.call();
+    if (!b) {
+      if (errorState != null) {
+        push(
+          errorState!().uri.path,
+          queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET.toQueryParameters(),
           extra: RouteStateControllerErrorType.CONDITION_NOT_MET,
         );
       }
@@ -213,7 +232,7 @@ class RouteStateController {
   //
 
   bool pathExists(Uri path) {
-    return RouteStateBuilders.any((e) => e.state.path == path.path);
+    return builders.any((e) => e.routeState.path == path.path);
   }
 
   //
@@ -221,8 +240,8 @@ class RouteStateController {
   //
 
   bool _checkExtraTypeMismatch<TExtra extends Object?>(Uri path) {
-    return RouteStateBuilders.any(
-      (e) => e.state.path == path.path && e.runtimeType == RouteBuilder<TExtra>,
+    return builders.any(
+      (e) => e.routeState.path == path.path && e.runtimeType == RouteBuilder<TExtra>,
     );
   }
 
@@ -231,9 +250,7 @@ class RouteStateController {
   //
 
   RouteBuilder? _getBuilderByPath(Uri path) {
-    return RouteStateBuilders.where(
-      (state) => state.state.path == path.path,
-    ).firstOrNull;
+    return builders.where((state) => state.routeState.path == path.path).firstOrNull;
   }
 
   //
@@ -256,7 +273,7 @@ class RouteStateController {
   //
   //
 
-  void clear() {
+  void clearCache() {
     _widgetCache.clear();
   }
 
@@ -266,9 +283,7 @@ class RouteStateController {
 
   void _cleanUpState(RouteState? state) {
     if (state == null) return;
-    final a = RouteStateBuilders.where(
-      (e) => e.state.path == state.uri.path,
-    ).firstOrNull;
+    final a = builders.where((e) => e.routeState.path == state.uri.path).firstOrNull;
     if (a == null) return;
     if (a.shouldPrebuild && !a.shouldPreserve) {
       // Replace with empty widget instead of removing it to avoid rebuilds.
@@ -281,26 +296,20 @@ class RouteStateController {
   //
 
   Widget buildScreen(BuildContext context, RouteState state) {
-    var config = RouteStateBuilders.where(
-      (e) => e.state.path == state.uri.path,
-    ).firstOrNull;
+    var config = builders.where((e) => e.routeState.path == state.uri.path).firstOrNull;
     if (config == null) {
       return const SizedBox.shrink();
     }
     if (errorState != null) {
-      config = RouteStateBuilders.where(
-        (e) => e.state.path == errorState?.uri.path,
-      ).firstOrNull;
+      config = builders.where((e) => e.routeState.path == errorState?.call().uri.path).firstOrNull;
     }
     if (config == null) {
       return const SizedBox.shrink();
     }
-    _widgetCache[state] = Builder(
-      builder: (context) => config!.builder(context, state),
-    );
+    _widgetCache[state] = Builder(builder: (context) => config!.builder(context, state));
     return transitionBuilder(
       context,
-      TransitionBuilderParams(
+      RouteTransitionBuilderParams(
         controller: _controller,
         prevState: _prevState,
         state: state,
@@ -313,14 +322,12 @@ class RouteStateController {
                 builder: (context) {
                   return IndexedStack(
                     index: _widgetCache.keys.toList().indexOf(state),
-                    children: _widgetCache.entries.map((entry) {
-                      final fullRouteState = entry.key;
-                      final widget = entry.value;
-                      return KeyedSubtree(
-                        key: ValueKey(fullRouteState),
-                        child: widget,
-                      );
-                    }).toList(),
+                    children:
+                        _widgetCache.entries.map((entry) {
+                          final fullRouteState = entry.key;
+                          final widget = entry.value;
+                          return KeyedSubtree(key: ValueKey(fullRouteState), child: widget);
+                        }).toList(),
                   );
                 },
               ),
@@ -346,9 +353,8 @@ class RouteStateController {
   //
   //
 
-  static RouteStateController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteStateControllerProvider>();
+  static RouteController of(BuildContext context) {
+    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteStateControllerProvider found in context');
     }
@@ -394,8 +400,7 @@ class RouteStateNotFoundError extends RouteStateControllerError {
   }
 }
 
-class ExtraTypeMismatchError<TExtra extends Object?>
-    extends RouteStateControllerError {
+class ExtraTypeMismatchError<TExtra extends Object?> extends RouteStateControllerError {
   final Uri uri;
   const ExtraTypeMismatchError({required this.uri});
 

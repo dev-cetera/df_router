@@ -12,6 +12,8 @@
 
 import 'package:equatable/equatable.dart';
 
+import '../df_router.dart';
+
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class RouteState<TExtra extends Object?> extends Equatable {
@@ -19,6 +21,7 @@ class RouteState<TExtra extends Object?> extends Equatable {
   final TExtra? extra;
   final bool skipCurrent;
   final bool shouldAnimate;
+  final TRouteConditionFn? condition;
 
   RouteState(
     Uri uri, {
@@ -26,6 +29,7 @@ class RouteState<TExtra extends Object?> extends Equatable {
     this.extra,
     this.skipCurrent = true,
     this.shouldAnimate = false,
+    this.condition,
   }) {
     final qp = {...uri.queryParameters, ...?queryParameters};
     this.uri = uri.replace(queryParameters: qp.isNotEmpty ? qp : null);
@@ -37,6 +41,7 @@ class RouteState<TExtra extends Object?> extends Equatable {
     this.extra,
     this.skipCurrent = true,
     this.shouldAnimate = false,
+    this.condition,
   }) {
     final uri0 = Uri.parse(pathAndQuery);
     final qp = {...uri0.queryParameters, ...?queryParameters};
@@ -49,6 +54,7 @@ class RouteState<TExtra extends Object?> extends Equatable {
     TExtra? extra,
     bool? skipCurrent,
     bool? shouldAnimate,
+    TRouteConditionFn? condiiton,
   }) {
     return RouteState<TExtra>(
       uri ?? this.uri,
@@ -56,27 +62,29 @@ class RouteState<TExtra extends Object?> extends Equatable {
       extra: extra ?? this.extra,
       skipCurrent: skipCurrent ?? this.skipCurrent,
       shouldAnimate: shouldAnimate ?? this.shouldAnimate,
+      condition: condition ?? this.condition,
     );
   }
 
   RouteState<TExtra> copyWithout({
-    bool uri = false,
-    bool queryParameters = false,
-    bool extra = false,
-    bool skipCurrent = false,
-    bool shouldAnimate = false,
+    bool uri = true,
+    bool queryParameters = true,
+    bool extra = true,
+    bool skipCurrent = true,
+    bool shouldAnimate = true,
+    bool condition = true,
   }) {
     return RouteState<TExtra>(
-      uri ? Uri() : this.uri,
-      queryParameters: queryParameters ? null : this.uri.queryParameters,
-      extra: extra ? null : this.extra,
-      skipCurrent: skipCurrent ? true : this.skipCurrent,
+      uri ? this.uri : Uri(),
+      queryParameters: queryParameters ? this.uri.queryParameters : null,
+      extra: extra ? this.extra : null,
+      skipCurrent: skipCurrent ? this.skipCurrent : true,
       shouldAnimate: shouldAnimate ? false : this.shouldAnimate,
+      condition: condition ? this.condition : null,
     );
   }
 
-  RouteState<X?> cast<X extends Object?>() =>
-      RouteState<X?>(uri, extra: extra as X?);
+  RouteState<X?> cast<X extends Object?>() => RouteState<X?>(uri, extra: extra as X?);
 
   bool matchPath(RouteState other) => uri.path == other.uri.path;
 

@@ -16,16 +16,11 @@ import '_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteStateControllerProvider extends InheritedWidget {
-  final RouteStateController controller;
+class RouteControllerProvider extends InheritedWidget {
+  final RouteController controller;
 
-  const RouteStateControllerProvider({
-    super.key,
-    required this.controller,
-    required super.child,
-  });
+  const RouteControllerProvider({super.key, required this.controller, required super.child});
 
   @override
-  bool updateShouldNotify(RouteStateControllerProvider oldWidget) =>
-      controller != oldWidget.controller;
+  bool updateShouldNotify(RouteControllerProvider oldWidget) => controller != oldWidget.controller;
 }

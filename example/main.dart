@@ -31,14 +31,14 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return Material(
           // Provides basic Material theming (optional, but good practice)
-          child: RouteStateManager(
-            fallbackState: HomeRouteState(),
+          child: RouteManager(
+            fallbackState: () => HomeRouteState(),
             // Optional: initialState: HomeRouteState(),
 
             // Wrapper for persistent UI (e.g., Scaffold with AppBar)
             wrapper: (context, child) {
               // screenContent is the current route's widget
-              final controller = RouteStateController.of(context);
+              final controller = RouteController.of(context);
               return Material(
                 child: Column(
                   children: [
@@ -88,22 +88,22 @@ class MyApp extends StatelessWidget {
             // List of all available routes
             builders: [
               RouteBuilder<String>(
-                state: HomeRouteState(),
+                routeState: HomeRouteState(),
                 condition: () {
                   // Check if the user is logged in or any other condition
                   return true;
                 },
                 shouldPrebuild: true, // Prebuild this route for better performance
                 shouldPreserve: true, // Preserve this route in the widget cache
-                builder: (context, state) => HomeScreen(state: state),
+                builder: (context, state) => HomeScreen(routeState: state),
               ),
               RouteBuilder<int>(
-                state: ProfileRouteState(),
+                routeState: ProfileRouteState(),
                 condition: () {
                   // Check if the user is logged in or any other condition
                   return true;
                 },
-                builder: (context, state) => ProfileScreen(state: state),
+                builder: (context, state) => ProfileScreen(routeState: state),
               ),
               // Example with typed extra data:
               // RouteBuilder<String>(
@@ -122,9 +122,9 @@ class MyApp extends StatelessWidget {
 
 class HomeScreen extends StatefulWidget with RouteWidgetMixin<String> {
   @override
-  final RouteState<String?> state;
+  final RouteState<String?> routeState;
 
-  const HomeScreen({super.key, required this.state});
+  const HomeScreen({super.key, required this.routeState});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     debugPrint('BUILDING HomeScreen!!!');
-    final controller = RouteStateController.of(context);
+    final controller = RouteController.of(context);
     return Container(
       color: Colors.amber[100],
       child: Center(
@@ -155,11 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text('Home Screen', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
-            Text('Current Path: ${widget.state.path}'),
+            Text('Current Path: ${widget.routeState.path}'),
             const SizedBox(height: 8),
-            Text('Query Parameters: ${widget.state.uri.queryParameters}'),
+            Text('Query Parameters: ${widget.routeState.uri.queryParameters}'),
             const SizedBox(height: 8),
-            Text('Extra: ${widget.state.extra}'),
+            Text('Extra: ${widget.routeState.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed:
@@ -175,9 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class ProfileScreen extends StatefulWidget with RouteWidgetMixin<int> {
   @override
-  final RouteState<int?>? state;
+  final RouteState<int?>? routeState;
 
-  const ProfileScreen({super.key, this.state});
+  const ProfileScreen({super.key, this.routeState});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -199,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     debugPrint('BUILDING ProfileScreen!!!');
-    final controller = RouteStateController.of(context);
+    final controller = RouteController.of(context);
     return Container(
       color: Colors.cyan[100],
       child: Center(
@@ -208,11 +208,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text('Profile Screen', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
-            Text('Current Path: ${widget.state?.path}'),
+            Text('Current Path: ${widget.routeState?.path}'),
             const SizedBox(height: 8),
-            Text('Query Parameters: ${widget.state?.uri.queryParameters}'),
+            Text('Query Parameters: ${widget.routeState?.uri.queryParameters}'),
             const SizedBox(height: 8),
-            Text('Extra: ${widget.state?.extra}'),
+            Text('Extra: ${widget.routeState?.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => controller.pushState(HomeRouteState().copyWith(shouldAnimate: true)),

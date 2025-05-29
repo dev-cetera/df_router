@@ -17,14 +17,14 @@ import '_src.g.dart';
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class RouteBuilder<TExtra extends Object?> {
-  final RouteState<TExtra> state;
+  final RouteState<TExtra> routeState;
   final bool shouldPreserve;
   final bool shouldPrebuild;
   late final TRouteWidgetBuilder builder;
-  final TConditionFunction? condition;
+  final TRouteConditionFn? condition;
 
   RouteBuilder({
-    required this.state,
+    required this.routeState,
     this.shouldPreserve = false,
     this.shouldPrebuild = false,
     required TRouteWidgetBuilder<TExtra> builder,
@@ -36,10 +36,7 @@ class RouteBuilder<TExtra extends Object?> {
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-typedef TConditionFunction = bool Function();
+typedef TRouteConditionFn = bool Function();
 
 typedef TRouteWidgetBuilder<TExtra extends Object?> =
-    RouteWidgetMixin<TExtra> Function(
-      BuildContext context,
-      RouteState<TExtra?> state,
-    );
+    RouteWidgetMixin<TExtra> Function(BuildContext context, RouteState<TExtra?> state);
