@@ -21,8 +21,8 @@ typedef TTransitionBuilder = Widget Function(BuildContext context, TransitionBui
 class TransitionBuilderParams {
   final TransitionController controller;
   @protected
-  final Uri? prevState;
-  final Uri? state;
+  final RouteState? prevState;
+  final RouteState? state;
   final Widget prev;
   final Widget child;
 

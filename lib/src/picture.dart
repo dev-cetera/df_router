@@ -20,6 +20,10 @@ import 'package:flutter/rendering.dart';
 typedef Picture = ui.Picture;
 
 Picture? captureWidgetPicture(BuildContext context) {
+  if (!context.mounted) {
+    debugPrint('Context is not mounted');
+    return null;
+  }
   final renderObject = context.findRenderObject() as RenderRepaintBoundary?;
   if (renderObject == null || renderObject.debugLayer == null) {
     debugPrint('RenderObject or debugLayer is null');
@@ -88,10 +92,7 @@ class PictureWidget extends StatelessWidget {
     if (picture == null) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) {
-        return CustomPaint(
-          size: constraints.biggest,
-          painter: PicturePainter(picture!),
-        );
+        return CustomPaint(size: constraints.biggest, painter: PicturePainter(picture!));
       },
     );
   }

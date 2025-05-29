@@ -16,10 +16,10 @@ import '_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteManager extends StatelessWidget {
-  final Uri? initialState;
-  final Uri fallbackState;
-  final List<RouteBuilder> routes;
+class RouteStateManager extends StatelessWidget {
+  final RouteState? initialState;
+  final RouteState fallbackState;
+  final List<RouteBuilder> RouteStates;
   final TTransitionBuilder? transitionBuilder;
 
   /// Use this builder for wrapping the main content of the app. This is useful
@@ -27,21 +27,21 @@ class RouteManager extends StatelessWidget {
   /// widget that should be present on all screens.
   final Widget Function(BuildContext context, Widget child)? wrapper;
 
-  const RouteManager({
+  const RouteStateManager({
     super.key,
     this.initialState,
     required this.fallbackState,
-    required this.routes,
+    required this.RouteStates,
     this.transitionBuilder,
     this.wrapper,
   });
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteController(
+    final controller = RouteStateController(
       initialState: initialState,
       fallbackState: fallbackState,
-      routeBuilders: routes,
+      RouteStateBuilders: RouteStates,
       transitionBuilder: (context, params) {
         return transitionBuilder?.call(context, params) ??
             HorizontalSlideFadeTransition(
@@ -53,7 +53,7 @@ class RouteManager extends StatelessWidget {
       },
     );
 
-    return RouteControllerProvider(
+    return RouteStateControllerProvider(
       controller: controller,
       child: ValueListenableBuilder(
         valueListenable: controller.pState,

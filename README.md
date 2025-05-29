@@ -3,18 +3,18 @@
 
 Dart & Flutter Packages by dev-cetera.com & contributors.
 
-[![pub package](https://img.shields.io/pub/v/df_router.svg)](https://pub.dev/packages/df_router)
-[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE)
+[![pub package](https://img.shields.io/pub/v/df_RouteStater.svg)](https://pub.dev/packages/df_RouteStater)
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/dev-cetera/df_RouteStater/main/LICENSE)
 
 ## Summary
 
-A lightweight router designed for ease of use and efficient state management. This package is in early development but remains simple and production-ready. It supports deep linking. For simplicity, this router does not support nested routes, which are unnecessary for most applications.
+A lightweight RouteStater designed for ease of use and efficient state management. This package is in early development but remains simple and production-ready. It supports deep linking. For simplicity, this RouteStater does not support nested RouteStates, which are unnecessary for most applications.
 
-For a full feature set, please refer to the [API reference](https://pub.dev/documentation/df_router/).
+For a full feature set, please refer to the [API reference](https://pub.dev/documentation/df_RouteStater/).
 
 ## Usage Example
 
-Define `RouteManager` somewhere in your app, typically at the root of your widget tree. This is where you will define your routes and their behaviors.
+Define `RouteStateManager` somewhere in your app, typically at the root of your widget tree. This is where you will define your RouteStates and their behaviors.
 
 ```dart
 class MyApp extends StatelessWidget {
@@ -25,8 +25,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       color: Colors.white,
       builder:
-          (context, child) => RouteManager(
-            fallbackRoute: '/home',
+          (context, child) => RouteStateManager(
+            fallbackRouteState: '/home',
             // Define how the pages should transition. You can use these
             // or create your own by extending `TransitionMixin`.
             transitionBuilder: (context, params) {
@@ -46,8 +46,8 @@ class MyApp extends StatelessWidget {
               //   child: params.child,
               // );
             },
-            // Define your routes here.
-            routes: [
+            // Define your RouteStates here.
+            RouteStates: [
               RouteBuilder(
                 basePath: '/home',
                 builder: (context, prev, pathQuery) {
@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
               ),
               RouteBuilder(
                 basePath: '/messages',
-                // Preserves the route when navigating away. This means it will
+                // Preserves the RouteState when navigating away. This means it will
                 // be kept in memory and not disposed until manually disposed.
                 shouldPreserve: true,
                 builder: (context, prev, pathQuery) {
@@ -65,8 +65,8 @@ class MyApp extends StatelessWidget {
               ),
               RouteBuilder(
                 basePath: '/chat',
-                // Pre-builds the widget even if the route is not at the top of
-                // the stack. This is useful for routes that are frequently
+                // Pre-builds the widget even if the RouteState is not at the top of
+                // the stack. This is useful for RouteStates that are frequently
                 // navigated to or that takes some time to build.
                 shouldPrebuild: true,
                 builder: (context, prev, pathQuery) {
@@ -86,17 +86,17 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-Navigate to a route or go back to the previous route:
+Navigate to a RouteState or go back to the previous RouteState:
 
 ```dart
-// Push a new route with some parameters.
-RouteManager.of(context).push('/messages?id=123&name=John');
+// Push a new RouteState with some parameters.
+RouteStateManager.of(context).push('/messages?id=123&name=John');
 
-// Push a new route with the defined transition animation.
-RouteManager.of(context).push('/home', shouldAnimate: true);
+// Push a new RouteState with the defined transition animation.
+RouteStateManager.of(context).push('/home', shouldAnimate: true);
 
-// Push to the previous route.
-RouteManager.of(context).pushBack();
+// Push to the previous RouteState.
+RouteStateManager.of(context).pushBack();
 ```
 
 ---
@@ -126,4 +126,4 @@ If you're enjoying this package and find it valuable, consider showing your appr
 
 ## License
 
-This project is released under the MIT License. See [LICENSE](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE) for more information.
+This project is released under the MIT License. See [LICENSE](https://raw.githubusercontent.com/dev-cetera/df_RouteStater/main/LICENSE) for more information.

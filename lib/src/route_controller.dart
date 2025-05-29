@@ -19,48 +19,48 @@ import '_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteController {
+class RouteStateController {
   //
   //
   //
 
-  late final ValueNotifier<Uri> _pState;
-  ValueListenable<Uri> get pState => _pState;
-  Uri get state => _pState.value;
+  late final ValueNotifier<RouteState> _pState;
+  ValueListenable<RouteState> get pState => _pState;
+  RouteState get state => _pState.value;
 
-  var _widgetCache = <Uri, Widget>{};
-  late final List<RouteBuilder> routeBuilders;
+  var _widgetCache = <RouteState, Widget>{};
+  late final List<RouteBuilder> RouteStateBuilders;
   final bool enablePrevsCapturing;
   final TTransitionBuilder transitionBuilder;
 
   Picture? _picture;
   BuildContext? _captureContext;
-  Uri? _prevState;
+  RouteState? _prevState;
   final _controller = TransitionController();
-  final Uri? errorStte;
+  final RouteState<Enum>? errorState;
 
   //
   //
   //
 
-  RouteController({
-    Uri? initialState,
-    this.errorStte,
-    required Uri fallbackState,
-    required this.routeBuilders,
+  RouteStateController({
+    RouteState? initialState,
+    this.errorState,
+    required RouteState fallbackState,
+    required this.RouteStateBuilders,
     this.enablePrevsCapturing = true,
     required this.transitionBuilder,
   }) {
     final state = initialState ?? _navigatorState ?? fallbackState;
-    _pState = ValueNotifier<Uri>(state);
+    _pState = ValueNotifier<RouteState>(state);
     platformNavigator.addStateCallback(_onStateChange);
-    print(state);
-    platformNavigator.pushState(state);
+    platformNavigator.pushState(state.uri);
     _widgetCache = Map.fromEntries(
-      routeBuilders.where((route) => route.shouldPrebuild).map((e) {
-        final state = Uri.parse(e.path);
+      RouteStateBuilders.where((RouteState) => RouteState.shouldPrebuild).map((e) {
+        final uri = e.state.uri;
+        final state = RouteState(uri);
         return MapEntry(
-          state,
+          RouteState(uri),
           Builder(
             builder: (context) {
               return e.builder(context, _pictureWidget(context), state);
@@ -75,20 +75,20 @@ class RouteController {
   //
   //
 
-  Uri? get _navigatorState {
-    final pathQuery = platformNavigator.getCurrentUrl()?.pathQuery;
+  RouteState? get _navigatorState {
+    final pathQuery = platformNavigator.getCurrentUrl()?.pathAndQuery;
     if (pathQuery == null || pathQuery == '/' || pathQuery.isEmpty) {
       return null;
     }
-    return Uri.tryParse(pathQuery);
+    return RouteState(Uri.parse(pathQuery));
   }
 
   //
   //
   //
 
-  void _onStateChange(Uri state) {
-    _pState.value = state;
+  void _onStateChange(Uri uri) {
+    _pState.value = RouteState(uri);
   }
 
   //
@@ -121,18 +121,10 @@ class RouteController {
   //
   //
 
-  void pushAgain(Uri state, {bool shouldAnimate = false}) {
-    disposeState(state);
-    push(state, shouldAnimate: shouldAnimate);
-  }
-
-  //
-  //
-  //
-
   void pushBack() {
     if (_prevState != null) {
-      push(_prevState!, shouldAnimate: false);
+      final uri = _prevState!.uri;
+      push(uri.path, queryParameters: uri.queryParameters, shouldAnimate: false);
     }
   }
 
@@ -140,27 +132,68 @@ class RouteController {
   //
   //
 
-  void push(
-    Uri route, {
+  void pushState<TExtra extends Object?>(RouteState<TExtra> state) {
+    push<TExtra>(
+      state.uri.path,
+      queryParameters: state.uri.queryParameters,
+      extra: state.extra,
+      skipCurrent: state.skipCurrent,
+      shouldAnimate: state.shouldAnimate,
+    );
+  }
+
+  //
+  //
+  //
+
+  void push<TExtra extends Object?>(
+    String path, {
+    Map<String, String>? queryParameters,
+    TExtra? extra,
     bool skipCurrent = true,
     bool shouldAnimate = false,
-    Map<String, String>? queryParams,
   }) {
-    if (skipCurrent && _pState.value == route) {
+    var uri = Uri.parse(path);
+    final qp = {...uri.queryParameters, ...?queryParameters};
+    uri = uri.replace(queryParameters: qp.isNotEmpty ? qp : null);
+    if (skipCurrent && _pState.value.uri == uri) {
       return;
     }
-    if (!pathExists(route) || !(_getBuilderByPath(route)?.condition?.call() != false)) {
-      if (errorStte != null) {
-        push(errorStte!);
+    if (_checkExtraTypeMismatch<TExtra>(uri) == false) {
+      if (errorState != null) {
+        push(
+          errorState!.uri.path,
+          queryParameters: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH.toQueryParameters(),
+          extra: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH,
+        );
       }
-      return;
+      throw ExtraTypeMismatchError<TExtra>(uri: uri);
+    }
+    if (!pathExists(uri)) {
+      if (errorState != null) {
+        push(
+          errorState!.uri.path,
+          queryParameters: RouteStateControllerErrorType.RouteState_NOT_FOUND.toQueryParameters(),
+          extra: RouteStateControllerErrorType.RouteState_NOT_FOUND,
+        );
+      }
+      throw RouteStateNotFoundError(uri: uri);
+    }
+    if (!(_getBuilderByPath(uri)?.condition?.call() != false)) {
+      if (errorState != null) {
+        push(
+          errorState!.uri.path,
+          queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET.toQueryParameters(),
+          extra: RouteStateControllerErrorType.CONDITION_NOT_MET,
+        );
+      }
+      throw CondtionNotMetError(uri: uri);
     }
     _maybeCapture();
-    platformNavigator.pushState(route);
+    platformNavigator.pushState(uri);
     _prevState = _pState.value;
-    _pState.value = route;
+    _pState.value = RouteState(uri, extra: extra);
     _cleanUpState(_prevState);
-
     if (shouldAnimate) {
       Future.microtask(() {
         _controller.reset();
@@ -173,7 +206,17 @@ class RouteController {
   //
 
   bool pathExists(Uri path) {
-    return routeBuilders.any((e) => e.path == path.path);
+    return RouteStateBuilders.any((e) => e.state.path == path.path);
+  }
+
+  //
+  //
+  //
+
+  bool _checkExtraTypeMismatch<TExtra extends Object?>(Uri path) {
+    return RouteStateBuilders.any(
+      (e) => e.state.path == path.path && e.runtimeType == RouteBuilder<TExtra>,
+    );
   }
 
   //
@@ -181,15 +224,15 @@ class RouteController {
   //
 
   RouteBuilder? _getBuilderByPath(Uri path) {
-    return routeBuilders.where((route) => route.path == path.path).firstOrNull;
+    return RouteStateBuilders.where((RouteState) => RouteState.state.path == path.path).firstOrNull;
   }
 
   //
   //
   //
 
-  void disposeState(Uri state) {
-    _widgetCache.remove(state);
+  Widget? disposeState(RouteState state) {
+    return _widgetCache.remove(state);
   }
 
   //
@@ -197,7 +240,7 @@ class RouteController {
   //
 
   void disposePath(Uri path) {
-    _widgetCache.removeWhere((key, _) => key.path == path.path);
+    _widgetCache.removeWhere((state, widget) => state.uri.path == path.path);
   }
 
   //
@@ -212,9 +255,9 @@ class RouteController {
   //
   //
 
-  void _cleanUpState(Uri? state) {
+  void _cleanUpState(RouteState? state) {
     if (state == null) return;
-    final a = routeBuilders.where((e) => e.path == state.path).firstOrNull;
+    final a = RouteStateBuilders.where((e) => e.state.path == state.uri.path).firstOrNull;
     if (a == null) return;
     if (a.shouldPrebuild && !a.shouldPreserve) {
       // Replace with empty widget instead of removing it to avoid rebuilds.
@@ -226,13 +269,13 @@ class RouteController {
   //
   //
 
-  Widget buildScreen(BuildContext context, Uri state) {
-    var config = routeBuilders.where((e) => e.path == state.path).firstOrNull;
+  Widget buildScreen(BuildContext context, RouteState state) {
+    var config = RouteStateBuilders.where((e) => e.state.path == state.uri.path).firstOrNull;
     if (config == null) {
       return const SizedBox.shrink();
     }
-    if (errorStte != null) {
-      config = routeBuilders.where((e) => e.path == errorStte?.path).firstOrNull;
+    if (errorState != null) {
+      config = RouteStateBuilders.where((e) => e.state.path == errorState?.uri.path).firstOrNull;
     }
     if (config == null) {
       return const SizedBox.shrink();
@@ -257,9 +300,9 @@ class RouteController {
                     index: _widgetCache.keys.toList().indexOf(state),
                     children:
                         _widgetCache.entries.map((entry) {
-                          final fullRoute = entry.key;
+                          final fullRouteState = entry.key;
                           final widget = entry.value;
-                          return KeyedSubtree(key: ValueKey(fullRoute), child: widget);
+                          return KeyedSubtree(key: ValueKey(fullRouteState), child: widget);
                         }).toList(),
                   );
                 },
@@ -286,11 +329,59 @@ class RouteController {
   //
   //
 
-  static RouteController of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+  static RouteStateController of(BuildContext context) {
+    final provider = context.dependOnInheritedWidgetOfExactType<RouteStateControllerProvider>();
     if (provider == null) {
-      throw FlutterError('No RouteControllerProvider found in context');
+      throw FlutterError('No RouteStateControllerProvider found in context');
     }
     return provider.controller;
+  }
+}
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+enum RouteStateControllerErrorType {
+  CONDITION_NOT_MET,
+  RouteState_NOT_FOUND,
+  EXTRA_TYPE_MISMATCH;
+
+  const RouteStateControllerErrorType();
+
+  Map<String, String> toQueryParameters() {
+    return {'error': name};
+  }
+}
+
+abstract class RouteStateControllerError {
+  const RouteStateControllerError();
+}
+
+class CondtionNotMetError extends RouteStateControllerError {
+  final Uri uri;
+  const CondtionNotMetError({required this.uri});
+
+  @override
+  String toString() {
+    return '[CondtionNotMetError] "condition" not met for RouteState $uri!';
+  }
+}
+
+class RouteStateNotFoundError extends RouteStateControllerError {
+  final Uri uri;
+  const RouteStateNotFoundError({required this.uri});
+
+  @override
+  String toString() {
+    return '[RouteStateNotFoundError] RouteState not found: "$uri".';
+  }
+}
+
+class ExtraTypeMismatchError<TExtra extends Object?> extends RouteStateControllerError {
+  final Uri uri;
+  const ExtraTypeMismatchError({required this.uri});
+
+  @override
+  String toString() {
+    return '[ExtraTypeMismatchError] "extra" is not of expected type "$TExtra" for RouteState $uri.';
   }
 }

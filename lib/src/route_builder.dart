@@ -12,24 +12,35 @@
 
 import 'package:flutter/widgets.dart';
 
+import '_src.g.dart';
+
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteBuilder {
-  final String path;
+class RouteBuilder<TExtra extends Object?> {
+  final RouteState<TExtra> state;
   final bool shouldPreserve;
   final bool shouldPrebuild;
-  final Widget Function(BuildContext context, Widget? previous, Uri state) builder;
+  late final TRouteWidgetBuilder builder;
   final TConditionFunction? condition;
 
-  const RouteBuilder({
-    required this.path,
+  RouteBuilder({
+    required this.state,
     this.shouldPreserve = false,
     this.shouldPrebuild = false,
-    required this.builder,
+    required TRouteWidgetBuilder<TExtra> builder,
     this.condition,
-  });
+  }) {
+    this.builder = (context, previous, state) => builder(context, previous, state.cast<TExtra>());
+  }
 }
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 typedef TConditionFunction = bool Function();
+
+typedef TRouteWidgetBuilder<TExtra extends Object?> =
+    RouteWidgetMixin<TExtra> Function(
+      BuildContext context,
+      Widget? previous,
+      RouteState<TExtra?> state,
+    );
