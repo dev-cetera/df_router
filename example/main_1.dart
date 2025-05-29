@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../lib/df_router.dart';
+import 'package:df_router/df_router.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,8 +21,7 @@ final class MessagesRouteState1 extends RouteState {
 }
 
 final class MessagesRouteState2 extends RouteState {
-  MessagesRouteState2()
-    : super.parse('/messages?key1=value1', queryParameters: {'key2': 'value2'});
+  MessagesRouteState2() : super.parse('/messages?key1=value1', queryParameters: {'key2': 'value2'});
 }
 
 class MyApp extends StatelessWidget {
@@ -66,11 +65,9 @@ class MyApp extends StatelessWidget {
                             'HOME',
                             style: TextStyle(
                               color:
-                                  RouteStateController.of(
-                                    context,
-                                  ).state.matchPath(HomeRouteState())
-                                  ? Colors.grey
-                                  : Colors.white,
+                                  RouteStateController.of(context).state.matchPath(HomeRouteState())
+                                      ? Colors.grey
+                                      : Colors.white,
                             ),
                           ),
                         ),
@@ -83,10 +80,9 @@ class MyApp extends StatelessWidget {
                             'CHAT',
                             style: TextStyle(
                               color:
-                                  RouteStateController.of(context).state.path ==
-                                      '/chat'
-                                  ? Colors.grey
-                                  : Colors.white,
+                                  RouteStateController.of(context).state.path == '/chat'
+                                      ? Colors.grey
+                                      : Colors.white,
                             ),
                           ),
                         ),
@@ -207,8 +203,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/messages?key1=value1', shouldAnimate: true),
+              onPressed: () => controller.push('/messages?key1=value1', shouldAnimate: true),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
@@ -216,12 +211,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('DISPOSE Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.pushState(
-                MessagesRouteState2().copyWith(
-                  extra: 'HELLO THERE HOW ARE YOU?',
-                  shouldAnimate: true,
-                ),
-              ),
+              onPressed:
+                  () => controller.pushState(
+                    MessagesRouteState2().copyWith(
+                      extra: 'HELLO THERE HOW ARE YOU?',
+                      shouldAnimate: true,
+                    ),
+                  ),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
@@ -271,8 +267,7 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/chat', extra: 'Hello from Home!'),
+              onPressed: () => controller.push('/chat', extra: 'Hello from Home!'),
               child: const Text('Go to Chat'),
             ),
           ],
@@ -323,16 +318,16 @@ class _ChatScreenState extends State<ChatScreen> {
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () =>
-                  controller.push('/chat', extra: 'Hello from Chat!'),
+              onPressed: () => controller.push('/chat', extra: 'Hello from Chat!'),
               child: const Text('Go to Chat (No ID)'),
             ),
             FilledButton(
-              onPressed: () => controller.push(
-                '/chat?id=123',
-                queryParameters: {'dude': '22'},
-                extra: 'Hello from Chat!',
-              ),
+              onPressed:
+                  () => controller.push(
+                    '/chat?id=123',
+                    queryParameters: {'dude': '22'},
+                    extra: 'Hello from Chat!',
+                  ),
               child: const Text('Go to Chat (ID=123)'),
             ),
             FilledButton(
