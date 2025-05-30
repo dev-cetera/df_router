@@ -55,7 +55,7 @@ class RouteManager extends StatelessWidget {
             HorizontalSlideFadeTransition(
               prev: params.prevSnapshot,
               controller: params.controller,
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 375),
               child: params.child,
             );
       },

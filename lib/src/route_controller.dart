@@ -24,6 +24,7 @@ class RouteController {
   //
   //
 
+  // TODO: Convert to Pod once that flashing error is fixed.
   late final ValueNotifier<RouteState> _pRouteState;
   ValueListenable<RouteState> get pRouteState => _pRouteState;
   RouteState get routeState => _pRouteState.value;
@@ -88,6 +89,8 @@ class RouteController {
       _widgetCache[routeState] = Builder(
         builder: (context) => builder.builder(context, routeState),
       );
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+      _pRouteState.notifyListeners();
     }
   }
 
