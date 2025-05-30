@@ -154,7 +154,7 @@ class RouteController {
 
   void _maybeCapture() {
     if (shouldCapture && _captureContext != null && _captureContext!.mounted) {
-      _prevSnapshotPicture = captureWidgetPicture(_captureContext!);
+      _prevSnapshotPicture = captureWidgetPictureSync(_captureContext!)!;
     }
   }
 
