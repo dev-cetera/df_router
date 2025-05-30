@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
                         FilledButton(
                           child: const Text('Go to Home'),
                           onPressed: () {
-                            controller.pushState(
+                            controller.push(
                               HomeRouteState().copyWith(
                                 queryParameters: {'from': 'Go to Home'},
                                 extra: '<pass extra data here>',
@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
                         FilledButton(
                           child: const Text('Go to Profile'),
                           onPressed: () {
-                            controller.pushState(
+                            controller.push(
                               ProfileRouteState().copyWith(
                                 queryParameters: {'from': 'Go to Profile'},
                                 extra: 12345, // Example of passing extra data
@@ -162,8 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('Extra: ${widget.routeState.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed:
-                  () => controller.pushState(ProfileRouteState().copyWith(shouldAnimate: true)),
+              onPressed: () => controller.push(ProfileRouteState().copyWith(shouldAnimate: true)),
               child: const Text('Go to Profile'),
             ),
           ],
@@ -215,7 +214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text('Extra: ${widget.routeState?.extra}'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => controller.pushState(HomeRouteState().copyWith(shouldAnimate: true)),
+              onPressed: () => controller.push(HomeRouteState().copyWith(shouldAnimate: true)),
               child: const Text('Go to Home'),
             ),
           ],

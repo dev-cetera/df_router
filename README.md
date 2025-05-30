@@ -164,7 +164,7 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
           children: [
             Text('Home Screen - Path: ${state.path}'),
             FilledButton(
-              onPressed: () => controller.pushState(MessagesRouteState()),
+              onPressed: () => controller.push(MessagesRouteState()),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
@@ -175,7 +175,7 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
               child: const Text('Go to Messages (with query & extra)'),
             ),
             FilledButton(
-              onPressed: () => controller.pushState(
+              onPressed: () => controller.push(
                 ChatRouteState().copyWith(extra: "Hello from Home!"),
               ),
               child: const Text('Go to Chat with extra data'),
@@ -227,7 +227,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Increment'),
             ),
             FilledButton(
-              onPressed: () => controller.pushState(HomeRouteState()),
+              onPressed: () => controller.push(HomeRouteState()),
               child: const Text('Go to Home'),
             ),
             FilledButton(
@@ -261,7 +261,7 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin<String> {
             Text('Chat ID from query: ${state.uri.queryParameters['id']}'),
             Text('Extra data from previous route: ${state.extra ?? "No extra data"}'),
             FilledButton(
-              onPressed: () => controller.pushState(HomeRouteState()),
+              onPressed: () => controller.push(HomeRouteState()),
               child: const Text('Go to Home'),
             ),
           ],
@@ -280,8 +280,8 @@ Access the RouteStateController to navigate:
 final controller = RouteStateController.of(context);
 
 // Navigate using a defined RouteState object
-controller.pushState(HomeRouteState());
-controller.pushState(MessagesWithQueryRouteState(key1Value: "example"));
+controller.push(HomeRouteState());
+controller.push(MessagesWithQueryRouteState(key1Value: "example"));
 
 // Navigate using a path string
 controller.push('/messages?key1=value1&key2=value2');
@@ -289,12 +289,12 @@ controller.push('/messages?key1=value1&key2=value2');
 // Pass extra data (can be any object)
 controller.push('/chat', extra: "Some chat ID or object");
 // Or with RouteState
-controller.pushState(ChatRouteState().copyWith(extra: "User123"));
+controller.push(ChatRouteState().copyWith(extra: "User123"));
 
 
 // Control animation
 controller.push('/detail', shouldAnimate: true);
-controller.pushState(HomeRouteState().copyWith(shouldAnimate: false));
+controller.push(HomeRouteState().copyWith(shouldAnimate: false));
 
 // Dispose a specific preserved RouteState instance from cache
 controller.disposeState(MessagesRouteState()); // If it matches a cached one

@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
                         IconButton(
                           onPressed: () {
                             final controller = RouteController.of(context);
-                            controller.pushState(HomeRouteState());
+                            controller.push(HomeRouteState());
                           },
                           icon: Text(
                             'HOME',
@@ -74,7 +74,7 @@ class MyApp extends StatelessWidget {
                         IconButton(
                           onPressed: () {
                             final controller = RouteController.of(context);
-                            controller.push('/chat');
+                            controller.push(RouteState.parse('/chat'));
                           },
                           icon: Text(
                             'CHAT',
@@ -195,15 +195,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Increment'),
             ),
             FilledButton(
-              onPressed: () => controller.pushState(HomeRouteState()),
+              onPressed: () => controller.push(HomeRouteState()),
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.pushState(MessagesRouteState()),
+              onPressed: () => controller.push(MessagesRouteState()),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages?key1=value1', shouldAnimate: true),
+              onPressed:
+                  () => controller.push(
+                    RouteState.parse('/messages?key1=value1').copyWith(shouldAnimate: true),
+                  ),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
@@ -212,7 +215,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ),
             FilledButton(
               onPressed:
-                  () => controller.pushState(
+                  () => controller.push(
                     MessagesRouteState2().copyWith(
                       extra: 'HELLO THERE HOW ARE YOU?',
                       shouldAnimate: true,
@@ -251,23 +254,26 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FilledButton(
-              onPressed: () => controller.push('/messages'),
+              onPressed: () => controller.push(RouteState.parse('/messages')),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages?key1=value1'),
+              onPressed: () => controller.push(RouteState.parse('/messages?key1=value1')),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages?key2=value2'),
+              onPressed: () => controller.push(RouteState.parse('/messages?key2=value2')),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/detail'),
+              onPressed: () => controller.push(RouteState.parse('/detail')),
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/chat', extra: 'Hello from Home!'),
+              onPressed:
+                  () => controller.push(
+                    RouteState.parse('/chat').copyWith(extra: 'Hello from Home!'),
+                  ),
               child: const Text('Go to Chat'),
             ),
           ],
@@ -314,19 +320,22 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Text(widget.routeState.extra.toString()),
             FilledButton(
-              onPressed: () => controller.push('/home'),
+              onPressed: () => controller.push(RouteState.parse('/home')),
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/chat', extra: 'Hello from Chat!'),
+              onPressed:
+                  () => controller.push(
+                    RouteState.parse('/chat').copyWith(extra: 'Hello from Chat!'),
+                  ),
               child: const Text('Go to Chat (No ID)'),
             ),
             FilledButton(
               onPressed:
                   () => controller.push(
-                    '/chat?id=123',
-                    queryParameters: {'dude': '22'},
-                    extra: 'Hello from Chat!',
+                    RouteState.parse(
+                      '/chat?id=123',
+                    ).copyWith(queryParameters: {'dude': '22'}, extra: 'Hello from Chat!'),
                   ),
               child: const Text('Go to Chat (ID=123)'),
             ),
@@ -361,11 +370,11 @@ class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FilledButton(
-              onPressed: () => controller.push('/home'),
+              onPressed: () => controller.push(RouteState.parse('/home')),
               child: const Text('Back to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.push('/messages'),
+              onPressed: () => controller.push(RouteState.parse('/messages')),
               child: const Text('Go to Messages'),
             ),
           ],

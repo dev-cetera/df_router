@@ -36,7 +36,7 @@ class RouteController {
 
   Picture? _prevSnapshotPicture;
   BuildContext? _captureContext;
-  RouteState? _prevRouteState;
+  late RouteState _prevRouteState = _pRouteState.value;
   final _controller = TransitionController();
   final RouteState Function()? errorRouteState;
   final RouteState Function() fallbackRouteState;
@@ -58,7 +58,7 @@ class RouteController {
     final routeState = initialRouteState?.call() ?? _requestedRouteState ?? fallbackRouteState();
     platformNavigator.addStateCallback(_onStateChange);
     resetCache();
-    pushState(routeState);
+    push(routeState);
   }
 
   //
@@ -162,26 +162,12 @@ class RouteController {
   //
   //
 
-  void pushBack() {
-    if (_prevRouteState != null) {
-      final uri = _prevRouteState!.uri;
-      push(uri.path, queryParameters: uri.queryParameters, shouldAnimate: false);
+  void pushBack({RouteState? fallback}) {
+    if (_prevRouteState.path == '/') {
+      push(fallback ?? fallbackRouteState());
+    } else {
+      push(_prevRouteState);
     }
-  }
-
-  //
-  //
-  //
-
-  void pushState<TExtra extends Object?>(RouteState<TExtra> routeState) {
-    push<TExtra>(
-      routeState.uri.path,
-      queryParameters: routeState.uri.queryParameters,
-      extra: routeState.extra,
-      skipCurrent: routeState.skipCurrent,
-      shouldAnimate: routeState.shouldAnimate,
-      condition: routeState.condition,
-    );
   }
 
   //
@@ -189,49 +175,49 @@ class RouteController {
   //
 
   void push<TExtra extends Object?>(
-    String path, {
-    Map<String, String>? queryParameters,
-    TExtra? extra,
-    bool skipCurrent = true,
-    bool shouldAnimate = false,
-    TRouteConditionFn? condition,
+    RouteState<TExtra> routeState, {
+    RouteState? errorFallback,
+    RouteState? fallback,
   }) {
-    var uri = Uri.parse(path);
-    final qp = {...uri.queryParameters, ...?queryParameters};
-    uri = uri.replace(queryParameters: qp.isNotEmpty ? qp : null);
+    final uri = routeState.uri;
+    final extra = routeState.extra;
+    final skipCurrent = routeState.skipCurrent;
+    final shouldAnimate = routeState.shouldAnimate;
+    final condition = routeState.condition;
     if (skipCurrent && _pRouteState.value.uri == uri) {
       return;
     }
     if (_checkExtraTypeMismatch<TExtra>(uri) == false) {
-      if (errorRouteState != null) {
-        debugPrint('[RouteController.push] Error!');
-        pushState(errorRouteState!());
+      debugPrint('[RouteController.push] Error!');
+      final errorFallback1 = errorFallback ?? errorRouteState?.call();
+      if (errorFallback1 != null) {
+        push(errorFallback1);
       }
       return;
     }
     if (!pathExists(uri)) {
-      if (errorRouteState != null) {
-        debugPrint('[RouteController.push] Error!');
-        pushState(fallbackRouteState()); // go to fallback state if path does not exist
-        //pushState(errorRouteState!());
+      debugPrint('[RouteController.push] Error!');
+      final errorFallback1 = errorFallback ?? errorRouteState?.call();
+      if (errorFallback1 != null) {
+        push(errorFallback1);
       }
       return;
     }
     final a = condition == null || condition();
     if (!a) {
       debugPrint('[RouteController.push] Condition not met!');
-      pushState(fallbackRouteState());
+      push(fallback ?? fallbackRouteState());
       return;
     }
     final condition2 = _getBuilderByPath(uri)?.condition;
     final b = condition2 == null || condition2.call();
     if (!b) {
       debugPrint('[RouteController.push] Condition not met!');
-      pushState(fallbackRouteState());
+      push(fallback ?? fallbackRouteState());
       return;
     }
     _maybeCapture();
-    platformNavigator.replaceState(uri);
+    platformNavigator.pushState(uri);
     _prevRouteState = _pRouteState.value;
     _pRouteState.value = RouteState(uri, extra: extra);
     _cleanUpState(_prevRouteState);
