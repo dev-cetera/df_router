@@ -28,7 +28,7 @@ class RouteController {
   ValueListenable<RouteState> get pRouteState => _pRouteState;
   RouteState get routeState => _pRouteState.value;
 
-  var _widgetCache = <RouteState, Widget>{};
+  final _widgetCache = <RouteState, Widget>{};
   late final List<RouteBuilder> builders;
   final bool shouldCapture;
   final TRouteTransitionBuilder transitionBuilder;
@@ -54,21 +54,41 @@ class RouteController {
     final routeState = initialRouteState ?? _navigatorState ?? fallbackRouteState;
     _pRouteState = ValueNotifier<RouteState>(routeState);
     platformNavigator.addStateCallback(_onStateChange);
-    platformNavigator.pushState(routeState.uri);
-    _widgetCache = Map.fromEntries(
-      builders.where((routeState) => routeState.shouldPrebuild).map((e) {
-        final uri = e.routeState.uri;
-        final routeState = RouteState(uri);
-        return MapEntry(
-          RouteState(uri),
-          Builder(
-            builder: (context) {
-              return e.builder(context, routeState);
-            },
-          ),
-        );
-      }),
-    );
+    platformNavigator.replaceState(routeState.uri);
+    resetCache();
+  }
+
+  //
+  //
+  //
+
+  void resetCache() {
+    clearCache();
+    final routeStates = builders
+        .where((routeState) => routeState.shouldPrebuild)
+        .map((e) => routeState);
+    cacheStates(routeStates);
+  }
+
+  //
+  //
+  //
+
+  void cacheStates(Iterable<RouteState> routeStates) {
+    for (final routeState in routeStates) {
+      if (_widgetCache.containsKey(routeState)) {
+        // TODO: Handle this case.
+        continue;
+      }
+      final builder = _getBuilderByPath(routeState.uri);
+      if (builder == null) {
+        // TODO: Handle this case.
+        continue;
+      }
+      _widgetCache[routeState] = Builder(
+        builder: (context) => builder.builder(context, routeState),
+      );
+    }
   }
 
   //
@@ -88,6 +108,20 @@ class RouteController {
   //
 
   void _onStateChange(Uri uri) {
+    final builder = _getBuilderByPath(uri);
+    if (builder == null) {
+      if (errorRouteState != null) {
+        // TODO: Handle this!
+      }
+      return;
+    }
+    final condition = builder.condition;
+    if (condition != null && !condition()) {
+      if (errorRouteState != null) {
+        // TODO: Handle this!
+      }
+      return;
+    }
     _pRouteState.value = RouteState(uri);
   }
 
@@ -95,7 +129,7 @@ class RouteController {
   //
   //
 
-  Widget _pictureWidget(BuildContext context) {
+  Widget _pictureWidget() {
     if (_prevSnapshotPicture == null) {
       return const SizedBox.shrink();
     }
@@ -112,7 +146,7 @@ class RouteController {
   //
 
   void _maybeCapture() {
-    if (shouldCapture) {
+    if (shouldCapture && _captureContext != null && _captureContext!.mounted) {
       _prevSnapshotPicture = captureWidgetPicture(_captureContext!);
     }
   }
@@ -126,15 +160,6 @@ class RouteController {
       final uri = _prevRouteState!.uri;
       push(uri.path, queryParameters: uri.queryParameters, shouldAnimate: false);
     }
-  }
-
-  //
-  //
-  //
-
-  void setState<TExtra extends Object?>(RouteState<TExtra> routeState) {
-    clearCache();
-    pushState(routeState);
   }
 
   //
@@ -216,7 +241,7 @@ class RouteController {
       throw CondtionNotMetError(uri: uri);
     }
     _maybeCapture();
-    platformNavigator.pushState(uri);
+    platformNavigator.replaceState(uri);
     _prevRouteState = _pRouteState.value;
     _pRouteState.value = RouteState(uri, extra: extra);
     _cleanUpState(_prevRouteState);
@@ -314,7 +339,7 @@ class RouteController {
         controller: _controller,
         prevRouteState: _prevRouteState,
         routeState: routeState,
-        prevSnapshot: _pictureWidget(context),
+        prevSnapshot: _pictureWidget(),
         child: Builder(
           builder: (context) {
             _captureContext = context;

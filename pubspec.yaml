@@ -29,7 +29,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  df_pwa_utils: ^0.2.0
+  df_pwa_utils:
+    path: ../df_pwa_utils
   equatable: ^2.0.7
 
 ## -----------------------------------------------------------------------------

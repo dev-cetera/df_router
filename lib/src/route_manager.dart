@@ -49,12 +49,13 @@ class RouteManager extends StatelessWidget {
       fallbackRouteState: fallbackState(),
       errorRouteState: errorState,
       builders: builders,
+      shouldCapture: true,
       transitionBuilder: (context, params) {
         return transitionBuilder?.call(context, params) ??
             HorizontalSlideFadeTransition(
               prev: params.prevSnapshot,
               controller: params.controller,
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 200),
               child: params.child,
             );
       },
