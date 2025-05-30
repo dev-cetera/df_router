@@ -240,9 +240,9 @@ class RouteController {
   //
 
   bool _checkExtraTypeMismatch<TExtra extends Object?>(Uri path) {
-    return builders.any(
-      (e) => e.routeState.path == path.path && e.runtimeType == RouteBuilder<TExtra>,
-    );
+    return builders.any((e) {
+      return e.routeState.path == path.path && e is RouteBuilder<TExtra>;
+    });
   }
 
   //
