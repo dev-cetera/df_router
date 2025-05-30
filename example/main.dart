@@ -79,7 +79,7 @@ class MyApp extends StatelessWidget {
             transitionBuilder: (context, params) {
               return HorizontalSlideFadeTransition(
                 // Or VerticalSlideFadeTransition
-                prev: params.prev,
+                prev: params.prevSnapshot,
                 controller: params.controller,
                 child: params.child,
               );

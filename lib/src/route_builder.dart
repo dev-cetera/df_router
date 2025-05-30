@@ -39,4 +39,4 @@ class RouteBuilder<TExtra extends Object?> {
 typedef TRouteConditionFn = bool Function();
 
 typedef TRouteWidgetBuilder<TExtra extends Object?> =
-    RouteWidgetMixin<TExtra> Function(BuildContext context, RouteState<TExtra?> state);
+    RouteWidgetMixin<TExtra> Function(BuildContext context, RouteState<TExtra?> routeState);

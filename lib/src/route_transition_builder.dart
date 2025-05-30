@@ -22,16 +22,16 @@ typedef TRouteTransitionBuilder =
 class RouteTransitionBuilderParams {
   final TransitionController controller;
   @protected
-  final RouteState? prevState;
-  final RouteState? state;
-  final Widget prev;
+  final RouteState? prevRouteState;
+  final RouteState? routeState;
+  final Widget prevSnapshot;
   final Widget child;
 
   const RouteTransitionBuilderParams({
     required this.controller,
-    required this.prevState,
-    required this.state,
-    required this.prev,
+    required this.prevRouteState,
+    required this.routeState,
+    required this.prevSnapshot,
     required this.child,
   });
 }

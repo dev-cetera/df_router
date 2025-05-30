@@ -24,46 +24,46 @@ class RouteController {
   //
   //
 
-  late final ValueNotifier<RouteState> _pState;
-  ValueListenable<RouteState> get pState => _pState;
-  RouteState get state => _pState.value;
+  late final ValueNotifier<RouteState> _pRouteState;
+  ValueListenable<RouteState> get pRouteState => _pRouteState;
+  RouteState get routeState => _pRouteState.value;
 
   var _widgetCache = <RouteState, Widget>{};
   late final List<RouteBuilder> builders;
   final bool shouldCapture;
   final TRouteTransitionBuilder transitionBuilder;
 
-  Picture? _picture;
+  Picture? _prevSnapshotPicture;
   BuildContext? _captureContext;
-  RouteState? _prevState;
+  RouteState? _prevRouteState;
   final _controller = TransitionController();
-  final RouteState<Enum> Function()? errorState;
+  final RouteState<Enum> Function()? errorRouteState;
 
   //
   //
   //
 
   RouteController({
-    RouteState? initialState,
-    this.errorState,
-    required RouteState fallbackState,
+    RouteState? initialRouteState,
+    this.errorRouteState,
+    required RouteState fallbackRouteState,
     required this.builders,
     this.shouldCapture = true,
     required this.transitionBuilder,
   }) {
-    final state = initialState ?? _navigatorState ?? fallbackState;
-    _pState = ValueNotifier<RouteState>(state);
+    final routeState = initialRouteState ?? _navigatorState ?? fallbackRouteState;
+    _pRouteState = ValueNotifier<RouteState>(routeState);
     platformNavigator.addStateCallback(_onStateChange);
-    platformNavigator.pushState(state.uri);
+    platformNavigator.pushState(routeState.uri);
     _widgetCache = Map.fromEntries(
-      builders.where((state) => state.shouldPrebuild).map((e) {
+      builders.where((routeState) => routeState.shouldPrebuild).map((e) {
         final uri = e.routeState.uri;
-        final state = RouteState(uri);
+        final routeState = RouteState(uri);
         return MapEntry(
           RouteState(uri),
           Builder(
             builder: (context) {
-              return e.builder(context, state);
+              return e.builder(context, routeState);
             },
           ),
         );
@@ -88,7 +88,7 @@ class RouteController {
   //
 
   void _onStateChange(Uri uri) {
-    _pState.value = RouteState(uri);
+    _pRouteState.value = RouteState(uri);
   }
 
   //
@@ -96,13 +96,13 @@ class RouteController {
   //
 
   Widget _pictureWidget(BuildContext context) {
-    if (_picture == null) {
+    if (_prevSnapshotPicture == null) {
       return const SizedBox.shrink();
     }
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = Size(constraints.maxWidth, constraints.maxHeight);
-        return PictureWidget(picture: _picture, size: size);
+        return PictureWidget(picture: _prevSnapshotPicture, size: size);
       },
     );
   }
@@ -113,7 +113,7 @@ class RouteController {
 
   void _maybeCapture() {
     if (shouldCapture) {
-      _picture = captureWidgetPicture(_captureContext!);
+      _prevSnapshotPicture = captureWidgetPicture(_captureContext!);
     }
   }
 
@@ -122,8 +122,8 @@ class RouteController {
   //
 
   void pushBack() {
-    if (_prevState != null) {
-      final uri = _prevState!.uri;
+    if (_prevRouteState != null) {
+      final uri = _prevRouteState!.uri;
       push(uri.path, queryParameters: uri.queryParameters, shouldAnimate: false);
     }
   }
@@ -132,23 +132,23 @@ class RouteController {
   //
   //
 
-  void setState<TExtra extends Object?>(RouteState<TExtra> state) {
+  void setState<TExtra extends Object?>(RouteState<TExtra> routeState) {
     clearCache();
-    pushState(state);
+    pushState(routeState);
   }
 
   //
   //
   //
 
-  void pushState<TExtra extends Object?>(RouteState<TExtra> state) {
+  void pushState<TExtra extends Object?>(RouteState<TExtra> routeState) {
     push<TExtra>(
-      state.uri.path,
-      queryParameters: state.uri.queryParameters,
-      extra: state.extra,
-      skipCurrent: state.skipCurrent,
-      shouldAnimate: state.shouldAnimate,
-      condition: state.condition,
+      routeState.uri.path,
+      queryParameters: routeState.uri.queryParameters,
+      extra: routeState.extra,
+      skipCurrent: routeState.skipCurrent,
+      shouldAnimate: routeState.shouldAnimate,
+      condition: routeState.condition,
     );
   }
 
@@ -167,13 +167,13 @@ class RouteController {
     var uri = Uri.parse(path);
     final qp = {...uri.queryParameters, ...?queryParameters};
     uri = uri.replace(queryParameters: qp.isNotEmpty ? qp : null);
-    if (skipCurrent && _pState.value.uri == uri) {
+    if (skipCurrent && _pRouteState.value.uri == uri) {
       return;
     }
     if (_checkExtraTypeMismatch<TExtra>(uri) == false) {
-      if (errorState != null) {
+      if (errorRouteState != null) {
         push(
-          errorState!().uri.path,
+          errorRouteState!().uri.path,
           queryParameters: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH.toQueryParameters(),
           extra: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH,
         );
@@ -181,9 +181,9 @@ class RouteController {
       throw ExtraTypeMismatchError<TExtra>(uri: uri);
     }
     if (!pathExists(uri)) {
-      if (errorState != null) {
+      if (errorRouteState != null) {
         push(
-          errorState!().uri.path,
+          errorRouteState!().uri.path,
           queryParameters: RouteStateControllerErrorType.RouteState_NOT_FOUND.toQueryParameters(),
           extra: RouteStateControllerErrorType.RouteState_NOT_FOUND,
         );
@@ -193,9 +193,9 @@ class RouteController {
     // Condition 1.
     final a = condition == null || condition();
     if (!a) {
-      if (errorState != null) {
+      if (errorRouteState != null) {
         push(
-          errorState!().uri.path,
+          errorRouteState!().uri.path,
           queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET.toQueryParameters(),
           extra: RouteStateControllerErrorType.CONDITION_NOT_MET,
         );
@@ -206,9 +206,9 @@ class RouteController {
     final condition2 = _getBuilderByPath(uri)?.condition;
     final b = condition2 == null || condition2.call();
     if (!b) {
-      if (errorState != null) {
+      if (errorRouteState != null) {
         push(
-          errorState!().uri.path,
+          errorRouteState!().uri.path,
           queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET.toQueryParameters(),
           extra: RouteStateControllerErrorType.CONDITION_NOT_MET,
         );
@@ -217,9 +217,9 @@ class RouteController {
     }
     _maybeCapture();
     platformNavigator.pushState(uri);
-    _prevState = _pState.value;
-    _pState.value = RouteState(uri, extra: extra);
-    _cleanUpState(_prevState);
+    _prevRouteState = _pRouteState.value;
+    _pRouteState.value = RouteState(uri, extra: extra);
+    _cleanUpState(_prevRouteState);
     if (shouldAnimate) {
       Future.microtask(() {
         _controller.reset();
@@ -250,15 +250,15 @@ class RouteController {
   //
 
   RouteBuilder? _getBuilderByPath(Uri path) {
-    return builders.where((state) => state.routeState.path == path.path).firstOrNull;
+    return builders.where((routeState) => routeState.routeState.path == path.path).firstOrNull;
   }
 
   //
   //
   //
 
-  Widget? disposeState(RouteState state) {
-    return _widgetCache.remove(state);
+  Widget? disposeState(RouteState routeState) {
+    return _widgetCache.remove(routeState);
   }
 
   //
@@ -266,7 +266,7 @@ class RouteController {
   //
 
   void disposePath(Uri path) {
-    _widgetCache.removeWhere((state, widget) => state.uri.path == path.path);
+    _widgetCache.removeWhere((routeState, widget) => routeState.uri.path == path.path);
   }
 
   //
@@ -281,13 +281,13 @@ class RouteController {
   //
   //
 
-  void _cleanUpState(RouteState? state) {
-    if (state == null) return;
-    final a = builders.where((e) => e.routeState.path == state.uri.path).firstOrNull;
+  void _cleanUpState(RouteState? routeState) {
+    if (routeState == null) return;
+    final a = builders.where((e) => e.routeState.path == routeState.uri.path).firstOrNull;
     if (a == null) return;
     if (a.shouldPrebuild && !a.shouldPreserve) {
       // Replace with empty widget instead of removing it to avoid rebuilds.
-      _widgetCache[state] = const SizedBox.shrink();
+      _widgetCache[routeState] = const SizedBox.shrink();
     }
   }
 
@@ -295,25 +295,26 @@ class RouteController {
   //
   //
 
-  Widget buildScreen(BuildContext context, RouteState state) {
-    var config = builders.where((e) => e.routeState.path == state.uri.path).firstOrNull;
+  Widget buildScreen(BuildContext context, RouteState routeState) {
+    var config = builders.where((e) => e.routeState.path == routeState.uri.path).firstOrNull;
     if (config == null) {
       return const SizedBox.shrink();
     }
-    if (errorState != null) {
-      config = builders.where((e) => e.routeState.path == errorState?.call().uri.path).firstOrNull;
+    if (errorRouteState != null) {
+      config =
+          builders.where((e) => e.routeState.path == errorRouteState?.call().uri.path).firstOrNull;
     }
     if (config == null) {
       return const SizedBox.shrink();
     }
-    _widgetCache[state] = Builder(builder: (context) => config!.builder(context, state));
+    _widgetCache[routeState] = Builder(builder: (context) => config!.builder(context, routeState));
     return transitionBuilder(
       context,
       RouteTransitionBuilderParams(
         controller: _controller,
-        prevState: _prevState,
-        state: state,
-        prev: _pictureWidget(context),
+        prevRouteState: _prevRouteState,
+        routeState: routeState,
+        prevSnapshot: _pictureWidget(context),
         child: Builder(
           builder: (context) {
             _captureContext = context;
@@ -321,7 +322,7 @@ class RouteController {
               child: Builder(
                 builder: (context) {
                   return IndexedStack(
-                    index: _widgetCache.keys.toList().indexOf(state),
+                    index: _widgetCache.keys.toList().indexOf(routeState),
                     children:
                         _widgetCache.entries.map((entry) {
                           final fullRouteState = entry.key;
@@ -344,7 +345,7 @@ class RouteController {
 
   void dispose() {
     platformNavigator.removeStateCallback(_onStateChange);
-    _pState.dispose();
+    _pRouteState.dispose();
     _widgetCache.clear();
     _controller.clear();
   }

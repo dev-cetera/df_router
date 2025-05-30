@@ -65,7 +65,7 @@ class MyApp extends StatelessWidget {
                             'HOME',
                             style: TextStyle(
                               color:
-                                  RouteController.of(context).state.matchPath(HomeRouteState())
+                                  RouteController.of(context).routeState.matchPath(HomeRouteState())
                                       ? Colors.grey
                                       : Colors.white,
                             ),
@@ -80,7 +80,7 @@ class MyApp extends StatelessWidget {
                             'CHAT',
                             style: TextStyle(
                               color:
-                                  RouteController.of(context).state.path == '/chat'
+                                  RouteController.of(context).routeState.path == '/chat'
                                       ? Colors.grey
                                       : Colors.white,
                             ),
@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
               // );
               // For Android.
               return VerticalSlideFadeTransition(
-                prev: params.prev,
+                prev: params.prevSnapshot,
                 controller: params.controller,
                 duration: const Duration(milliseconds: 300),
                 child: params.child,

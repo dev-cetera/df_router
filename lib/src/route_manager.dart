@@ -45,14 +45,14 @@ class RouteManager extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = RouteController(
-      initialState: initialState?.call(),
-      fallbackState: fallbackState(),
-      errorState: errorState,
+      initialRouteState: initialState?.call(),
+      fallbackRouteState: fallbackState(),
+      errorRouteState: errorState,
       builders: builders,
       transitionBuilder: (context, params) {
         return transitionBuilder?.call(context, params) ??
             HorizontalSlideFadeTransition(
-              prev: params.prev,
+              prev: params.prevSnapshot,
               controller: params.controller,
               duration: const Duration(milliseconds: 300),
               child: params.child,
@@ -64,7 +64,7 @@ class RouteManager extends StatelessWidget {
     return RouteControllerProvider(
       controller: controller,
       child: ValueListenableBuilder(
-        valueListenable: controller.pState,
+        valueListenable: controller.pRouteState,
         builder: (context, value, snapshot) {
           final child = ClipRect(child: controller.buildScreen(context, value));
           return wrapper?.call(context, child) ?? child;
