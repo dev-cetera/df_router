@@ -17,8 +17,8 @@ import '_src.g.dart';
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class RouteManager extends StatelessWidget {
-  final RouteState Function()? initialState;
-  final RouteState Function() fallbackState;
+  final RouteState Function()? initialRouteState;
+  final RouteState Function() fallbackRouteState;
   final RouteState<Enum> Function()? errorState;
   final void Function(RouteController controller)? onControllerCreated;
   final List<RouteBuilder> builders;
@@ -32,8 +32,8 @@ class RouteManager extends StatelessWidget {
 
   const RouteManager({
     super.key,
-    this.initialState,
-    required this.fallbackState,
+    this.initialRouteState,
+    required this.fallbackRouteState,
     this.errorState,
     this.onControllerCreated,
     required this.builders,
@@ -45,8 +45,8 @@ class RouteManager extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = RouteController(
-      initialRouteState: initialState?.call(),
-      fallbackRouteState: fallbackState(),
+      initialRouteState: initialRouteState,
+      fallbackRouteState: fallbackRouteState,
       errorRouteState: errorState,
       builders: builders,
       shouldCapture: false,
@@ -67,7 +67,7 @@ class RouteManager extends StatelessWidget {
       child: ValueListenableBuilder(
         valueListenable: controller.pRouteState,
         builder: (context, value, snapshot) {
-          final child = ClipRect(child: controller.buildScreen(context, value));
+          final child = ClipRect(child: controller.buildScreen(context, value!));
           return wrapper?.call(context, child) ?? child;
         },
       ),

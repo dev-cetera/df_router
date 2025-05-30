@@ -25,7 +25,7 @@ class RouteController {
   //
 
   // TODO: Convert to Pod once that flashing error is fixed.
-  late final ValueNotifier<RouteState> _pRouteState;
+  final _pRouteState = ValueNotifier(RouteState.parse('/'));
   ValueListenable<RouteState> get pRouteState => _pRouteState;
   RouteState get routeState => _pRouteState.value;
 
@@ -38,25 +38,27 @@ class RouteController {
   BuildContext? _captureContext;
   RouteState? _prevRouteState;
   final _controller = TransitionController();
-  final RouteState<Enum> Function()? errorRouteState;
+  final RouteState Function()? errorRouteState;
+  final RouteState Function() fallbackRouteState;
+  RouteState? _requestedRouteState;
 
   //
   //
   //
 
   RouteController({
-    RouteState? initialRouteState,
+    RouteState Function()? initialRouteState,
     this.errorRouteState,
-    required RouteState fallbackRouteState,
+    required this.fallbackRouteState,
     required this.builders,
     this.shouldCapture = true,
     required this.transitionBuilder,
   }) {
-    final routeState = initialRouteState ?? _navigatorState ?? fallbackRouteState;
-    _pRouteState = ValueNotifier<RouteState>(routeState);
+    _requestedRouteState = getNavigatorRouteState();
+    final routeState = initialRouteState?.call() ?? _requestedRouteState ?? fallbackRouteState();
     platformNavigator.addStateCallback(_onStateChange);
-    platformNavigator.replaceState(routeState.uri);
     resetCache();
+    pushState(routeState);
   }
 
   //
@@ -98,12 +100,18 @@ class RouteController {
   //
   //
 
-  RouteState? get _navigatorState {
-    final pathQuery = platformNavigator.getCurrentUrl()?.pathAndQuery;
-    if (pathQuery == null || pathQuery == '/' || pathQuery.isEmpty) {
+  RouteState getNavigatorOrFallbackRouteState() => _requestedRouteState ?? fallbackRouteState();
+
+  //
+  //
+  //
+
+  RouteState? getNavigatorRouteState() {
+    final url = platformNavigator.getCurrentUrl();
+    if (url == null) {
       return null;
     }
-    return RouteState(Uri.parse(pathQuery));
+    return _getBuilderByPath(url)?.routeState.copyWith(queryParameters: url.queryParameters);
   }
 
   //
@@ -113,16 +121,12 @@ class RouteController {
   void _onStateChange(Uri uri) {
     final builder = _getBuilderByPath(uri);
     if (builder == null) {
-      if (errorRouteState != null) {
-        // TODO: Handle this!
-      }
+      debugPrint('[RouteController._onStateChange] Condition not met!');
       return;
     }
     final condition = builder.condition;
     if (condition != null && !condition()) {
-      if (errorRouteState != null) {
-        // TODO: Handle this!
-      }
+      debugPrint('[RouteController._onStateChange] Condition not met!');
       return;
     }
     _pRouteState.value = RouteState(uri);
@@ -200,48 +204,31 @@ class RouteController {
     }
     if (_checkExtraTypeMismatch<TExtra>(uri) == false) {
       if (errorRouteState != null) {
-        push(
-          errorRouteState!().uri.path,
-          queryParameters: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH.toQueryParameters(),
-          extra: RouteStateControllerErrorType.EXTRA_TYPE_MISMATCH,
-        );
+        debugPrint('[RouteController.push] Error!');
+        pushState(errorRouteState!());
       }
-      throw ExtraTypeMismatchError<TExtra>(uri: uri);
+      return;
     }
     if (!pathExists(uri)) {
       if (errorRouteState != null) {
-        push(
-          errorRouteState!().uri.path,
-          queryParameters: RouteStateControllerErrorType.RouteState_NOT_FOUND.toQueryParameters(),
-          extra: RouteStateControllerErrorType.RouteState_NOT_FOUND,
-        );
+        debugPrint('[RouteController.push] Error!');
+        pushState(fallbackRouteState()); // go to fallback state if path does not exist
+        //pushState(errorRouteState!());
       }
-      throw RouteStateNotFoundError(uri: uri);
+      return;
     }
-    // Condition 1.
     final a = condition == null || condition();
     if (!a) {
-      if (errorRouteState != null) {
-        push(
-          errorRouteState!().uri.path,
-          queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET.toQueryParameters(),
-          extra: RouteStateControllerErrorType.CONDITION_NOT_MET,
-        );
-      }
-      throw CondtionNotMetError(uri: uri);
+      debugPrint('[RouteController.push] Condition not met!');
+      pushState(fallbackRouteState());
+      return;
     }
-    // Ccndition 2.
     final condition2 = _getBuilderByPath(uri)?.condition;
     final b = condition2 == null || condition2.call();
     if (!b) {
-      if (errorRouteState != null) {
-        push(
-          errorRouteState!().uri.path,
-          queryParameters: RouteStateControllerErrorType.CONDITION_NOT_MET.toQueryParameters(),
-          extra: RouteStateControllerErrorType.CONDITION_NOT_MET,
-        );
-      }
-      throw CondtionNotMetError(uri: uri);
+      debugPrint('[RouteController.push] Condition not met!');
+      pushState(fallbackRouteState());
+      return;
     }
     _maybeCapture();
     platformNavigator.replaceState(uri);
@@ -388,53 +375,5 @@ class RouteController {
       throw FlutterError('No RouteStateControllerProvider found in context');
     }
     return provider.controller;
-  }
-}
-
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-
-enum RouteStateControllerErrorType {
-  CONDITION_NOT_MET,
-  RouteState_NOT_FOUND,
-  EXTRA_TYPE_MISMATCH;
-
-  const RouteStateControllerErrorType();
-
-  Map<String, String> toQueryParameters() {
-    return {'error': name};
-  }
-}
-
-abstract class RouteStateControllerError {
-  const RouteStateControllerError();
-}
-
-class CondtionNotMetError extends RouteStateControllerError {
-  final Uri uri;
-  const CondtionNotMetError({required this.uri});
-
-  @override
-  String toString() {
-    return '[CondtionNotMetError] "condition" not met for RouteState $uri!';
-  }
-}
-
-class RouteStateNotFoundError extends RouteStateControllerError {
-  final Uri uri;
-  const RouteStateNotFoundError({required this.uri});
-
-  @override
-  String toString() {
-    return '[RouteStateNotFoundError] RouteState not found: "$uri".';
-  }
-}
-
-class ExtraTypeMismatchError<TExtra extends Object?> extends RouteStateControllerError {
-  final Uri uri;
-  const ExtraTypeMismatchError({required this.uri});
-
-  @override
-  String toString() {
-    return '[ExtraTypeMismatchError] "extra" is not of expected type "$TExtra" for RouteState $uri.';
   }
 }

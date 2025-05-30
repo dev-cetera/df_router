@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return Material(
           child: RouteManager(
-            fallbackState: () => HomeRouteState(),
+            fallbackRouteState: () => HomeRouteState(),
             wrapper: (context, child) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

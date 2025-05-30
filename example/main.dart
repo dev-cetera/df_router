@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         return Material(
           // Provides basic Material theming (optional, but good practice)
           child: RouteManager(
-            fallbackState: () => HomeRouteState(),
+            fallbackRouteState: () => HomeRouteState(),
             // Optional: initialState: HomeRouteState(),
 
             // Wrapper for persistent UI (e.g., Scaffold with AppBar)
