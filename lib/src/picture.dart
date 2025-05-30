@@ -1,10 +1,11 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 // For testing, you might need:
-// import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart'; // Example: for Color
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
@@ -25,108 +26,97 @@ typedef Picture = ui.Picture;
 /// The re-compositing logic for complex layer trees is a simplification and might not
 /// capture all advanced effects or deeply nested non-transformed offsets perfectly.
 Picture? captureWidgetPictureSync(BuildContext context) {
-  if (!context.mounted) {
-    debugPrint('[captureWidgetPictureSync] Context is not mounted at call time.');
+  try {
+    if (!context.mounted) {
+      debugPrint('[captureWidgetPictureSync] Context is not mounted at call time.');
+      return null;
+    }
+
+    final renderObject = context.findRenderObject();
+
+    if (renderObject == null) {
+      debugPrint('[captureWidgetPictureSync] RenderObject is null.');
+      return null;
+    }
+
+    if (renderObject is! RenderRepaintBoundary) {
+      debugPrint(
+        '[captureWidgetPictureSync] RenderObject is not a RenderRepaintBoundary. It is a ${renderObject.runtimeType}.',
+      );
+      return null;
+    }
+
+    final rrb = renderObject;
+
+    // --- kDebugMode guarded section for robust release mode operation ---
+    bool logAsPotentiallyNotReady = !rrb.hasSize;
+    String layoutDebugInfoForLog = '';
+
+    if (kDebugMode) {
+      // Only in debug mode, check debugNeedsLayout if rrb has size
+      if (rrb.hasSize) {
+        // Only check layout if it has size
+        if (rrb.debugNeedsLayout) {
+          logAsPotentiallyNotReady = true; // Mark for logging that it might not be ideal
+          layoutDebugInfoForLog = ', NeedsLayout: true (debug check)';
+        } else {
+          layoutDebugInfoForLog = ', NeedsLayout: false (debug check)';
+        }
+      }
+      // If !rrb.hasSize, logAsPotentiallyNotReady is already true, no need to check layout.
+    }
+    // In release mode, logAsPotentiallyNotReady is solely based on !rrb.hasSize,
+    // and layoutDebugInfoForLog remains empty. No access to rrb.debugNeedsLayout occurs.
+
+    if (logAsPotentiallyNotReady) {
+      // This debugPrint is primarily for debugging. In release, layoutDebugInfoForLog will be empty.
+      debugPrint(
+        '[captureWidgetPictureSync] RenderRepaintBoundary status check: Size: ${rrb.size}$layoutDebugInfoForLog. Proceeding with capture.',
+      );
+    }
+    // --- End of kDebugMode guarded section ---
+
+    // ignore: invalid_use_of_protected_member
+    final Layer? rrbRootLayer = rrb.layer;
+
+    if (rrbRootLayer == null && rrb.hasSize && rrb.size != Size.zero) {
+      debugPrint(
+        '[captureWidgetPictureSync] RenderRepaintBoundary has size ${rrb.size} but no layer. Has it been painted as empty? Or is it genuinely empty?',
+      );
+    }
+
+    final bounds = Offset.zero & rrb.size;
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(pictureRecorder, bounds);
+
+    if (rrbRootLayer != null) {
+      _compositeLayerTreeToCanvas(canvas, rrbRootLayer, Offset.zero);
+    } else {
+      debugPrint(
+        '[captureWidgetPictureSync] RRB has no root layer (or size is zero). Canvas will reflect this (e.g., empty picture).',
+      );
+    }
+
+    return pictureRecorder.endRecording();
+  } catch (e, stackTrace) {
+    debugPrint('[captureWidgetPictureSync] Error capturing widget picture: $e\n$stackTrace');
     return null;
   }
-
-  final renderObject = context.findRenderObject();
-
-  if (renderObject == null) {
-    debugPrint('[captureWidgetPictureSync] RenderObject is null.');
-    return null;
-  }
-
-  if (renderObject is! RenderRepaintBoundary) {
-    debugPrint(
-      '[captureWidgetPictureSync] RenderObject is not a RenderRepaintBoundary. It is a ${renderObject.runtimeType}.',
-    );
-    return null;
-  }
-
-  final rrb = renderObject;
-
-  // Check if the RepaintBoundary has a size and has been painted.
-  // The layer check is crucial.
-  if (!rrb.hasSize || rrb.debugNeedsLayout) {
-    debugPrint(
-      '[captureWidgetPictureSync] RenderRepaintBoundary not ready (no size or needs layout). Size: ${rrb.size}, NeedsLayout: ${rrb.debugNeedsLayout}',
-    );
-    // It's possible it has size but no layer if it's empty or just became visible.
-  }
-
-  // ignore: invalid_use_of_protected_member
-  final Layer? rrbRootLayer = rrb.layer;
-
-  if (rrbRootLayer == null && rrb.hasSize && rrb.size != Size.zero) {
-    // It has a size, but no layer. This implies it hasn't been painted yet or is truly empty.
-    // If it's supposed to have content, this is where things go wrong for lazy items.
-    debugPrint(
-      '[captureWidgetPictureSync] RenderRepaintBoundary has size ${rrb.size} but no layer. Has it been painted? Or is it genuinely empty?',
-    );
-    // Proceeding will result in a blank picture of these bounds.
-  }
-
-  final bounds = Offset.zero & rrb.size;
-  // It's valid for a RepaintBoundary to have zero size.
-  // If bounds are empty, the resulting picture will also be empty, which is correct.
-
-  final pictureRecorder = ui.PictureRecorder();
-  final canvas = ui.Canvas(pictureRecorder, bounds); // Use RRB's bounds for the new picture
-
-  if (rrbRootLayer != null) {
-    debugPrint(
-      '[captureWidgetPictureSync] RRB root layer is ${rrbRootLayer.runtimeType}. Attempting to re-composite.',
-    );
-    // The root layer of the RepaintBoundary (often an OffsetLayer) is already at the correct
-    // position relative to the RepaintBoundary's origin (0,0). So, we start compositing
-    // it with an initial offset of Offset.zero onto our new canvas.
-    _compositeLayerTreeToCanvas(canvas, rrbRootLayer, Offset.zero);
-  } else {
-    debugPrint(
-      '[captureWidgetPictureSync] RRB has no root layer. Canvas will be empty (or background if one was set).',
-    );
-    // This means the RepaintBoundary was either empty or not painted.
-    // The canvas created with `bounds` will result in an appropriately sized (possibly empty) picture.
-  }
-
-  return pictureRecorder.endRecording();
 }
 
+// ... (Rest of your _compositeLayerTreeToCanvas, LayerDebugging, PicturePainter, PictureWidget code remains the same) ...
+
 /// Recursively re-draws layers onto the provided canvas.
-/// `canvas`: The canvas to draw onto.
-/// `layer`: The current layer to process.
-/// `parentAccumulatedOffset`: The offset of this layer's parent relative to the
-///                            RepaintBoundary's origin. This is NOT the layer's own offset.
-///                            For the initial root layer, this is Offset.zero.
 void _compositeLayerTreeToCanvas(ui.Canvas canvas, Layer layer, Offset parentAccumulatedOffset) {
   canvas.save();
-
   var currentGlobalOffset = parentAccumulatedOffset;
 
-  // Apply layer-specific effects and transformations.
-  // The order of these checks can matter if layers inherit from each other.
-  // Generally, check for more specific types before more general types if there's overlap.
-
   if (layer is OffsetLayer) {
-    // OffsetLayer has an `offset` property. This offset is relative to its parent.
-    // We need to translate the canvas by this amount.
     canvas.translate(layer.offset.dx, layer.offset.dy);
     currentGlobalOffset = currentGlobalOffset + layer.offset;
   }
-  // Note: TransformLayer, OpacityLayer, etc., often extend OffsetLayer.
-  // Their specific properties are applied *after* their intrinsic offset.
 
   if (layer is TransformLayer) {
-    // If it's a TransformLayer, it might also be an OffsetLayer.
-    // Its `offset` would have been handled by the `OffsetLayer` check if it came first.
-    // Here we apply its specific `transform`.
-    // The engine logic is roughly: apply offset, then apply transform.
-    // If `OffsetLayer` was already handled, `layer.offset` is already part of the CTM.
-    // If `TransformLayer` is handled *before* `OffsetLayer` (if it's a direct subclass, not via OffsetLayer),
-    // then its own offset would need to be handled here too.
-    // Given `TransformLayer extends OffsetLayer`, the OffsetLayer case handles its `offset`.
-    // Now, apply its `transform` property.
     if (layer.transform != null) {
       canvas.transform(layer.transform!.storage);
     }
@@ -142,22 +132,15 @@ void _compositeLayerTreeToCanvas(ui.Canvas canvas, Layer layer, Offset parentAcc
     if (layer.clipPath != null) {
       canvas.clipPath(layer.clipPath!, doAntiAlias: layer.clipBehavior != Clip.hardEdge);
     }
-  }
-  // OpacityLayer extends OffsetLayer, so its offset is handled by the `is OffsetLayer` block.
-  // Here, we handle the opacity itself.
-  else if (layer is OpacityLayer) {
+  } else if (layer is OpacityLayer) {
     final alpha = layer.alpha;
     if (alpha != null) {
       if (alpha == 0) {
-        canvas.restore(); // Pop the save for this layer's state (including its offset)
+        canvas.restore(); // Pop state for this layer
         return; // Nothing more to draw for this layer or its children
       }
       if (alpha != 255) {
-        // The bounds for saveLayer should be relative to the current canvas transform.
-        // OpacityLayer.describeClipBounds() can be null.
-        // If null, it applies to the current clip.
         var layerBounds = layer.describeClipBounds();
-        // DescribeClipBounds are in parent coords. Canvas is already there.
         canvas.saveLayer(layerBounds, ui.Paint()..color = ui.Color.fromARGB(alpha, 0, 0, 0));
         // Children drawn into this temp layer, then opacity applied on restore.
       }
@@ -167,17 +150,13 @@ void _compositeLayerTreeToCanvas(ui.Canvas canvas, Layer layer, Offset parentAcc
       canvas.saveLayer(layer.describeClipBounds(), ui.Paint()..colorFilter = layer.colorFilter);
     }
   } else if (layer is ImageFilterLayer) {
-    // ImageFilterLayer extends OffsetLayer. Its offset is handled.
     if (layer.imageFilter != null) {
       canvas.saveLayer(layer.describeClipBounds(), ui.Paint()..imageFilter = layer.imageFilter);
     }
   }
-  // Add other specific layer types like ShaderMaskLayer if needed.
 
-  // Draw content of this layer or recurse for its children.
+  // Draw content or recurse
   if (layer is PictureLayer) {
-    // PictureLayer is painted at Offset.zero in its coordinate system.
-    // Its position on canvas is determined by ancestor transforms/offsets.
     if (layer.picture != null) {
       canvas.drawPicture(layer.picture!);
     } else {
@@ -186,89 +165,45 @@ void _compositeLayerTreeToCanvas(ui.Canvas canvas, Layer layer, Offset parentAcc
       );
     }
   } else if (layer is TextureLayer) {
-    // TextureLayer has its own rect.
-    // We cannot directly draw a texture to a ui.Picture. Draw a placeholder.
     debugPrint(
-      '[_compositeLayerTreeToCanvas] Encountered TextureLayer (id: ${layer.textureId}). Cannot draw to ui.Picture. Drawing placeholder.',
+      '[_compositeLayerTreeToCanvas] Encountered TextureLayer (id: ${layer.textureId}). Drawing placeholder.',
     );
     final placeholderPaint =
         Paint()
-          ..color = const Color(0xFFFF00FF).withValues(alpha: 0.5) // Bright pink placeholder
+          ..color = const Color(0x80FF00FF) // Bright pink with 50% alpha
           ..style = PaintingStyle.fill;
-    // TextureLayer.rect is in its parent's coordinate system.
-    // Since we've already applied parent transforms (like OffsetLayer),
-    // we draw rect directly.
     canvas.drawRect(layer.rect, placeholderPaint);
   } else if (layer is PlatformViewLayer) {
-    debugPrint(
-      '[_compositeLayerTreeToCanvas] Encountered PlatformViewLayer. Cannot draw platform views to ui.Picture. Skipping.',
-    );
+    debugPrint('[_compositeLayerTreeToCanvas] Encountered PlatformViewLayer. Skipping.');
+  } else if (layer is ContainerLayer) {
+    // Base for layers with children
+    var child = layer.firstChild;
+    while (child != null) {
+      _compositeLayerTreeToCanvas(canvas, child, currentGlobalOffset);
+      child = child.nextSibling;
+    }
   }
-  // ContainerLayer is the base for layers that have children.
-  // OffsetLayer, Clip*, Opacity*, etc., are all ContainerLayers.
-  else if (layer is ContainerLayer) {
-    var child = layer.firstChild;
-    while (child != null) {
-      // The child's position is relative to this ContainerLayer.
-      // If this ContainerLayer was an OffsetLayer, its offset was already applied to the canvas.
-      // So, the child starts from the new origin of the canvas.
-      // The `currentGlobalOffset` is the global position of *this* layer's origin.
-      _compositeLayerTreeToCanvas(canvas, child, currentGlobalOffset);
-      child = child.nextSibling;
-    }
-  } else if (layer is AnnotatedRegionLayer) {
-    // AnnotatedRegionLayer is a ContainerLayer. It doesn't paint itself but its children.
-    // This case might be hit if it's not caught by `is ContainerLayer` first,
-    // but ContainerLayer should catch it. Handle children:
-    var child = layer.firstChild;
-    while (child != null) {
-      _compositeLayerTreeToCanvas(canvas, child, currentGlobalOffset);
-      child = child.nextSibling;
-    }
-  } else if (layer is LeaderLayer) {
-    // LeaderLayer extends ContainerLayer
-    // Its offset is handled by OffsetLayer case if it's also an OffsetLayer
-    // (LeaderLayer does extend OffsetLayer via ContainerLayer -> OffsetLayer).
-    // Then recurse for children.
-    var child = layer.firstChild;
-    while (child != null) {
-      _compositeLayerTreeToCanvas(canvas, child, currentGlobalOffset); // Pass current global offset
-      child = child.nextSibling;
-    }
-  } else if (layer is FollowerLayer) {
-    // FollowerLayer extends ContainerLayer
-    // FollowerLayer calculates its own transform based on its linked LeaderLayer.
-    // This is complex to replicate perfectly without engine internals.
-    // A simple approach is to draw its children at its current position.
-    // Its `_lastTransform` is internal.
-    // For a synchronous capture, we assume its current painted state is what we get.
-    // It's also an OffsetLayer effectively, if its _lastTransform is applied.
-    // This is a known difficult case for simple layer tree traversal.
-    // We will effectively draw its children as if it's a regular ContainerLayer
-    // at its last painted offset/transform.
-    // The `canvas.save()` and `canvas.restore()` at the start/end of this function
-    // handle the local transform scope. If `FollowerLayer` has a complex transform
-    // not captured by `TransformLayer` type, it might not be perfect.
-    var child = layer.firstChild;
-    while (child != null) {
-      _compositeLayerTreeToCanvas(canvas, child, currentGlobalOffset);
-      child = child.nextSibling;
-    }
-  } else {
+  // Specific container types like AnnotatedRegionLayer, LeaderLayer, FollowerLayer
+  // are already handled by 'is ContainerLayer' if they don't have specific drawing logic
+  // beyond their children. If they do, they'd need their own 'else if'.
+  // The provided code had them as separate else-ifs, which is fine for clarity
+  // or if they might get special handling later.
+  // For this example, assuming ContainerLayer handles their children traversal.
+  else if (layer is! PictureLayer && layer is! TextureLayer && layer is! PlatformViewLayer) {
+    // Catch-all for unhandled non-ContainerLayer
     debugPrint('[_compositeLayerTreeToCanvas] Unhandled layer type: ${layer.runtimeType}');
   }
 
-  // Restore for layers that used saveLayer (e.g. Opacity, ColorFilter, ImageFilter)
+  // Restore for layers that used saveLayer
   if ((layer is OpacityLayer && layer.alpha != null && layer.alpha != 0 && layer.alpha != 255) ||
       (layer is ColorFilterLayer && layer.colorFilter != null) ||
       (layer is ImageFilterLayer && layer.imageFilter != null)) {
-    canvas.restore();
+    canvas.restore(); // Matches the saveLayer
   }
 
-  canvas.restore(); // Pop the save for this layer's transformations/clips
+  canvas.restore(); // Matches the initial canvas.save()
 }
 
-// Helper for debugging layer path
 extension LayerDebugging on Layer {
   String get debugCreatorPathToLayer {
     final path = <String>[];
@@ -276,14 +211,7 @@ extension LayerDebugging on Layer {
     while (current != null) {
       var layerDesc = current.runtimeType.toString();
       if (current.debugCreator != null) {
-        // debugCreator is often a RenderObject.
-        // We might want a shorter description of it.
         var creatorDesc = current.debugCreator.runtimeType.toString();
-        if (current.debugCreator is RenderObject) {
-          // This can be verbose
-          //final ro = current.debugCreator as RenderObject;
-          // creatorDesc = ro.toStringShort();
-        }
         layerDesc += '(creator: $creatorDesc)';
       }
       path.add(layerDesc);
