@@ -13,6 +13,7 @@
 // ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
 
 import 'package:df_pwa_utils/df_pwa_utils.dart';
+import 'package:df_widgets/_common.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
@@ -247,12 +248,14 @@ class RouteController {
     //   children: _widgetCache.values.toList(),
     // );
 
-    return PrioritizedIndexedStack(
+    return AnimatedStackWrapper(
       indices: [
         _widgetCache.keys.toList().indexOf(routeState),
         _widgetCache.keys.toList().indexOf(_prevRouteState),
       ],
+
       children: _widgetCache.values.toList(),
+      transition: PISTopLayerSlideTransition(),
     );
   }
 
