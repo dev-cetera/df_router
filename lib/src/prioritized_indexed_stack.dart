@@ -136,6 +136,372 @@ class PISTransformation {
   static PISTransformation identity = PISTransformation(transform: Matrix4.identity());
 }
 
+// /// Abstract class defining the contract for a transition animation
+// /// to be used with AnimatedStackWrapper and PrioritizedIndexedStack.
+// abstract class PISTransition {
+//   /// The [Listenable] that drives the animation (typically an AnimationController).
+//   /// AnimatedStackWrapper will listen to this to rebuild.
+//   Listenable get animationListenable;
+
+//   /// Initializes the transition. Must be called before use.
+//   /// [vsync]: The TickerProvider.
+//   /// [duration]: The duration of the transition.
+//   void initialize({required TickerProvider vsync, required Duration duration});
+
+//   /// Called by AnimatedStackWrapper when the active indices in PrioritizedIndexedStack change.
+//   /// This method should decide if and how to start an animation.
+//   ///
+//   /// [previousIndices]: The list of `widget.children` indices that were active before the change.
+//   ///                    The first element is the topmost, second is below, etc.
+//   /// [newIndices]: The list of `widget.children` indices that are now active.
+//   ///               The first element is the new topmost, second is new below, etc.
+//   /// [childrenCount]: The total number of children available in the main `children` list.
+//   void onIndicesChanged({
+//     required List<int?> previousIndices,
+//     required List<int?> newIndices,
+//     required int childrenCount,
+//   });
+
+//   /// Retrieves the current transformation for a specific child.
+//   ///
+//   /// [context]: The BuildContext.
+//   /// [childOriginalIndex]: The index of the child in the main `children` list.
+//   /// [newStackingOrder]: The child's current stacking order in `newIndices` (0 for top, 1 for second, etc.).
+//   ///                     Null if the child is not active in `newIndices`.
+//   /// [isActiveInNewStack]: True if this child is present in `newIndices`.
+//   PISTransformation getTransformation({
+//     required BuildContext context,
+//     required int childOriginalIndex,
+//     required int? newStackingOrder,
+//     required bool isActiveInNewStack,
+//   });
+
+//   /// Disposes of any resources (like AnimationController).
+//   void dispose();
+// }
+
+class PISTopLayerSlideTransition extends PISTransition {
+  AnimationController? _controller;
+  Animation<Offset>? _slideAnimationForTopLayer;
+
+  // Index of the child that is currently the "top" or becoming the "top".
+  // This is set by onIndicesChanged or can be influenced by manual triggers.
+  int? _currentTopOriginalIndex;
+
+  // Index of the child that should appear stationary below the top one during transition.
+  int? _stationaryBelowTopOriginalIndex;
+
+  // True if an animation is (or should be) actively playing.
+  // This is the primary flag getTransformation uses to decide its output.
+  bool _isTransitioning = false;
+
+  // Used to signal AnimatedBuilder to rebuild when _isTransitioning changes
+  // but the _controller itself might not be ticking (e.g., it's already at 0.0 or 1.0).
+  final ValueNotifier<int> _rebuildSignal = ValueNotifier(0);
+
+  // --- PISTransition Implementation ---
+
+  @override
+  Listenable get animationListenable {
+    if (_controller == null) {
+      // Fallback if controller isn't ready, though this shouldn't be common.
+      // _rebuildSignal allows manual state changes to still trigger UI updates.
+      // print("PISTopLayerSlideTransition WARN: animationListenable called, _controller is null. Returning _rebuildSignal only.");
+      return _rebuildSignal;
+    }
+    // AnimatedBuilder will rebuild if EITHER the controller ticks OR _rebuildSignal changes value.
+    return Listenable.merge([_controller!, _rebuildSignal]);
+  }
+
+  @override
+  AnimationController? get animationController => _controller;
+
+  @override
+  void initialize({required TickerProvider vsync, required Duration duration}) {
+    // print("PISTopLayerSlideTransition: Initializing. Old controller: $_controller");
+
+    // Dispose previous controller and listeners if any
+    _controller?.removeStatusListener(_handleAnimationStatusChange);
+    _controller?.dispose();
+
+    _controller = AnimationController(vsync: vsync, duration: duration)
+      ..addStatusListener(_handleAnimationStatusChange);
+
+    _slideAnimationForTopLayer = null; // Animation will be recreated if needed
+    _isTransitioning = false; // Reset transitioning state
+    _currentTopOriginalIndex = null; // Reset target index
+    _stationaryBelowTopOriginalIndex = null;
+
+    // print("PISTopLayerSlideTransition: Initialized. New controller: $_controller. _isTransitioning: $_isTransitioning");
+    _signalRebuild(); // Ensure UI reflects initial non-transitioning state
+  }
+
+  @override
+  void onIndicesChanged({
+    required List<int?> previousIndices,
+    required List<int?> newIndices,
+    required int childrenCount,
+  }) {
+    // print("PISTopLayerSlideTransition: onIndicesChanged. NewI: $newIndices, PrevI: $previousIndices. "
+    //       "Current _isT: $_isTransitioning, CtrlVal: ${_controller?.value}, CtrlStatus: ${_controller?.status}");
+
+    final oldTopOriginalIdx = previousIndices.isNotEmpty ? previousIndices[0] : null;
+    final newTopOriginalIdx = newIndices.isNotEmpty ? newIndices[0] : null;
+
+    // Update the primary indices this transition cares about
+    _currentTopOriginalIndex = newTopOriginalIdx;
+    _stationaryBelowTopOriginalIndex = newIndices.length > 1 ? newIndices[1] : null;
+
+    if (_controller == null) {
+      // print("PISTopLayerSlideTransition WARN: onIndicesChanged - Controller is null. Cannot animate.");
+      if (_isTransitioning) {
+        _isTransitioning = false;
+        _signalRebuild(); // Ensure state consistency
+      }
+      return;
+    }
+
+    // Determine if the primary (top) element has changed.
+    // This is the main condition for this transition to auto-play.
+    bool topElementChanged = newTopOriginalIdx != oldTopOriginalIdx;
+
+    if (newTopOriginalIdx != null && topElementChanged) {
+      // print("PISTopLayerSlideTransition: onIndicesChanged - Top element changed ($oldTopOriginalIdx -> $newTopOriginalIdx). Starting animation.");
+      _startAnimationInternal(restart: true);
+    } else {
+      // print("PISTopLayerSlideTransition: onIndicesChanged - Top element NOT changed or newTop is null. Ensuring non-transitioning state.");
+      // If no animation is triggered by index change, ensure we are in a stable, non-transitioning state.
+      bool needsVisualUpdate = false;
+      if (_isTransitioning) {
+        // If we somehow thought we were transitioning, stop.
+        _isTransitioning = false;
+        needsVisualUpdate = true;
+      }
+      // If controller is not at its end state (1.0), snap it there.
+      // This also handles the case where an animation was manually stopped mid-way.
+      if (_controller!.value != 1.0) {
+        _controller!.value = 1.0; // This notifies listeners, so AnimatedBuilder will rebuild.
+        needsVisualUpdate = false; // Controller update handles the signal.
+      }
+      if (needsVisualUpdate) {
+        _signalRebuild(); // Only signal if _isTransitioning changed without controller value changing.
+      }
+    }
+  }
+
+  @override
+  PISTransformation getTransformation({
+    required BuildContext context,
+    required int childOriginalIndex,
+    required int? newStackingOrder, // The child's current stacking order in `newIndices`
+    required bool isActiveInNewStack,
+  }) {
+    // Uncomment for very verbose logging of getTransformation calls:
+    // print("PISTopLayerSlideTransition: GET_TRANSFORMATION for child $childOriginalIndex (order $newStackingOrder, active $isActiveInNewStack). "
+    //       "_isTransitioning: $_isTransitioning, _currentTop: $_currentTopOriginalIndex, ctrlVal: ${_controller?.value ?? 'N/A'}");
+
+    if (!isActiveInNewStack) {
+      return PISTransformation(opacity: 0.0, transform: Matrix4.identity());
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Case 1: This child IS the target top element AND we are actively transitioning it.
+    if (_isTransitioning &&
+        _slideAnimationForTopLayer != null &&
+        childOriginalIndex == _currentTopOriginalIndex &&
+        newStackingOrder == 0) {
+      // print("PISTopLayerSlideTransition: Applying ANIMATED transform for top child $childOriginalIndex");
+      return PISTransformation(
+        opacity: 1.0, // Could be animated too if Tween<double> for opacity was used
+        transform: Matrix4.translationValues(
+          _slideAnimationForTopLayer!.value.dx * screenWidth,
+          0, // Assuming horizontal slide only
+          0,
+        ),
+      );
+    }
+    // Case 2: This child IS the target top element, BUT we are NOT actively transitioning.
+    // (e.g., animation complete, or was never started for this state). Show it as is.
+    else if (childOriginalIndex == _currentTopOriginalIndex && newStackingOrder == 0) {
+      // print("PISTopLayerSlideTransition: Applying IDENTITY transform for top child $childOriginalIndex (not transitioning or animation complete)");
+      return PISTransformation.identity;
+    }
+    // Case 3: This child IS the one designated to be stationary below the top.
+    else if (childOriginalIndex == _stationaryBelowTopOriginalIndex && newStackingOrder == 1) {
+      // print("PISTopLayerSlideTransition: Applying IDENTITY transform for stationary child $childOriginalIndex below top");
+      return PISTransformation.identity;
+    }
+
+    // Default: Any other active child that isn't the top or the one below it
+    // (according to this transition's logic) should be fully transparent.
+    // Or, if only one item is in newIndices (newStackingOrder is 0, but not the one below), make others transparent.
+    // print("PISTopLayerSlideTransition: Applying TRANSPARENT transform for child $childOriginalIndex (not top, not below-top, or not relevant)");
+    return PISTransformation(opacity: 0.0, transform: Matrix4.identity());
+  }
+
+  @override
+  void dispose() {
+    // print("PISTopLayerSlideTransition: Disposing.");
+    _controller?.removeStatusListener(_handleAnimationStatusChange);
+    _controller?.dispose();
+    _controller = null;
+    _slideAnimationForTopLayer = null;
+    _rebuildSignal.dispose();
+    // If PISTransition had a super.dispose(), it should be called:
+    // super.dispose();
+  }
+
+  // --- Internal Helper Methods ---
+
+  void _handleAnimationStatusChange(AnimationStatus status) {
+    // print("PISTopLayerSlideTransition: Status Change: $status. "
+    //       "Was _isTransitioning: $_isTransitioning. Controller Value: ${_controller?.value}");
+    if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+      // Only change _isTransitioning if we thought we were in a transition.
+      // This prevents conflicts if _isTransitioning was manually set to false already (e.g., by stopTransition).
+      if (_isTransitioning) {
+        _isTransitioning = false;
+        // print("PISTopLayerSlideTransition: Animation ended ($status). Set _isTransitioning = false.");
+        _signalRebuild(); // Crucial: Our internal state changed, UI needs to reflect non-transitioning state.
+      }
+    }
+    // No need to set _isTransitioning = true on forward/reverse here,
+    // as _startAnimationInternal and triggerTransition handle that.
+  }
+
+  void _ensureSlideAnimation() {
+    if (_controller == null) {
+      // print("PISTopLayerSlideTransition ERROR: _ensureSlideAnimation called but _controller is null!");
+      return;
+    }
+    // Create or re-create the animation Tween if it's null (e.g., after initialize).
+    // This ensures it's always bound to the current _controller.
+    if (_slideAnimationForTopLayer == null) {
+      final curve = Curves.easeInOutCubic; // Or make this configurable
+      _slideAnimationForTopLayer = Tween<Offset>(
+        begin: const Offset(1.0, 0.0), // New top always slides in from the right
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: _controller!, curve: curve));
+      // print("PISTopLayerSlideTransition: Created/Recreated _slideAnimationForTopLayer.");
+    }
+  }
+
+  void _signalRebuild() {
+    // print("PISTopLayerSlideTransition: Signaling rebuild. Current _isTransitioning: $_isTransitioning, Controller val: ${_controller?.value}");
+    // Incrementing the value of ValueNotifier triggers its listeners (i.e., AnimatedBuilder via Listenable.merge).
+    _rebuildSignal.value++;
+  }
+
+  // Internal method to configure and start the animation.
+  void _startAnimationInternal({bool restart = true}) {
+    if (_controller == null) {
+      // print("PISTopLayerSlideTransition ERROR: _startAnimationInternal - Controller is null.");
+      return;
+    }
+    if (_currentTopOriginalIndex == null) {
+      // print("PISTopLayerSlideTransition WARN: _startAnimationInternal - _currentTopOriginalIndex is null. Cannot determine animation target.");
+      // If we can't determine the top, ensure we're not stuck in a transition state.
+      if (_isTransitioning) {
+        _isTransitioning = false;
+        _signalRebuild();
+      }
+      return;
+    }
+
+    _ensureSlideAnimation(); // Make sure the Tween is set up.
+
+    // Set our state BEFORE controller actions.
+    // If we are already transitioning and just restarting, _isTransitioning is already true.
+    // If we were not transitioning, set it to true and signal a rebuild.
+    if (!_isTransitioning) {
+      _isTransitioning = true;
+      _signalRebuild(); // Let getTransformation know we are now transitioning.
+      // The subsequent controller.forward() will then drive the values.
+    }
+
+    if (restart) {
+      // print("PISTopLayerSlideTransition: _startAnimationInternal - Calling controller.forward(from: 0.0)");
+      _controller!.forward(from: 0.0); // This notifies listeners (AnimatedBuilder).
+    } else {
+      // If restart is false, resume or start from current position.
+      // Useful if animation was stopped mid-way and needs to continue.
+      // print("PISTopLayerSlideTransition: _startAnimationInternal - Calling controller.forward()");
+      _controller!.forward(); // This also notifies listeners.
+    }
+  }
+
+  // --- Public Manual Control Methods ---
+
+  /// Manually triggers or restarts the slide animation for the `_currentTopOriginalIndex`.
+  ///
+  /// Use this method to programmatically initiate the transition, for example,
+  /// in response to a user action that doesn't necessarily change the `indices`
+  /// passed to `AnimatedStackWrapper` (e.g., a "replay animation" button),
+  /// or if you want more direct control than relying solely on `onIndicesChanged`.
+  ///
+  /// - [restart]: If `true` (default), the animation starts from the beginning.
+  ///              If `false`, and the animation was previously stopped mid-way,
+  ///              it attempts to resume. If the animation was completed or dismissed,
+  ///              it will effectively restart even if `restart` is `false`.
+  void triggerTransition({bool restart = true}) {
+    // print("PISTopLayerSlideTransition: MANUAL triggerTransition(restart: $restart) called. "
+    //       "_currentTop: $_currentTopOriginalIndex, current _isT: $_isTransitioning, "
+    //       "CtrlVal: ${_controller?.value}, CtrlStatus: ${_controller?.status}");
+
+    if (_controller == null) {
+      // print("PISTopLayerSlideTransition WARN: triggerTransition - Controller is null. Cannot start.");
+      return;
+    }
+    if (_currentTopOriginalIndex == null) {
+      // print("PISTopLayerSlideTransition WARN: triggerTransition - _currentTopOriginalIndex is null. Cannot determine animation target.");
+      // To make this more robust, you could try to set _currentTopOriginalIndex here
+      // if it's null, perhaps from the latest `newIndices` seen by `onIndicesChanged`,
+      // but that adds complexity and assumes onIndicesChanged has run with valid data.
+      // For now, it requires _currentTopOriginalIndex to be set.
+      return;
+    }
+
+    // Call the internal start method. This centralizes the animation start logic.
+    _startAnimationInternal(restart: restart);
+    // print("PISTopLayerSlideTransition: MANUAL triggerTransition completed call to _startAnimationInternal.");
+  }
+
+  /// Manually stops the current animation if it's running.
+  ///
+  /// The transition will visually stop at its current state.
+  /// `_isTransitioning` will be set to `false`.
+  void stopTransition() {
+    // print("PISTopLayerSlideTransition: MANUAL stopTransition called. "
+    //       "Current _isT: $_isTransitioning, CtrlVal: ${_controller?.value}, CtrlStatus: ${_controller?.status}");
+
+    if (_controller == null) {
+      // print("PISTopLayerSlideTransition WARN: stopTransition - Controller is null.");
+      return;
+    }
+
+    // Set our internal state to non-transitioning BEFORE stopping the controller.
+    // This ensures that if stop() causes an immediate rebuild for any reason,
+    // getTransformation already sees _isTransitioning as false.
+    if (_isTransitioning) {
+      _isTransitioning = false;
+      _signalRebuild(); // Crucial: Our state changed, tell AnimatedBuilder to get new transform.
+      // print("PISTopLayerSlideTransition: stopTransition - Set _isTransitioning = false and signaled rebuild.");
+    }
+
+    if (_controller!.isAnimating) {
+      // print("PISTopLayerSlideTransition: stopTransition - Controller is animating. Calling stop().");
+      _controller!
+          .stop(); // This will eventually trigger the status listener (_handleAnimationStatusChange),
+      // which will also set _isTransitioning = false (idempotently) and signal rebuild.
+    } else {
+      // print("PISTopLayerSlideTransition: stopTransition - Controller was not animating.");
+      // If it wasn't animating, but we ensure _isTransitioning is false and signaled rebuild,
+      // the UI should reflect the non-transitioning state.
+    }
+  }
+}
+
 /// Abstract class defining the contract for a transition animation
 /// to be used with AnimatedStackWrapper and PrioritizedIndexedStack.
 abstract class PISTransition {
@@ -143,19 +509,29 @@ abstract class PISTransition {
   /// AnimatedStackWrapper will listen to this to rebuild.
   Listenable get animationListenable;
 
+  /// Provides direct access to the underlying [AnimationController], if one is used by this transition.
+  ///
+  /// Returns `null` if this transition type does not use an [AnimationController].
+  /// For transitions that do use one (e.g., [PISTopLayerSlideTransition]), this getter
+  /// provides the controller instance. Note that the controller is typically initialized
+  /// within the [initialize] method. Accessing this getter before [initialize] has
+  /// been called by [AnimatedStackWrapper] (e.g., in its `initState` or `didUpdateWidget`)
+  /// might result in a [LateInitializationError] if the controller is `late`-initialized.
+  ///
+  /// **Caution**: Manually manipulating the [AnimationController] (e.g., calling `stop()`,
+  /// `forward()`) can interfere with the transition's internal animation logic,
+  /// particularly how it responds to [onIndicesChanged]. This should be done
+  /// with a clear understanding of the specific transition's behavior.
+  AnimationController? get animationController; // <<< NEW GETTER
+
   /// Initializes the transition. Must be called before use.
   /// [vsync]: The TickerProvider.
   /// [duration]: The duration of the transition.
   void initialize({required TickerProvider vsync, required Duration duration});
 
+  // ... rest of the PISTransition class remains the same
+  // ...
   /// Called by AnimatedStackWrapper when the active indices in PrioritizedIndexedStack change.
-  /// This method should decide if and how to start an animation.
-  ///
-  /// [previousIndices]: The list of `widget.children` indices that were active before the change.
-  ///                    The first element is the topmost, second is below, etc.
-  /// [newIndices]: The list of `widget.children` indices that are now active.
-  ///               The first element is the new topmost, second is new below, etc.
-  /// [childrenCount]: The total number of children available in the main `children` list.
   void onIndicesChanged({
     required List<int?> previousIndices,
     required List<int?> newIndices,
@@ -163,12 +539,6 @@ abstract class PISTransition {
   });
 
   /// Retrieves the current transformation for a specific child.
-  ///
-  /// [context]: The BuildContext.
-  /// [childOriginalIndex]: The index of the child in the main `children` list.
-  /// [newStackingOrder]: The child's current stacking order in `newIndices` (0 for top, 1 for second, etc.).
-  ///                     Null if the child is not active in `newIndices`.
-  /// [isActiveInNewStack]: True if this child is present in `newIndices`.
   PISTransformation getTransformation({
     required BuildContext context,
     required int childOriginalIndex,
@@ -180,164 +550,53 @@ abstract class PISTransition {
   void dispose();
 }
 
-class PISTopLayerSlideTransition extends PISTransition {
-  late AnimationController _controller;
-  Animation<Offset>? _slideAnimationForTopLayer;
+// /// A PISTransition that applies no animation, showing the top item directly.
+// class PISNoTransition extends PISTransition {
+//   // A dummy notifier to satisfy the Listenable requirement, though it won't change.
+//   final ValueNotifier<double> _notifier = ValueNotifier(1.0);
+//   int? _currentTopIndex;
 
-  // Store the original index of the page that IS the current/incoming top
-  int? _currentTopOriginalIndex;
-  // Store the original index of the page that IS stationary below the top
-  int? _stationaryBelowTopOriginalIndex;
+//   @override
+//   Listenable get animationListenable => _notifier;
 
-  bool _isTransitioning = false;
+//   @override
+//   void initialize({required TickerProvider vsync, required Duration duration}) {
+//     // No-op
+//   }
 
-  @override
-  Listenable get animationListenable => _controller;
+//   @override
+//   void onIndicesChanged({
+//     required List<int?> previousIndices,
+//     required List<int?> newIndices,
+//     required int childrenCount,
+//   }) {
+//     _currentTopIndex = newIndices.isNotEmpty ? newIndices[0] : null;
+//     // Notify to ensure a rebuild if only indices changed without an actual animation starting
+//     // This is subtle: if PISNoTransition is used, onIndicesChanged might be the only signal
+//     // to update which child is fully visible if AnimatedBuilder doesn't run.
+//     // However, AnimatedStackWrapper rebuilds on index change anyway.
+//     // _notifier.value = _notifier.value; // Force notify (hacky, not ideal)
+//     // Better: AnimatedStackWrapper's didUpdateWidget handles this.
+//   }
 
-  @override
-  void initialize({required TickerProvider vsync, required Duration duration}) {
-    _controller = AnimationController(vsync: vsync, duration: duration)..addStatusListener((
-      status,
-    ) {
-      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-        _isTransitioning = false;
-        // After transition, the _currentTopOriginalIndex is the one fully visible.
-        // The _stationaryBelowTopOriginalIndex might no longer be relevant if it's not in newIndices[1]
-      }
-    });
-  }
+//   @override
+//   PISTransformation getTransformation({
+//     required BuildContext context,
+//     required int childOriginalIndex,
+//     required int? newStackingOrder,
+//     required bool isActiveInNewStack,
+//   }) {
+//     if (isActiveInNewStack && childOriginalIndex == _currentTopIndex && newStackingOrder == 0) {
+//       return PISTransformation.identity; // Show only the top item
+//     }
+//     return PISTransformation(opacity: 0.0, transform: Matrix4.identity());
+//   }
 
-  @override
-  void onIndicesChanged({
-    required List<int?> previousIndices,
-    required List<int?> newIndices,
-    required int childrenCount,
-  }) {
-    final oldTopOriginalIdx = previousIndices.isNotEmpty ? previousIndices[0] : null;
-    final newTopOriginalIdx = newIndices.isNotEmpty ? newIndices[0] : null;
-    final newSecondOriginalIdx = newIndices.length > 1 ? newIndices[1] : null;
-
-    _currentTopOriginalIndex = newTopOriginalIdx;
-    _stationaryBelowTopOriginalIndex = newSecondOriginalIdx; // This will be the stationary one
-
-    // Only animate if the top element has actually changed and is valid
-    if (newTopOriginalIdx != null && newTopOriginalIdx != oldTopOriginalIdx) {
-      _isTransitioning = true;
-
-      // For this transition, the new top always slides in from the right.
-      // The element below it (newIndices[1]) does not move.
-      final curve = Curves.easeInOutCubic;
-      _slideAnimationForTopLayer = Tween<Offset>(
-        begin: const Offset(1.0, 0.0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: _controller, curve: curve));
-
-      _controller.forward(from: 0.0);
-    } else {
-      // Top element hasn't changed, or newTop is null.
-      _isTransitioning = false;
-      _controller.value = 1.0; // Ensure animation is at its completed state
-      // If top didn't change but second did, we still update _stationaryBelowTopOriginalIndex
-      if (newTopOriginalIdx == oldTopOriginalIdx) {
-        _stationaryBelowTopOriginalIndex = newSecondOriginalIdx;
-      }
-    }
-  }
-
-  @override
-  PISTransformation getTransformation({
-    required BuildContext context,
-    required int childOriginalIndex,
-    required int? newStackingOrder, // current stacking order in PIS.indices
-    required bool isActiveInNewStack, // is this child in PIS.indices at all
-  }) {
-    if (!isActiveInNewStack) {
-      return PISTransformation(opacity: 0.0, transform: Matrix4.identity());
-    }
-
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    // Case 1: This child IS the current top AND is actively transitioning
-    if (_isTransitioning &&
-        childOriginalIndex == _currentTopOriginalIndex &&
-        newStackingOrder == 0 &&
-        _slideAnimationForTopLayer != null) {
-      return PISTransformation(
-        opacity: 1.0,
-        transform: Matrix4.translationValues(
-          _slideAnimationForTopLayer!.value.dx * screenWidth,
-          0,
-          0,
-        ),
-      );
-    }
-    // Case 2: This child IS the current top, BUT the transition is complete or wasn't for this top element
-    else if (childOriginalIndex == _currentTopOriginalIndex && newStackingOrder == 0) {
-      return PISTransformation.identity; // Show as is, no transform, full opacity
-    }
-    // Case 3: This child IS the one designated to be stationary below the top
-    else if (childOriginalIndex == _stationaryBelowTopOriginalIndex && newStackingOrder == 1) {
-      return PISTransformation.identity; // Stationary, full opacity
-    }
-
-    // Default: Any other active child (should not happen if indices is only 0 or 0,1)
-    // or inactive children are made fully transparent.
-    return PISTransformation(opacity: 0.0, transform: Matrix4.identity());
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-  }
-}
-
-/// A PISTransition that applies no animation, showing the top item directly.
-class PISNoTransition extends PISTransition {
-  // A dummy notifier to satisfy the Listenable requirement, though it won't change.
-  final ValueNotifier<double> _notifier = ValueNotifier(1.0);
-  int? _currentTopIndex;
-
-  @override
-  Listenable get animationListenable => _notifier;
-
-  @override
-  void initialize({required TickerProvider vsync, required Duration duration}) {
-    // No-op
-  }
-
-  @override
-  void onIndicesChanged({
-    required List<int?> previousIndices,
-    required List<int?> newIndices,
-    required int childrenCount,
-  }) {
-    _currentTopIndex = newIndices.isNotEmpty ? newIndices[0] : null;
-    // Notify to ensure a rebuild if only indices changed without an actual animation starting
-    // This is subtle: if PISNoTransition is used, onIndicesChanged might be the only signal
-    // to update which child is fully visible if AnimatedBuilder doesn't run.
-    // However, AnimatedStackWrapper rebuilds on index change anyway.
-    // _notifier.value = _notifier.value; // Force notify (hacky, not ideal)
-    // Better: AnimatedStackWrapper's didUpdateWidget handles this.
-  }
-
-  @override
-  PISTransformation getTransformation({
-    required BuildContext context,
-    required int childOriginalIndex,
-    required int? newStackingOrder,
-    required bool isActiveInNewStack,
-  }) {
-    if (isActiveInNewStack && childOriginalIndex == _currentTopIndex && newStackingOrder == 0) {
-      return PISTransformation.identity; // Show only the top item
-    }
-    return PISTransformation(opacity: 0.0, transform: Matrix4.identity());
-  }
-
-  @override
-  void dispose() {
-    _notifier.dispose();
-  }
-}
+//   @override
+//   void dispose() {
+//     _notifier.dispose();
+//   }
+// }
 
 class ChildManipulatorController {
   double _opacity = 1.0;

@@ -204,6 +204,7 @@ class RouteController {
     _prevRouteState = _pRouteState.value;
     _pRouteState.value = routeState;
     addStatesToCache([routeState]);
+    myTransition.triggerTransition();
     // final shouldAnimate = routeState.shouldAnimate;
     // if (shouldAnimate) {
     //   Future.microtask(() {
@@ -242,20 +243,23 @@ class RouteController {
   //
   //
 
+  final myTransition = PISTopLayerSlideTransition();
+
   Widget buildScreen(BuildContext context, RouteState routeState) {
     // return IndexedStack(
     //   index: _widgetCache.keys.toList().indexOf(routeState),
     //   children: _widgetCache.values.toList(),
     // );
-
+    print('!!!!');
+    myTransition.triggerTransition();
     return AnimatedStackWrapper(
       indices: [
         _widgetCache.keys.toList().indexOf(routeState),
         _widgetCache.keys.toList().indexOf(_prevRouteState),
       ],
 
-      children: _widgetCache.values.toList(),
       transition: PISTopLayerSlideTransition(),
+      children: _widgetCache.values.toList(),
     );
   }
 
