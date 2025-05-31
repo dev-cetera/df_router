@@ -38,7 +38,6 @@ class RouteManager extends StatelessWidget {
     this.onControllerCreated,
     required this.builders,
     this.transitionBuilder,
-
     this.wrapper,
   });
 
@@ -53,7 +52,7 @@ class RouteManager extends StatelessWidget {
       transitionBuilder: (context, params) {
         return transitionBuilder?.call(context, params) ??
             HorizontalSlideFadeTransition(
-              prev: params.prevSnapshot,
+              prev: const SizedBox(),
               controller: params.controller,
               duration: const Duration(milliseconds: 275),
               child: params.child,

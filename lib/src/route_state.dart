@@ -10,18 +10,20 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
-import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart' show Key, ValueKey;
 
 import '../df_router.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteState<TExtra extends Object?> extends Equatable {
+class RouteState<TExtra extends Object?> {
   late final Uri uri;
   final TExtra? extra;
   final bool skipCurrent;
   final bool shouldAnimate;
   final TRouteConditionFn? condition;
+
+  Key get key => ValueKey(uri.toString());
 
   RouteState(
     Uri uri, {
@@ -88,8 +90,15 @@ class RouteState<TExtra extends Object?> extends Equatable {
 
   bool matchPath(RouteState other) => uri.path == other.uri.path;
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! RouteState) return false;
+    return uri == other.uri;
+  }
+
   String get path => uri.path;
 
   @override
-  List<Object?> get props => [uri]; // extra is not included in equality check.
+  int get hashCode => (RouteState).hashCode ^ uri.hashCode;
 }

@@ -10,6 +10,8 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
+// ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+
 import 'package:df_pwa_utils/df_pwa_utils.dart';
 import 'package:flutter/foundation.dart';
 
@@ -30,12 +32,11 @@ class RouteController {
   RouteState get routeState => _pRouteState.value;
 
   final _widgetCache = <RouteState, Widget>{};
+
   late final List<RouteBuilder> builders;
   final bool shouldCapture;
   final TRouteTransitionBuilder transitionBuilder;
 
-  Picture? _prevSnapshotPicture;
-  BuildContext? _captureContext;
   late RouteState _prevRouteState = _pRouteState.value;
   final _controller = TransitionController();
   final RouteState Function()? errorRouteState;
@@ -56,44 +57,11 @@ class RouteController {
   }) {
     _requestedRouteState = getNavigatorRouteState();
     final routeState = initialRouteState?.call() ?? _requestedRouteState ?? fallbackRouteState();
-    platformNavigator.addStateCallback(_onStateChange);
-    resetCache();
-    push(routeState);
-  }
-
-  //
-  //
-  //
-
-  void resetCache() {
-    clearCache();
-    final routeStates = builders
-        .where((routeState) => routeState.shouldPrebuild)
-        .map((e) => routeState);
-    cacheStates(routeStates);
-  }
-
-  //
-  //
-  //
-
-  void cacheStates(Iterable<RouteState> routeStates) {
-    for (final routeState in routeStates) {
-      if (_widgetCache.containsKey(routeState)) {
-        // TODO: Handle this case.
-        continue;
-      }
-      final builder = _getBuilderByPath(routeState.uri);
-      if (builder == null) {
-        // TODO: Handle this case.
-        continue;
-      }
-      _widgetCache[routeState] = Builder(
-        builder: (context) => builder.builder(context, routeState),
-      );
-      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
-      _pRouteState.notifyListeners();
+    for (final builder in builders) {
+      _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
     }
+    platformNavigator.addStateCallback(pushUri);
+    push(routeState);
   }
 
   //
@@ -118,45 +86,61 @@ class RouteController {
   //
   //
 
-  void _onStateChange(Uri uri) {
-    final builder = _getBuilderByPath(uri);
-    if (builder == null) {
-      debugPrint('[RouteController._onStateChange] Condition not met!');
-      return;
+  void addStatesToCache(Iterable<RouteState> routeStates) {
+    for (final routeState in routeStates) {
+      final builder = _getBuilderByPath(routeState.uri);
+      if (builder == null) continue;
+      if (_widgetCache[routeState] is Builder) continue;
+      _widgetCache[routeState] = Builder(
+        key: routeState.key,
+        builder: (context) {
+          return builder.builder(context, routeState);
+        },
+      );
+
+      _pRouteState.notifyListeners();
     }
-    final condition = builder.condition;
-    if (condition != null && !condition()) {
-      debugPrint('[RouteController._onStateChange] Condition not met!');
-      return;
+  }
+
+  //
+  //
+  //
+
+  void removeStatesFromCache(Iterable<RouteState> routeStates) {
+    for (final routeState in routeStates) {
+      final builder = _getBuilderByPath(routeState.uri);
+      if (builder == null) continue;
+      if (_widgetCache[routeState] is SizedBox) continue;
+      _widgetCache[routeState] = SizedBox.shrink(key: _widgetCache[routeState]?.key);
+      _pRouteState.notifyListeners();
     }
-    _pRouteState.value = RouteState(uri);
   }
 
   //
   //
   //
 
-  Widget _pictureWidget() {
-    if (_prevSnapshotPicture == null) {
-      return const SizedBox.shrink();
-    }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = Size(constraints.maxWidth, constraints.maxHeight);
-        return PictureWidget(picture: _prevSnapshotPicture, size: size);
-      },
-    );
+  void clearCache() {
+    removeStatesFromCache(_widgetCache.keys);
   }
 
   //
   //
   //
 
-  void _maybeCapture() {
-    if (shouldCapture && _captureContext != null && _captureContext!.mounted) {
-      _prevSnapshotPicture = captureWidgetPictureSync(_captureContext!);
-    }
-  }
+  // void resetCache() {
+  //   clearCache();
+  //   final routeStates = builders
+  //       .where((builder) => builder.shouldPrebuild)
+  //       .map((e) => e.routeState);
+  //   cacheStates(routeStates);
+  // }
+
+  //
+  //
+  //
+
+  void pushUri(Uri uri) => push(RouteState(uri));
 
   //
   //
@@ -179,11 +163,9 @@ class RouteController {
     RouteState? errorFallback,
     RouteState? fallback,
   }) {
+    print('PUSHING!!!');
     final uri = routeState.uri;
-    final extra = routeState.extra;
     final skipCurrent = routeState.skipCurrent;
-    final shouldAnimate = routeState.shouldAnimate;
-    final condition = routeState.condition;
     if (skipCurrent && _pRouteState.value.uri == uri) {
       return;
     }
@@ -203,6 +185,7 @@ class RouteController {
       }
       return;
     }
+    final condition = routeState.condition;
     final a = condition == null || condition();
     if (!a) {
       debugPrint('[RouteController.push] Condition not met!');
@@ -216,17 +199,16 @@ class RouteController {
       push(fallback ?? fallbackRouteState());
       return;
     }
-    _maybeCapture();
     platformNavigator.pushState(uri);
     _prevRouteState = _pRouteState.value;
-    _pRouteState.value = RouteState(uri, extra: extra);
-    _cleanUpState(_prevRouteState);
-    if (shouldAnimate) {
-      Future.microtask(() {
-        _controller.reset();
-      });
-    }
-    print(1);
+    _pRouteState.value = routeState;
+    addStatesToCache([routeState]);
+    // final shouldAnimate = routeState.shouldAnimate;
+    // if (shouldAnimate) {
+    //   Future.microtask(() {
+    //     _controller.reset();
+    //   });
+    // }
   }
 
   //
@@ -259,85 +241,18 @@ class RouteController {
   //
   //
 
-  Widget? disposeState(RouteState routeState) {
-    return _widgetCache.remove(routeState);
-  }
-
-  //
-  //
-  //
-
-  void disposePath(Uri path) {
-    _widgetCache.removeWhere((routeState, widget) => routeState.uri.path == path.path);
-  }
-
-  //
-  //
-  //
-
-  void clearCache() {
-    _widgetCache.clear();
-  }
-
-  //
-  //
-  //
-
-  void _cleanUpState(RouteState? routeState) {
-    if (routeState == null) return;
-    final a = builders.where((e) => e.routeState.path == routeState.uri.path).firstOrNull;
-    if (a == null) return;
-    if (a.shouldPrebuild && !a.shouldPreserve) {
-      // Replace with empty widget instead of removing it to avoid rebuilds.
-      _widgetCache[routeState] = const SizedBox.shrink();
-    }
-  }
-
-  //
-  //
-  //
-
   Widget buildScreen(BuildContext context, RouteState routeState) {
-    var config = builders.where((e) => e.routeState.path == routeState.uri.path).firstOrNull;
-    if (config == null) {
-      return const SizedBox.shrink();
-    }
-    if (errorRouteState != null) {
-      config =
-          builders.where((e) => e.routeState.path == errorRouteState?.call().uri.path).firstOrNull;
-    }
-    if (config == null) {
-      return const SizedBox.shrink();
-    }
-    _widgetCache[routeState] = Builder(builder: (context) => config!.builder(context, routeState));
-    return transitionBuilder(
-      context,
-      RouteTransitionBuilderParams(
-        controller: _controller,
-        prevRouteState: _prevRouteState,
-        routeState: routeState,
-        prevSnapshot: _pictureWidget(),
-        child: Builder(
-          builder: (context) {
-            _captureContext = context;
-            return RepaintBoundary(
-              child: Builder(
-                builder: (context) {
-                  return IndexedStack(
-                    index: _widgetCache.keys.toList().indexOf(routeState),
-                    children:
-                        _widgetCache.entries.map((entry) {
-                          final fullRouteState = entry.key;
-                          final widget = entry.value;
-                          return KeyedSubtree(key: ValueKey(fullRouteState), child: widget);
-                        }).toList(),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      ),
+    // return IndexedStack(
+    //   index: _widgetCache.keys.toList().indexOf(routeState),
+    //   children: _widgetCache.values.toList(),
+    // );
+
+    return PrioritizedIndexedStack(
+      indices: [
+        _widgetCache.keys.toList().indexOf(routeState),
+        _widgetCache.keys.toList().indexOf(_prevRouteState),
+      ],
+      children: _widgetCache.values.toList(),
     );
   }
 
@@ -346,7 +261,7 @@ class RouteController {
   //
 
   void dispose() {
-    platformNavigator.removeStateCallback(_onStateChange);
+    platformNavigator.removeStateCallback(pushUri);
     _pRouteState.dispose();
     _widgetCache.clear();
     _controller.clear();
