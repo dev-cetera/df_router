@@ -20,7 +20,7 @@ class RouteState<TExtra extends Object?> {
   late final Uri uri;
   final TExtra? extra;
   final bool skipCurrent;
-  final bool shouldAnimate;
+  final AnimationEffect? animationEffect;
   final TRouteConditionFn? condition;
 
   Key get key => ValueKey(uri.toString());
@@ -30,7 +30,7 @@ class RouteState<TExtra extends Object?> {
     Map<String, String>? queryParameters,
     this.extra,
     this.skipCurrent = true,
-    this.shouldAnimate = false,
+    this.animationEffect,
     this.condition,
   }) {
     final qp = {...uri.queryParameters, ...?queryParameters};
@@ -42,7 +42,7 @@ class RouteState<TExtra extends Object?> {
     Map<String, String>? queryParameters,
     this.extra,
     this.skipCurrent = true,
-    this.shouldAnimate = false,
+    this.animationEffect,
     this.condition,
   }) {
     final uri0 = Uri.parse(pathAndQuery);
@@ -55,7 +55,7 @@ class RouteState<TExtra extends Object?> {
     Map<String, String>? queryParameters,
     TExtra? extra,
     bool? skipCurrent,
-    bool? shouldAnimate,
+    AnimationEffect? animationEffect,
     TRouteConditionFn? condiiton,
   }) {
     return RouteState<TExtra>(
@@ -63,7 +63,7 @@ class RouteState<TExtra extends Object?> {
       queryParameters: queryParameters,
       extra: extra ?? this.extra,
       skipCurrent: skipCurrent ?? this.skipCurrent,
-      shouldAnimate: shouldAnimate ?? this.shouldAnimate,
+      animationEffect: animationEffect ?? this.animationEffect,
       condition: condition ?? this.condition,
     );
   }
@@ -73,7 +73,7 @@ class RouteState<TExtra extends Object?> {
     bool queryParameters = true,
     bool extra = true,
     bool skipCurrent = true,
-    bool shouldAnimate = true,
+    bool animationEffect = true,
     bool condition = true,
   }) {
     return RouteState<TExtra>(
@@ -81,7 +81,7 @@ class RouteState<TExtra extends Object?> {
       queryParameters: queryParameters ? this.uri.queryParameters : null,
       extra: extra ? this.extra : null,
       skipCurrent: skipCurrent ? this.skipCurrent : true,
-      shouldAnimate: shouldAnimate ? false : this.shouldAnimate,
+      animationEffect: animationEffect ? null : this.animationEffect,
       condition: condition ? this.condition : null,
     );
   }

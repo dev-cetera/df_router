@@ -12,12 +12,8 @@
 
 // ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
 
-import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:df_pwa_utils/df_pwa_utils.dart';
 import 'package:df_widgets/_common.dart';
-import 'package:flutter/material.dart';
 
 import '_src.g.dart';
 
@@ -42,6 +38,8 @@ class RouteController {
   final RouteState Function() fallbackRouteState;
   RouteState? _requestedRouteState;
 
+  AnimationEffect nextEffect = NoEffect();
+
   //
   //
   //
@@ -52,13 +50,12 @@ class RouteController {
     required this.fallbackRouteState,
     required this.builders,
   }) {
+    platformNavigator.addStateCallback(pushUri);
+    // Set all the builder output to SizedBox.shrink.
+    resetState();
     _requestedRouteState = getNavigatorRouteState();
     final routeState = initialRouteState?.call() ?? _requestedRouteState ?? fallbackRouteState();
-    for (final builder in builders) {
-      _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
-    }
-    platformNavigator.addStateCallback(pushUri);
-    push(routeState, shouldAnimate: false);
+    push(routeState);
   }
 
   //
@@ -108,7 +105,7 @@ class RouteController {
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
       if (_widgetCache[routeState] is SizedBox) continue;
-      _widgetCache[routeState] = SizedBox.shrink(key: _widgetCache[routeState]?.key);
+      _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
       _pRouteState.notifyListeners();
     }
   }
@@ -118,20 +115,34 @@ class RouteController {
   //
 
   void clearCache() {
-    removeStatesFromCache(_widgetCache.keys);
+    for (final builder in builders) {
+      _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
+    }
   }
 
   //
   //
   //
 
-  // void resetCache() {
-  //   clearCache();
-  //   final routeStates = builders
-  //       .where((builder) => builder.shouldPrebuild)
-  //       .map((e) => e.routeState);
-  //   cacheStates(routeStates);
-  // }
+  void resetState() {
+    clearCache();
+    final routeStates = builders
+        .where((builder) => builder.shouldPrebuild)
+        .map((e) => e.routeState);
+    addStatesToCache(routeStates);
+  }
+
+  //
+  //
+  //
+
+  void _maybeRemoveStaleRoute(RouteState routeState) {
+    final builder = _getBuilderByPath(routeState.uri);
+    if (builder == null) return;
+    if (!builder.shouldPreserve) {
+      _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
+    }
+  }
 
   //
   //
@@ -159,8 +170,9 @@ class RouteController {
     RouteState<TExtra> routeState, {
     RouteState? errorFallback,
     RouteState? fallback,
-    bool shouldAnimate = true,
+    AnimationEffect? animationEffect,
   }) {
+    nextEffect = animationEffect ?? routeState.animationEffect ?? NoEffect();
     print('PUSHING!!!');
     final uri = routeState.uri;
     final skipCurrent = routeState.skipCurrent;
@@ -198,20 +210,16 @@ class RouteController {
       return;
     }
     platformNavigator.pushState(uri);
+
     _prevRouteState = _pRouteState.value;
+
+    // Remove the previous route state from the cache if it is stale.
+
     _pRouteState.value = routeState;
     addStatesToCache([routeState]);
 
-    globalKey.currentState?.setControllerValues(shouldAnimate ? 0.0 : 1.0);
+    globalKey.currentState?.setControllerValues(0.0);
     globalKey.currentState?.forward();
-
-    //controller.startAnimation();
-    // final shouldAnimate = routeState.shouldAnimate;
-    // if (shouldAnimate) {
-    //   Future.microtask(() {
-    //     _controller.reset();
-    //   });
-    // }
   }
 
   //
@@ -249,7 +257,10 @@ class RouteController {
   Widget buildScreen(BuildContext context, RouteState routeState) {
     return AnimationEffectBuilder(
       key: globalKey,
-      effects: [FadeEffect()],
+      effects: [nextEffect],
+      onComplete: () {
+        _maybeRemoveStaleRoute(_prevRouteState);
+      },
       builder: (context, results) {
         final layerEffects = results.map((e) => e.data).toList()[0];
         return PrioritizedIndexedStack(
@@ -287,6 +298,7 @@ class RouteController {
   }
 }
 
+// Assuming AnimationEffect and AnimationLayerEffect are defined as in the provided code
 abstract class AnimationEffect {
   final Duration duration;
   final Curve curve;
@@ -305,8 +317,14 @@ class LayerEffectResult {
 class AnimationEffectBuilder extends StatefulWidget {
   final List<AnimationEffect> effects;
   final Widget Function(BuildContext context, List<LayerEffectResult> results) builder;
+  final VoidCallback? onComplete; // New callback parameter
 
-  const AnimationEffectBuilder({super.key, required this.effects, required this.builder});
+  const AnimationEffectBuilder({
+    super.key,
+    required this.effects,
+    required this.builder,
+    this.onComplete,
+  });
 
   @override
   AnimationEffectBuilderState createState() => AnimationEffectBuilderState();
@@ -316,23 +334,27 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
     with TickerProviderStateMixin {
   late List<AnimationController> controllers;
   late List<Animation<double>> animations;
+  bool _hasTriggeredCompletion = false; // Track if callback has been triggered
 
   void setControllerValues(double value) {
     for (final controller in controllers) {
       controller.value = value;
     }
+    _hasTriggeredCompletion = false; // Reset completion state
   }
 
   void forwardControllers() {
     for (final controller in controllers) {
       controller.forward();
     }
+    _hasTriggeredCompletion = false; // Reset completion state
   }
 
   void reverseControllers() {
     for (final controller in controllers) {
       controller.reverse();
     }
+    _hasTriggeredCompletion = false; // Reset completion state
   }
 
   @override
@@ -344,7 +366,14 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
   void _initializeAnimations() {
     controllers =
         widget.effects.map((config) {
-          return AnimationController(vsync: this, duration: config.duration, value: 1.0);
+          final controller = AnimationController(
+            vsync: this,
+            duration: config.duration,
+            value: 1.0,
+          );
+          // Add status listener to track completion
+          controller.addStatusListener(_handleAnimationStatus);
+          return controller;
         }).toList();
     animations =
         widget.effects.asMap().entries.map((entry) {
@@ -354,11 +383,25 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
         }).toList();
   }
 
+  void _handleAnimationStatus(AnimationStatus status) {
+    // Check if all controllers are completed
+    if (status == AnimationStatus.completed && !_hasTriggeredCompletion) {
+      final allCompleted = controllers.every(
+        (controller) => controller.status == AnimationStatus.completed,
+      );
+      if (allCompleted) {
+        widget.onComplete?.call();
+        _hasTriggeredCompletion = true; // Prevent multiple triggers
+      }
+    }
+  }
+
   @override
   void didUpdateWidget(AnimationEffectBuilder oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.effects.length != oldWidget.effects.length) {
       for (var controller in controllers) {
+        controller.removeStatusListener(_handleAnimationStatus);
         controller.dispose();
       }
       _initializeAnimations();
@@ -372,11 +415,13 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
         }
       }
     }
+    _hasTriggeredCompletion = false; // Reset completion state on widget update
   }
 
   @override
   void dispose() {
     for (final controller in controllers) {
+      controller.removeStatusListener(_handleAnimationStatus);
       controller.dispose();
     }
     super.dispose();
@@ -386,12 +431,14 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
     for (final controller in controllers) {
       controller.value = 0.0;
     }
+    _hasTriggeredCompletion = false; // Reset completion state
   }
 
   void forward() {
     for (final controller in controllers) {
       controller.forward();
     }
+    _hasTriggeredCompletion = false; // Reset completion state
   }
 
   @override

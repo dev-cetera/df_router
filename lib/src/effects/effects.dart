@@ -8,7 +8,7 @@ class NoEffect extends AnimationEffect {
         duration: const Duration(milliseconds: 300),
         curve: Curves.linear,
         data: (context, value) {
-          return [const AnimationLayerEffect(), const AnimationLayerEffect()];
+          return const [AnimationLayerEffect(), AnimationLayerEffect()];
         },
       );
 }
@@ -110,17 +110,16 @@ class TopToBottomEffect extends AnimationEffect {
       );
 }
 
-class GravityBounceEffect extends AnimationEffect {
-  GravityBounceEffect()
+class BounceOutEffect extends AnimationEffect {
+  BounceOutEffect()
     : super(
-        duration: const Duration(milliseconds: 900),
+        duration: Duration.zero, // makes no difference, as the curve is bounceOut
         curve: Curves.bounceOut,
         data: (context, value) {
           final size = MediaQuery.sizeOf(context);
-          final height75 = size.height * 0.75;
           return [
             AnimationLayerEffect(
-              transform: Matrix4.translationValues(0.0, -height75 + height75 * value, 0.0),
+              transform: Matrix4.translationValues(0.0, -size.height + size.height * value, 0.0),
             ),
             const AnimationLayerEffect(ignorePointer: true),
           ];

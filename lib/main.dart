@@ -9,19 +9,25 @@ void main() {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 final class HomeRouteState extends RouteState {
-  HomeRouteState() : super.parse('/home');
+  HomeRouteState() : super.parse('/home', animationEffect: BottomToTopEffect());
 }
 
 final class MessagesRouteState extends RouteState {
-  MessagesRouteState() : super.parse('/messages');
+  MessagesRouteState() : super.parse('/messages', animationEffect: QuickLeftToRightEffect());
 }
 
 final class MessagesRouteState1 extends RouteState {
-  MessagesRouteState1() : super.parse('/messages?key1=value1');
+  MessagesRouteState1()
+    : super.parse('/messages?key1=value1', animationEffect: QuickLeftToRightEffect());
 }
 
 final class MessagesRouteState2 extends RouteState {
-  MessagesRouteState2() : super.parse('/messages?key1=value1', queryParameters: {'key2': 'value2'});
+  MessagesRouteState2()
+    : super.parse(
+        '/messages?key1=value1',
+        queryParameters: {'key2': 'value2'},
+        animationEffect: QuickLeftToRightEffect(),
+      );
 }
 
 class MyApp extends StatelessWidget {
@@ -92,25 +98,6 @@ class MyApp extends StatelessWidget {
             //     ],
             //   );
             // },
-            // transitionBuilder: (context, params) {
-            //   // For iOS.
-            //   // return Expanded(
-            //   //   child: HorizontalSlideFadeTransition(
-            //   //     // Prev is a capture of the previous page.
-            //   //     prev: params.prev,
-            //   //     controller: params.controller,
-            //   //     duration: const Duration(milliseconds: 300),
-            //   //     child: params.child,
-            //   //   ),
-            //   // );
-            //   // For Android.
-            //   return VerticalSlideFadeTransition(
-            //     prev: params.prevSnapshot,
-            //     controller: params.controller,
-            //     duration: const Duration(milliseconds: 300),
-            //     child: params.child,
-            //   );
-            // },
             builders: [
               RouteBuilder(
                 routeState: HomeRouteState(),
@@ -132,7 +119,7 @@ class MyApp extends StatelessWidget {
                 // Pre-builds the widget even if the RouteState is not at the top of
                 // the stack. This is useful for RouteStates that are frequently
                 // navigated to or that takes some time to build.
-                //shouldPrebuild: true,
+                shouldPrebuild: true,
                 builder: (context, state) {
                   return ChatScreen(routeState: state);
                 },
@@ -205,7 +192,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             FilledButton(
               onPressed:
                   () => controller.push(
-                    RouteState.parse('/messages?key1=value1').copyWith(shouldAnimate: true),
+                    RouteState.parse('/messages?key1=value1').copyWith(animationEffect: NoEffect()),
                   ),
               child: const Text('Go to Messages (key1=value1)'),
             ),
@@ -215,7 +202,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   () => controller.push(
                     MessagesRouteState2().copyWith(
                       extra: 'HELLO THERE HOW ARE YOU?',
-                      shouldAnimate: true,
+                      animationEffect: NoEffect(),
                     ),
                   ),
               child: const Text('Go to Messages (key2=value2)'),
@@ -259,7 +246,11 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed: () => controller.push(RouteState.parse('/detail')),
+              onPressed:
+                  () => controller.push(
+                    RouteState.parse('/detail'),
+                    animationEffect: BounceOutEffect(),
+                  ),
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
