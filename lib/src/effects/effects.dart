@@ -5,7 +5,7 @@ import '../_src.g.dart';
 class NoEffect extends AnimationEffect {
   NoEffect()
     : super(
-        duration: const Duration(milliseconds: 300),
+        duration: Duration.zero,
         curve: Curves.linear,
         data: (context, value) {
           return const [AnimationLayerEffect(), AnimationLayerEffect()];
@@ -16,7 +16,7 @@ class NoEffect extends AnimationEffect {
 class FadeEffect extends AnimationEffect {
   FadeEffect()
     : super(
-        duration: const Duration(milliseconds: 5000),
+        duration: const Duration(milliseconds: 375),
         curve: Curves.easeOutSine,
         data: (context, value) {
           return [AnimationLayerEffect(opacity: value), AnimationLayerEffect(opacity: 1.0 - value)];
@@ -113,7 +113,7 @@ class TopToBottomEffect extends AnimationEffect {
 class BounceOutEffect extends AnimationEffect {
   BounceOutEffect()
     : super(
-        duration: Duration.zero, // makes no difference, as the curve is bounceOut
+        duration: const Duration(milliseconds: 375),
         curve: Curves.bounceOut,
         data: (context, value) {
           final size = MediaQuery.sizeOf(context);

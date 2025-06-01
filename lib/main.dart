@@ -11,16 +11,24 @@ void main() {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 final class HomeRouteState extends RouteState {
-  HomeRouteState() : super.parse('/home', animationEffect: BottomToTopEffect());
+  HomeRouteState() : super.parse('/home', animationEffect: CupertinoEffect());
 }
 
 final class MessagesRouteState extends RouteState {
-  MessagesRouteState() : super.parse('/messages', animationEffect: QuickLeftToRightEffect());
+  MessagesRouteState() : super.parse('/messages', animationEffect: CupertinoEffect());
+}
+
+final class ChatRouteState extends RouteState<String> {
+  ChatRouteState() : super.parse('/chat', animationEffect: CupertinoEffect());
 }
 
 final class MessagesRouteState1 extends RouteState {
   MessagesRouteState1()
-    : super.parse('/messages?key1=value1', animationEffect: QuickLeftToRightEffect());
+    : super.parse(
+        '/messages?key1=value1',
+        queryParameters: {'key1': 'value1'},
+        animationEffect: CupertinoEffect(),
+      );
 }
 
 final class MessagesRouteState2 extends RouteState {
@@ -28,8 +36,12 @@ final class MessagesRouteState2 extends RouteState {
     : super.parse(
         '/messages?key1=value1',
         queryParameters: {'key2': 'value2'},
-        animationEffect: QuickLeftToRightEffect(),
+        animationEffect: CupertinoEffect(),
       );
+}
+
+final class HomeDetailRouteState extends RouteState {
+  HomeDetailRouteState() : super.parse('/home_detail', animationEffect: CupertinoEffect());
 }
 
 class MyApp extends StatelessWidget {
@@ -117,7 +129,7 @@ class MyApp extends StatelessWidget {
                 },
               ),
               RouteBuilder<String>(
-                routeState: RouteState<String>.parse('/chat'),
+                routeState: ChatRouteState(),
                 // Pre-builds the widget even if the RouteState is not at the top of
                 // the stack. This is useful for RouteStates that are frequently
                 // navigated to or that takes some time to build.
@@ -127,7 +139,7 @@ class MyApp extends StatelessWidget {
                 },
               ),
               RouteBuilder(
-                routeState: RouteState.parse('/detail'),
+                routeState: HomeDetailRouteState(),
                 shouldPreserve: true,
                 builder: (context, state) {
                   return HomeDetailScreen(routeState: state);
@@ -193,20 +205,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed:
-                  () => controller.push(
-                    RouteState.parse('/messages?key1=value1').copyWith(animationEffect: NoEffect()),
-                  ),
+              onPressed: () => controller.push(MessagesRouteState1()),
               child: const Text('Go to Messages (key1=value1)'),
             ),
 
             FilledButton(
               onPressed:
                   () => controller.push(
-                    MessagesRouteState2().copyWith(
-                      extra: 'HELLO THERE HOW ARE YOU?',
-                      animationEffect: NoEffect(),
-                    ),
+                    MessagesRouteState2().copyWith(extra: 'HELLO THERE HOW ARE YOU?'),
                   ),
               child: const Text('Go to Messages (key2=value2)'),
             ),
@@ -238,30 +244,24 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
           children: [
             TextField(decoration: const InputDecoration(labelText: 'Home Screen'), readOnly: true),
             FilledButton(
-              onPressed: () => controller.push(RouteState.parse('/messages')),
+              onPressed: () => controller.push(MessagesRouteState()),
               child: const Text('Go to Messages (No Query)'),
             ),
             FilledButton(
-              onPressed: () => controller.push(RouteState.parse('/messages?key1=value1')),
+              onPressed: () => controller.push(MessagesRouteState1()),
               child: const Text('Go to Messages (key1=value1)'),
             ),
             FilledButton(
-              onPressed: () => controller.push(RouteState.parse('/messages?key2=value2')),
+              onPressed: () => controller.push(MessagesRouteState2()),
               child: const Text('Go to Messages (key2=value2)'),
             ),
             FilledButton(
-              onPressed:
-                  () => controller.push(
-                    RouteState.parse('/detail'),
-                    animationEffect: BounceOutEffect(),
-                  ),
+              onPressed: () => controller.push(HomeDetailRouteState()),
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
               onPressed:
-                  () => controller.push(
-                    RouteState.parse('/chat').copyWith(extra: 'Hello from Home!'),
-                  ),
+                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Home!')),
               child: const Text('Go to Chat'),
             ),
           ],
@@ -308,22 +308,21 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Text(widget.routeState.extra.toString()),
             FilledButton(
-              onPressed: () => controller.push(RouteState.parse('/home')),
+              onPressed: () => controller.push(HomeRouteState()),
               child: const Text('Go to Home'),
             ),
             FilledButton(
               onPressed:
-                  () => controller.push(
-                    RouteState.parse('/chat').copyWith(extra: 'Hello from Chat!'),
-                  ),
+                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Chat!')),
               child: const Text('Go to Chat (No ID)'),
             ),
             FilledButton(
               onPressed:
                   () => controller.push(
-                    RouteState.parse(
-                      '/chat?id=123',
-                    ).copyWith(queryParameters: {'dude': '22'}, extra: 'Hello from Chat!'),
+                    ChatRouteState().copyWith(
+                      queryParameters: {'dude': '22'},
+                      extra: 'Hello from Chat!',
+                    ),
                   ),
               child: const Text('Go to Chat (ID=123)'),
             ),
@@ -354,11 +353,11 @@ class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FilledButton(
-              onPressed: () => controller.push(RouteState.parse('/home')),
+              onPressed: () => controller.push(HomeRouteState()),
               child: const Text('Back to Home'),
             ),
             FilledButton(
-              onPressed: () => controller.push(RouteState.parse('/messages')),
+              onPressed: () => controller.push(MessagesRouteState()),
               child: const Text('Go to Messages'),
             ),
           ],
@@ -367,22 +366,3 @@ class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
     );
   }
 }
-
-// class ForceRepaint extends SingleChildRenderObjectWidget {
-//   const ForceRepaint({super.key, super.child});
-
-//   @override
-//   RenderObject createRenderObject(BuildContext context) {
-//     return RenderForceRepaint();
-//   }
-// }
-
-// class RenderForceRepaint extends RenderProxyBox {
-//   @override
-//   bool get alwaysNeedsCompositing => true;
-
-//   @override
-//   void paint(PaintingContext context, Offset offset) {
-//     context.paintChild(child!, offset);
-//   }
-// }
