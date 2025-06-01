@@ -126,6 +126,7 @@ class MyApp extends StatelessWidget {
               ),
               RouteBuilder(
                 routeState: RouteState.parse('/detail'),
+                shouldPreserve: true,
                 builder: (context, state) {
                   return HomeDetailScreen(routeState: state);
                 },
