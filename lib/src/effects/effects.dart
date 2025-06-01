@@ -16,7 +16,7 @@ class NoEffect extends AnimationEffect {
 class FadeEffect extends AnimationEffect {
   FadeEffect()
     : super(
-        duration: const Duration(milliseconds: 375),
+        duration: const Duration(milliseconds: 5000),
         curve: Curves.easeOutSine,
         data: (context, value) {
           return [AnimationLayerEffect(opacity: value), AnimationLayerEffect(opacity: 1.0 - value)];

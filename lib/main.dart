@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '/df_router.dart';
 
 void main() {
+  //debugRepaintRainbowEnabled = true;
   runApp(const MyApp());
 }
 
@@ -102,7 +104,7 @@ class MyApp extends StatelessWidget {
               RouteBuilder(
                 routeState: HomeRouteState(),
                 builder: (context, state) {
-                  return HomeScreen(routeState: state);
+                  return HomeScreen(key: state.key, routeState: state);
                 },
               ),
               RouteBuilder(
@@ -365,3 +367,22 @@ class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
     );
   }
 }
+
+// class ForceRepaint extends SingleChildRenderObjectWidget {
+//   const ForceRepaint({super.key, super.child});
+
+//   @override
+//   RenderObject createRenderObject(BuildContext context) {
+//     return RenderForceRepaint();
+//   }
+// }
+
+// class RenderForceRepaint extends RenderProxyBox {
+//   @override
+//   bool get alwaysNeedsCompositing => true;
+
+//   @override
+//   void paint(PaintingContext context, Offset offset) {
+//     context.paintChild(child!, offset);
+//   }
+// }

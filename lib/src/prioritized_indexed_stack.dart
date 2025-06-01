@@ -71,7 +71,7 @@ class PrioritizedIndexedStack extends StatelessWidget {
     this.sizing = StackFit.loose,
     this.indices = const <int>[],
     this.children = const <Widget>[],
-    this.layerEffects, // MODIFIED: Was topLayerTransforms
+    this.layerEffects,
   });
 
   final AlignmentGeometry alignment;
@@ -197,7 +197,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
   List<int?> _indices;
   List<int?> get indices => _indices;
   set indices(List<int?> value) {
-    if (_customListEquals(_indices, value)) return;
+    if (listEquals(_indices, value)) return;
     _indices = value;
     markNeedsPaint();
     markNeedsSemanticsUpdate();
@@ -211,16 +211,6 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     _layerEffects = value;
     markNeedsPaint();
     // Potentially markNeedsSemanticsUpdate if effects change accessibility significantly
-  }
-
-  bool _customListEquals<T>(List<T>? a, List<T>? b) {
-    // Original custom listEquals
-    if (a == null) return b == null;
-    if (b == null || a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 
   RenderBox? _getChildRenderBox(int? targetIndex) {
@@ -238,67 +228,153 @@ class RenderPrioritizedIndexedStack extends RenderStack {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    // MODIFIED: Apply full effects
     if (firstChild == null || _indices.isEmpty) {
       return;
     }
 
+    // Iterate in reverse paint order (bottom-most visible child first, then layers on top)
     for (var stackingOrder = _indices.length - 1; stackingOrder >= 0; stackingOrder--) {
       final childOriginalIndex = _indices[stackingOrder];
       if (childOriginalIndex == null) continue;
 
-      final childToPaint = _getChildRenderBox(childOriginalIndex);
+      final RenderBox? childToPaint = _getChildRenderBox(childOriginalIndex);
       if (childToPaint == null) continue;
 
-      final childParentData = childToPaint.parentData! as StackParentData;
-      final AnimationLayerEffect? effectData = _layerEffects?[stackingOrder];
-      final Offset childStackOffset =
-          offset + childParentData.offset; // Child's origin in stack's global coords
+      final StackParentData childParentData = childToPaint.parentData! as StackParentData;
+      final AnimationLayerEffect? effectData =
+          (_layerEffects != null && stackingOrder < _layerEffects!.length)
+              ? _layerEffects![stackingOrder]
+              : null;
 
-      bool needsSaveLayer = effectData?.hasVisualEffects ?? false;
-      Paint? layerPaint;
+      // This is the child's position as determined by the Stack layout, relative to the Stack's origin.
+      final Offset childStackLayoutOffset = childParentData.offset;
+      // This is the absolute offset where painting related to this child will start.
+      final Offset absoluteChildPaintOrigin = offset + childStackLayoutOffset;
 
-      if (needsSaveLayer) {
-        layerPaint = Paint();
+      // --- Layer for visual effects (opacity, colorFilter, imageFilter) ---
+      bool needsSaveLayerForVisualEffects =
+          (effectData?.opacity != null && effectData!.opacity! < 1.0) ||
+          effectData?.colorFilter != null ||
+          effectData?.imageFilter != null;
+      Paint? visualEffectsPaint;
+
+      if (needsSaveLayerForVisualEffects) {
+        visualEffectsPaint = Paint();
         if (effectData!.opacity != null) {
-          // Apply opacity to the layer: color's alpha channel.
-          // Use an opaque color with desired alpha to avoid blending issues if only opacity is set.
-          layerPaint.color = Color.fromRGBO(0, 0, 0, effectData.opacity!);
+          // Ensure opacity is applied correctly.
+          // Multiplying alpha by 255 for the Paint's color.
+          visualEffectsPaint.color = Color.fromRGBO(0, 0, 0, effectData.opacity!);
         }
         if (effectData.colorFilter != null) {
-          layerPaint.colorFilter = effectData.colorFilter;
+          visualEffectsPaint.colorFilter = effectData.colorFilter;
         }
         if (effectData.imageFilter != null) {
-          layerPaint.imageFilter = effectData.imageFilter;
+          visualEffectsPaint.imageFilter = effectData.imageFilter;
         }
-        // The bounds for saveLayer should be the child's bounds *before* its own transform.
-        // If the child paints outside its nominal 'size', this might clip.
-        // Using null for bounds saves the entire current layer, which is safer but potentially less performant.
-        // For now, let's use child's bounds.
-        Rect layerBounds = childStackOffset & childToPaint.size;
-        context.canvas.saveLayer(layerBounds, layerPaint);
+        // The saveLayer is established at the child's absolute position.
+        // Subsequent drawing operations within this layer are relative to this position.
+        context.canvas.saveLayer(absoluteChildPaintOrigin & childToPaint.size, visualEffectsPaint);
       }
 
-      final Matrix4? transform = effectData?.transform;
-      if (transform != null) {
-        context.canvas.save();
-        // Translate to the child's position *within the current canvas context*
-        // (which might be inside a saveLayer already offset).
-        // Then apply the transform, then paint child at (0,0) in its new transformed system.
-        context.canvas.translate(childStackOffset.dx, childStackOffset.dy);
-        context.canvas.transform(transform.storage);
-        context.paintChild(childToPaint, Offset.zero);
-        context.canvas.restore();
+      // --- Apply transform using pushTransform ---
+      final Matrix4? animationTransform = effectData?.transform;
+
+      // The offset at which the child should be painted by the painter callback of pushTransform.
+      // If we used saveLayer, we're already "at" the child's position, so paint at Offset.zero within the layer.
+      // Otherwise, paint at the child's layout offset relative to the current context (which includes the stack's `offset`).
+      final Offset offsetForPainter =
+          needsSaveLayerForVisualEffects ? Offset.zero : absoluteChildPaintOrigin;
+
+      if (animationTransform != null && !animationTransform.isIdentity()) {
+        context.pushTransform(
+          childToPaint
+              .needsCompositing, // Crucial: hints to Flutter to use a TransformLayer if needed
+          offsetForPainter, // The offset passed to the painter callback
+          animationTransform, // The transformation matrix
+          (PaintingContext paintingContext, Offset painterOffset) {
+            // painterOffset will be the same as offsetForPainter.
+            // The canvas is already transformed by animationTransform.
+            // We paint the child at painterOffset within this transformed coordinate system.
+            paintingContext.paintChild(childToPaint, painterOffset);
+          },
+        );
       } else {
-        // No transform, just paint the child at its stack position.
-        context.paintChild(childToPaint, childStackOffset);
+        // No animationTransform or it's an identity matrix
+        // Paint the child directly at the calculated offset.
+        // If inside a saveLayer, this offset is Offset.zero (relative to layer's origin).
+        // Otherwise, it's absoluteChildPaintOrigin.
+        context.paintChild(childToPaint, offsetForPainter);
       }
 
-      if (needsSaveLayer) {
+      if (needsSaveLayerForVisualEffects) {
         context.canvas.restore(); // Restore from saveLayer
       }
     }
   }
+
+  // @override
+  // void paint(PaintingContext context, Offset offset) {
+  //   // MODIFIED: Apply full effects
+  //   if (firstChild == null || _indices.isEmpty) {
+  //     return;
+  //   }
+
+  //   for (var stackingOrder = _indices.length - 1; stackingOrder >= 0; stackingOrder--) {
+  //     final childOriginalIndex = _indices[stackingOrder];
+  //     if (childOriginalIndex == null) continue;
+
+  //     final childToPaint = _getChildRenderBox(childOriginalIndex);
+  //     if (childToPaint == null) continue;
+
+  //     final childParentData = childToPaint.parentData! as StackParentData;
+  //     final AnimationLayerEffect? effectData = _layerEffects?[stackingOrder];
+  //     final Offset childStackOffset =
+  //         offset + childParentData.offset; // Child's origin in stack's global coords
+
+  //     bool needsSaveLayer = effectData?.hasVisualEffects ?? false;
+  //     Paint? layerPaint;
+
+  //     if (needsSaveLayer) {
+  //       layerPaint = Paint();
+  //       if (effectData!.opacity != null) {
+  //         // Apply opacity to the layer: color's alpha channel.
+  //         // Use an opaque color with desired alpha to avoid blending issues if only opacity is set.
+  //         layerPaint.color = Color.fromRGBO(0, 0, 0, effectData.opacity!);
+  //       }
+  //       if (effectData.colorFilter != null) {
+  //         layerPaint.colorFilter = effectData.colorFilter;
+  //       }
+  //       if (effectData.imageFilter != null) {
+  //         layerPaint.imageFilter = effectData.imageFilter;
+  //       }
+  //       // The bounds for saveLayer should be the child's bounds *before* its own transform.
+  //       // If the child paints outside its nominal 'size', this might clip.
+  //       // Using null for bounds saves the entire current layer, which is safer but potentially less performant.
+  //       // For now, let's use child's bounds.
+  //       Rect layerBounds = childStackOffset & childToPaint.size;
+  //       context.canvas.saveLayer(layerBounds, layerPaint);
+  //     }
+
+  //     final Matrix4? transform = effectData?.transform;
+  //     if (transform != null) {
+  //       context.canvas.save();
+  //       // Translate to the child's position *within the current canvas context*
+  //       // (which might be inside a saveLayer already offset).
+  //       // Then apply the transform, then paint child at (0,0) in its new transformed system.
+  //       context.canvas.translate(childStackOffset.dx, childStackOffset.dy);
+  //       context.canvas.transform(transform.storage);
+  //       context.paintChild(childToPaint, Offset.zero);
+  //       context.canvas.restore();
+  //     } else {
+  //       // No transform, just paint the child at its stack position.
+  //       context.paintChild(childToPaint, childStackOffset);
+  //     }
+
+  //     if (needsSaveLayer) {
+  //       context.canvas.restore(); // Restore from saveLayer
+  //     }
+  //   }
+  // }
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {

@@ -23,9 +23,6 @@ class RouteManager extends StatelessWidget {
   final void Function(RouteController controller)? onControllerCreated;
   final List<RouteBuilder> builders;
 
-  /// Use this builder for wrapping the main content of the app. This is useful
-  /// to add common widgets like a navigation bar, drawer, or any other
-  /// widget that should be present on all screens.
   final TRouteWrapperFn? wrapper;
 
   const RouteManager({
