@@ -32,6 +32,36 @@ class RouteBuilder<TExtra extends Object?> {
   }) {
     this.builder = (context, state) => builder(context, state.cast<TExtra>());
   }
+
+  RouteBuilder<TExtra> copyWith({
+    RouteState<TExtra>? routeState,
+    bool? shouldPreserve,
+    bool? shouldPrebuild,
+    TRouteWidgetBuilder<TExtra>? builder,
+    TRouteConditionFn? condition,
+  }) {
+    return RouteBuilder<TExtra>(
+      routeState: routeState ?? this.routeState,
+      shouldPreserve: shouldPreserve ?? this.shouldPreserve,
+      shouldPrebuild: shouldPrebuild ?? this.shouldPrebuild,
+      builder: builder ?? this.builder as TRouteWidgetBuilder<TExtra>,
+      condition: condition ?? this.condition,
+    );
+  }
+
+  RouteBuilder<TExtra> copyWithout({
+    bool shouldPreserve = true,
+    bool shouldPrebuild = true,
+    bool condition = true,
+  }) {
+    return RouteBuilder<TExtra>(
+      routeState: this.routeState,
+      shouldPreserve: shouldPreserve ? false : this.shouldPreserve,
+      shouldPrebuild: shouldPrebuild ? false : this.shouldPrebuild,
+      builder: (context, state) => this.builder(context, state) as RouteWidgetMixin<TExtra>,
+      condition: condition ? null : this.condition,
+    );
+  }
 }
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░

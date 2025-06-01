@@ -234,6 +234,7 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
           spacing: 8.0,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            TextField(decoration: const InputDecoration(labelText: 'Home Screen'), readOnly: true),
             FilledButton(
               onPressed: () => controller.push(RouteState.parse('/messages')),
               child: const Text('Go to Messages (No Query)'),

@@ -263,6 +263,7 @@ class RouteController {
       },
       builder: (context, results) {
         final layerEffects = results.map((e) => e.data).toList()[0];
+
         return PrioritizedIndexedStack(
           indices: [
             _widgetCache.keys.toList().indexOf(routeState),
@@ -317,7 +318,7 @@ class LayerEffectResult {
 class AnimationEffectBuilder extends StatefulWidget {
   final List<AnimationEffect> effects;
   final Widget Function(BuildContext context, List<LayerEffectResult> results) builder;
-  final VoidCallback? onComplete; // New callback parameter
+  final VoidCallback? onComplete;
 
   const AnimationEffectBuilder({
     super.key,
@@ -327,7 +328,7 @@ class AnimationEffectBuilder extends StatefulWidget {
   });
 
   @override
-  AnimationEffectBuilderState createState() => AnimationEffectBuilderState();
+  State<AnimationEffectBuilder> createState() => AnimationEffectBuilderState();
 }
 
 class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
@@ -406,7 +407,7 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
       }
       _initializeAnimations();
     } else {
-      for (int i = 0; i < widget.effects.length; i++) {
+      for (var i = 0; i < widget.effects.length; i++) {
         if (widget.effects[i].duration != oldWidget.effects[i].duration) {
           controllers[i].duration = widget.effects[i].duration;
         }
