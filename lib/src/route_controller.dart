@@ -12,6 +12,9 @@
 
 // ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
 
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:df_pwa_utils/df_pwa_utils.dart';
 import 'package:df_widgets/_common.dart';
 import 'package:flutter/material.dart';
@@ -33,11 +36,8 @@ class RouteController {
   final _widgetCache = <RouteState, Widget>{};
 
   late final List<RouteBuilder> builders;
-  final bool shouldCapture;
-  final TRouteTransitionBuilder transitionBuilder;
 
   late RouteState _prevRouteState = _pRouteState.value;
-  final _controller = TransitionController();
   final RouteState Function()? errorRouteState;
   final RouteState Function() fallbackRouteState;
   RouteState? _requestedRouteState;
@@ -51,8 +51,6 @@ class RouteController {
     this.errorRouteState,
     required this.fallbackRouteState,
     required this.builders,
-    this.shouldCapture = true,
-    required this.transitionBuilder,
   }) {
     _requestedRouteState = getNavigatorRouteState();
     final routeState = initialRouteState?.call() ?? _requestedRouteState ?? fallbackRouteState();
@@ -204,10 +202,9 @@ class RouteController {
     _pRouteState.value = routeState;
     addStatesToCache([routeState]);
 
-    if (shouldAnimate) {
-      globalKey.currentState?.controller.value = 0.0;
-      globalKey.currentState?.controller.forward();
-    }
+    globalKey.currentState?.setControllerValues(shouldAnimate ? 0.0 : 1.0);
+    globalKey.currentState?.forward();
+
     //controller.startAnimation();
     // final shouldAnimate = routeState.shouldAnimate;
     // if (shouldAnimate) {
@@ -247,28 +244,20 @@ class RouteController {
   //
   //
 
-  final globalKey = GlobalKey<SingleValueAnimationBuilderState>();
+  final globalKey = GlobalKey<AnimationEffectBuilderState>();
 
   Widget buildScreen(BuildContext context, RouteState routeState) {
-    return SingleValueAnimationBuilder(
+    return AnimationEffectBuilder(
       key: globalKey,
-      duration: Durations.medium3,
-      curve: Curves.easeInOutCubicEmphasized,
-      builder: (context, value, size) {
+      effects: [FadeEffect()],
+      builder: (context, results) {
+        final layerEffects = results.map((e) => e.data).toList()[0];
         return PrioritizedIndexedStack(
           indices: [
             _widgetCache.keys.toList().indexOf(routeState),
             _widgetCache.keys.toList().indexOf(_prevRouteState),
           ],
-
-          topLayerEffects: {
-            0: LayerEffectData(
-              transform: Matrix4.translationValues(size.width - size.width * value, 0, 0),
-            ),
-            1: LayerEffectData(
-              transform: Matrix4.translationValues(-size.width * value * 0.5, 0, 0),
-            ),
-          },
+          layerEffects: layerEffects,
           children: _widgetCache.values.toList(),
         );
       },
@@ -283,7 +272,6 @@ class RouteController {
     platformNavigator.removeStateCallback(pushUri);
     _pRouteState.dispose();
     _widgetCache.clear();
-    _controller.clear();
   }
 
   //
@@ -299,57 +287,127 @@ class RouteController {
   }
 }
 
-class SingleValueAnimationBuilder extends StatefulWidget {
+abstract class AnimationEffect {
   final Duration duration;
   final Curve curve;
-  final Widget Function(BuildContext context, double value, Size size) builder;
+  final List<AnimationLayerEffect> Function(BuildContext context, double value) data;
 
-  const SingleValueAnimationBuilder({
-    super.key,
-    required this.duration,
-    this.curve = Curves.linear,
-    required this.builder,
-  });
-
-  @override
-  SingleValueAnimationBuilderState createState() => SingleValueAnimationBuilderState();
+  const AnimationEffect({required this.duration, required this.curve, required this.data});
 }
 
-class SingleValueAnimationBuilderState extends State<SingleValueAnimationBuilder>
-    with SingleTickerProviderStateMixin {
-  late AnimationController controller;
-  late Animation<double> _animation;
+class LayerEffectResult {
+  final List<AnimationLayerEffect> data;
+  final double value;
+
+  LayerEffectResult({required this.data, required this.value});
+}
+
+class AnimationEffectBuilder extends StatefulWidget {
+  final List<AnimationEffect> effects;
+  final Widget Function(BuildContext context, List<LayerEffectResult> results) builder;
+
+  const AnimationEffectBuilder({super.key, required this.effects, required this.builder});
+
+  @override
+  AnimationEffectBuilderState createState() => AnimationEffectBuilderState();
+}
+
+class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
+    with TickerProviderStateMixin {
+  late List<AnimationController> controllers;
+  late List<Animation<double>> animations;
+
+  void setControllerValues(double value) {
+    for (final controller in controllers) {
+      controller.value = value;
+    }
+  }
+
+  void forwardControllers() {
+    for (final controller in controllers) {
+      controller.forward();
+    }
+  }
+
+  void reverseControllers() {
+    for (final controller in controllers) {
+      controller.reverse();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    controller = AnimationController(vsync: this, duration: widget.duration, value: 1.0);
-    _animation = CurvedAnimation(parent: controller, curve: widget.curve);
+    _initializeAnimations();
+  }
+
+  void _initializeAnimations() {
+    controllers =
+        widget.effects.map((config) {
+          return AnimationController(vsync: this, duration: config.duration, value: 1.0);
+        }).toList();
+    animations =
+        widget.effects.asMap().entries.map((entry) {
+          final index = entry.key;
+          final config = entry.value;
+          return CurvedAnimation(parent: controllers[index], curve: config.curve);
+        }).toList();
   }
 
   @override
-  void didUpdateWidget(SingleValueAnimationBuilder oldWidget) {
+  void didUpdateWidget(AnimationEffectBuilder oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.duration != oldWidget.duration) {
-      controller.duration = widget.duration;
-    }
-    if (widget.curve != oldWidget.curve) {
-      _animation = CurvedAnimation(parent: controller, curve: widget.curve);
+    if (widget.effects.length != oldWidget.effects.length) {
+      for (var controller in controllers) {
+        controller.dispose();
+      }
+      _initializeAnimations();
+    } else {
+      for (int i = 0; i < widget.effects.length; i++) {
+        if (widget.effects[i].duration != oldWidget.effects[i].duration) {
+          controllers[i].duration = widget.effects[i].duration;
+        }
+        if (widget.effects[i].curve != oldWidget.effects[i].curve) {
+          animations[i] = CurvedAnimation(parent: controllers[i], curve: widget.effects[i].curve);
+        }
+      }
     }
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    for (final controller in controllers) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  void reset() {
+    for (final controller in controllers) {
+      controller.value = 0.0;
+    }
+  }
+
+  void forward() {
+    for (final controller in controllers) {
+      controller.forward();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _animation,
+      animation: Listenable.merge(animations),
       builder: (context, child) {
-        return widget.builder(context, _animation.value, MediaQuery.sizeOf(context));
+        final results =
+            animations.asMap().entries.map((entry) {
+              final index = entry.key;
+              final animation = entry.value;
+              final data = widget.effects[index].data(context, animation.value);
+              final value = animation.value;
+              return LayerEffectResult(data: data, value: value);
+            }).toList();
+        return widget.builder(context, results);
       },
     );
   }

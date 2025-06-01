@@ -1,19 +1,21 @@
+// ignore_for_file: omit_local_variable_types
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:collection'; // For LinkedHashSet
-import 'package:flutter/foundation.dart' show mapEquals, immutable; // For mapEquals and @immutable
+import 'package:flutter/foundation.dart' show immutable, listEquals; // For mapEquals and @immutable
 import 'dart:ui' as ui show ImageFilter; // For ImageFilter type
 
 // --- NEW Data Class for Effects ---
 @immutable
-class LayerEffectData {
+class AnimationLayerEffect {
   final Matrix4? transform;
   final double? opacity; // 0.0 (transparent) to 1.0 (opaque)
   final ColorFilter? colorFilter;
   final ui.ImageFilter? imageFilter; // Note: import 'dart:ui' as ui;
   final bool? ignorePointer; // If true, this layer won't be hittable
 
-  const LayerEffectData({
+  const AnimationLayerEffect({
     this.transform,
     this.opacity,
     this.colorFilter,
@@ -40,7 +42,7 @@ class LayerEffectData {
     if (identical(this, other)) return true;
     // Note: Matrix4.operator== is by identity. This is usually fine for animation
     // where new matrices are generated. If value-equality is needed, deep compare.
-    return other is LayerEffectData &&
+    return other is AnimationLayerEffect &&
         other.transform == transform &&
         other.opacity == opacity &&
         other.colorFilter == colorFilter && // Assumes ColorFilter has good ==
@@ -67,23 +69,23 @@ class PrioritizedIndexedStack extends StatelessWidget {
     this.textDirection,
     this.clipBehavior = Clip.hardEdge,
     this.sizing = StackFit.loose,
-    this.indices = const <int?>[],
+    this.indices = const <int>[],
     this.children = const <Widget>[],
-    this.topLayerEffects, // MODIFIED: Was topLayerTransforms
+    this.layerEffects, // MODIFIED: Was topLayerTransforms
   });
 
   final AlignmentGeometry alignment;
   final TextDirection? textDirection;
   final Clip clipBehavior;
   final StackFit sizing;
-  final List<int?> indices;
+  final List<int> indices;
   final List<Widget> children;
 
   /// Optional effects to apply to the top layers of the stack.
   /// The key is the stacking order (0 for the topmost child specified by `indices`,
   /// 1 for the child below it, and so on).
   /// The value is the `LayerEffectData` describing transformations, opacity, etc.
-  final Map<int, LayerEffectData>? topLayerEffects; // MODIFIED
+  final List<AnimationLayerEffect>? layerEffects; // MODIFIED
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +116,7 @@ class PrioritizedIndexedStack extends StatelessWidget {
       clipBehavior: clipBehavior,
       sizing: sizing,
       indices: effectiveIndices,
-      topLayerEffects: topLayerEffects, // MODIFIED
+      layerEffects: layerEffects,
       children: wrappedChildren,
     );
   }
@@ -127,12 +129,12 @@ class _RawPrioritizedIndexedStack extends Stack {
     super.clipBehavior,
     required StackFit sizing,
     required this.indices,
-    this.topLayerEffects, // MODIFIED
+    this.layerEffects, // MODIFIED
     super.children,
   }) : super(fit: sizing);
 
   final List<int?> indices;
-  final Map<int, LayerEffectData>? topLayerEffects; // MODIFIED
+  final List<AnimationLayerEffect>? layerEffects; // MODIFIED
 
   @override
   RenderPrioritizedIndexedStack createRenderObject(BuildContext context) {
@@ -146,7 +148,7 @@ class _RawPrioritizedIndexedStack extends Stack {
     );
     return RenderPrioritizedIndexedStack(
       indices: indices,
-      topLayerEffects: topLayerEffects, // MODIFIED
+      layerEffects: layerEffects, // MODIFIED
       alignment: alignment,
       textDirection: textDirection ?? Directionality.maybeOf(context),
       clipBehavior: clipBehavior,
@@ -166,8 +168,8 @@ class _RawPrioritizedIndexedStack extends Stack {
     );
     renderObject
       ..indices = indices
-      ..topLayerEffects =
-          topLayerEffects // MODIFIED
+      ..layerEffects =
+          layerEffects // MODIFIED
       ..alignment = alignment
       ..textDirection = textDirection ?? Directionality.maybeOf(context)
       ..clipBehavior = clipBehavior
@@ -183,14 +185,14 @@ class _RawPrioritizedIndexedStack extends Stack {
 class RenderPrioritizedIndexedStack extends RenderStack {
   RenderPrioritizedIndexedStack({
     required List<int?> indices,
-    Map<int, LayerEffectData>? topLayerEffects, // MODIFIED
+    List<AnimationLayerEffect>? layerEffects, // MODIFIED
     super.children,
     super.alignment,
     super.textDirection,
     super.fit,
     super.clipBehavior,
   }) : _indices = indices,
-       _topLayerEffects = topLayerEffects; // MODIFIED
+       _layerEffects = layerEffects; // MODIFIED
 
   List<int?> _indices;
   List<int?> get indices => _indices;
@@ -202,11 +204,11 @@ class RenderPrioritizedIndexedStack extends RenderStack {
   }
 
   // MODIFIED: Property for LayerEffectData
-  Map<int, LayerEffectData>? _topLayerEffects;
-  Map<int, LayerEffectData>? get topLayerEffects => _topLayerEffects;
-  set topLayerEffects(Map<int, LayerEffectData>? value) {
-    if (mapEquals(_topLayerEffects, value)) return; // Relies on LayerEffectData.==
-    _topLayerEffects = value;
+  List<AnimationLayerEffect>? _layerEffects;
+  List<AnimationLayerEffect>? get layerEffects => _layerEffects;
+  set layerEffects(List<AnimationLayerEffect>? value) {
+    if (listEquals(_layerEffects, value)) return; // Relies on LayerEffectData.==
+    _layerEffects = value;
     markNeedsPaint();
     // Potentially markNeedsSemanticsUpdate if effects change accessibility significantly
   }
@@ -249,7 +251,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       if (childToPaint == null) continue;
 
       final childParentData = childToPaint.parentData! as StackParentData;
-      final LayerEffectData? effectData = _topLayerEffects?[stackingOrder];
+      final AnimationLayerEffect? effectData = _layerEffects?[stackingOrder];
       final Offset childStackOffset =
           offset + childParentData.offset; // Child's origin in stack's global coords
 
@@ -312,7 +314,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       final childToTest = _getChildRenderBox(childOriginalIndex);
       if (childToTest == null) continue;
 
-      final LayerEffectData? effectData = _topLayerEffects?[stackingOrder];
+      final AnimationLayerEffect? effectData = _layerEffects?[stackingOrder];
 
       // Check for ignorePointer or fully transparent
       if (effectData?.ignorePointer == true ||
@@ -328,6 +330,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       if (transform != null) {
         hitted = result.addWithPaintTransform(
           transform: transform,
+
           position: position + childStackOffset,
           hitTest: (BoxHitTestResult hitTestResult, Offset transformedLocalPosition) {
             return childToTest.hitTest(hitTestResult, position: transformedLocalPosition);
@@ -355,9 +358,9 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<List<int?>>('indices (effective)', _indices));
     properties.add(
-      DiagnosticsProperty<Map<int, LayerEffectData>>(
-        'topLayerEffects',
-        _topLayerEffects,
+      DiagnosticsProperty<List<AnimationLayerEffect>>(
+        'layerEffects',
+        _layerEffects,
         defaultValue: null,
       ),
     ); // MODIFIED

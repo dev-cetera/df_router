@@ -23,8 +23,6 @@ class RouteManager extends StatelessWidget {
   final void Function(RouteController controller)? onControllerCreated;
   final List<RouteBuilder> builders;
 
-  final TRouteTransitionBuilder? transitionBuilder;
-
   /// Use this builder for wrapping the main content of the app. This is useful
   /// to add common widgets like a navigation bar, drawer, or any other
   /// widget that should be present on all screens.
@@ -37,7 +35,6 @@ class RouteManager extends StatelessWidget {
     this.errorState,
     this.onControllerCreated,
     required this.builders,
-    this.transitionBuilder,
     this.wrapper,
   });
 
@@ -48,16 +45,6 @@ class RouteManager extends StatelessWidget {
       fallbackRouteState: fallbackRouteState,
       errorRouteState: errorState,
       builders: builders,
-      shouldCapture: true,
-      transitionBuilder: (context, params) {
-        return transitionBuilder?.call(context, params) ??
-            HorizontalSlideFadeTransition(
-              prev: const SizedBox(),
-              controller: params.controller,
-              duration: const Duration(milliseconds: 275),
-              child: params.child,
-            );
-      },
     );
 
     onControllerCreated?.call(controller);
