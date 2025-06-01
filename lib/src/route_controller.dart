@@ -14,8 +14,6 @@
 
 import 'package:df_pwa_utils/df_pwa_utils.dart';
 import 'package:df_widgets/_common.dart';
-import 'package:flutter/foundation.dart';
-
 import 'package:flutter/material.dart';
 
 import '_src.g.dart';
@@ -62,7 +60,7 @@ class RouteController {
       _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
     }
     platformNavigator.addStateCallback(pushUri);
-    push(routeState);
+    push(routeState, shouldAnimate: false);
   }
 
   //
@@ -163,6 +161,7 @@ class RouteController {
     RouteState<TExtra> routeState, {
     RouteState? errorFallback,
     RouteState? fallback,
+    bool shouldAnimate = true,
   }) {
     print('PUSHING!!!');
     final uri = routeState.uri;
@@ -204,7 +203,12 @@ class RouteController {
     _prevRouteState = _pRouteState.value;
     _pRouteState.value = routeState;
     addStatesToCache([routeState]);
-    myTransition.triggerTransition();
+
+    if (shouldAnimate) {
+      globalKey.currentState?.controller.value = 0.0;
+      globalKey.currentState?.controller.forward();
+    }
+    //controller.startAnimation();
     // final shouldAnimate = routeState.shouldAnimate;
     // if (shouldAnimate) {
     //   Future.microtask(() {
@@ -243,23 +247,31 @@ class RouteController {
   //
   //
 
-  final myTransition = PISTopLayerSlideTransition();
+  final globalKey = GlobalKey<SingleValueAnimationBuilderState>();
 
   Widget buildScreen(BuildContext context, RouteState routeState) {
-    // return IndexedStack(
-    //   index: _widgetCache.keys.toList().indexOf(routeState),
-    //   children: _widgetCache.values.toList(),
-    // );
-    print('!!!!');
-    myTransition.triggerTransition();
-    return AnimatedStackWrapper(
-      indices: [
-        _widgetCache.keys.toList().indexOf(routeState),
-        _widgetCache.keys.toList().indexOf(_prevRouteState),
-      ],
+    return SingleValueAnimationBuilder(
+      key: globalKey,
+      duration: Durations.medium3,
+      curve: Curves.easeInOutCubicEmphasized,
+      builder: (context, value, size) {
+        return PrioritizedIndexedStack(
+          indices: [
+            _widgetCache.keys.toList().indexOf(routeState),
+            _widgetCache.keys.toList().indexOf(_prevRouteState),
+          ],
 
-      transition: PISTopLayerSlideTransition(),
-      children: _widgetCache.values.toList(),
+          topLayerEffects: {
+            0: LayerEffectData(
+              transform: Matrix4.translationValues(size.width - size.width * value, 0, 0),
+            ),
+            1: LayerEffectData(
+              transform: Matrix4.translationValues(-size.width * value * 0.5, 0, 0),
+            ),
+          },
+          children: _widgetCache.values.toList(),
+        );
+      },
     );
   }
 
@@ -284,5 +296,61 @@ class RouteController {
       throw FlutterError('No RouteStateControllerProvider found in context');
     }
     return provider.controller;
+  }
+}
+
+class SingleValueAnimationBuilder extends StatefulWidget {
+  final Duration duration;
+  final Curve curve;
+  final Widget Function(BuildContext context, double value, Size size) builder;
+
+  const SingleValueAnimationBuilder({
+    super.key,
+    required this.duration,
+    this.curve = Curves.linear,
+    required this.builder,
+  });
+
+  @override
+  SingleValueAnimationBuilderState createState() => SingleValueAnimationBuilderState();
+}
+
+class SingleValueAnimationBuilderState extends State<SingleValueAnimationBuilder>
+    with SingleTickerProviderStateMixin {
+  late AnimationController controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = AnimationController(vsync: this, duration: widget.duration, value: 1.0);
+    _animation = CurvedAnimation(parent: controller, curve: widget.curve);
+  }
+
+  @override
+  void didUpdateWidget(SingleValueAnimationBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      controller.duration = widget.duration;
+    }
+    if (widget.curve != oldWidget.curve) {
+      _animation = CurvedAnimation(parent: controller, curve: widget.curve);
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return widget.builder(context, _animation.value, MediaQuery.sizeOf(context));
+      },
+    );
   }
 }
