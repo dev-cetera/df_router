@@ -36,9 +36,10 @@ class RouteController {
   late RouteState _prevRouteState = _pRouteState.value;
   final RouteState Function()? errorRouteState;
   final RouteState Function() fallbackRouteState;
-  RouteState? _requestedRouteState;
+  RouteState? _requested;
+  RouteState? get requested => _requested;
 
-  AnimationEffect nextEffect = NoEffect();
+  AnimationEffect nextEffect = const NoEffect();
 
   //
   //
@@ -53,8 +54,8 @@ class RouteController {
     platformNavigator.addStateCallback(pushUri);
     // Set all the builder output to SizedBox.shrink.
     resetState();
-    _requestedRouteState = getNavigatorRouteState();
-    final routeState = initialRouteState?.call() ?? _requestedRouteState ?? fallbackRouteState();
+    _requested = current;
+    final routeState = initialRouteState?.call() ?? _requested ?? fallbackRouteState();
     push(routeState);
   }
 
@@ -62,13 +63,13 @@ class RouteController {
   //
   //
 
-  RouteState getNavigatorOrFallbackRouteState() => _requestedRouteState ?? fallbackRouteState();
+  RouteState getNavigatorOrFallbackRouteState() => _requested ?? fallbackRouteState();
 
   //
   //
   //
 
-  RouteState? getNavigatorRouteState() {
+  RouteState? get current {
     final url = platformNavigator.getCurrentUrl();
     if (url == null) {
       return null;
@@ -80,7 +81,7 @@ class RouteController {
   //
   //
 
-  void addStatesToCache(Iterable<RouteState> routeStates) {
+  void addToCache(Iterable<RouteState> routeStates) {
     for (final routeState in routeStates) {
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
@@ -100,7 +101,7 @@ class RouteController {
   //
   //
 
-  void removeStatesFromCache(Iterable<RouteState> routeStates) {
+  void removeFromCache(Iterable<RouteState> routeStates) {
     for (final routeState in routeStates) {
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
@@ -129,7 +130,7 @@ class RouteController {
     final routeStates = builders
         .where((builder) => builder.shouldPrebuild)
         .map((e) => e.routeState);
-    addStatesToCache(routeStates);
+    addToCache(routeStates);
   }
 
   //
@@ -156,12 +157,40 @@ class RouteController {
   //
   //
 
-  void pushBack({RouteState? fallback, AnimationEffect? animationEffect}) {
+  void pushBack1({
+    RouteState? fallback,
+    AnimationEffect? animationEffect = const QuickForwardEffect(),
+  }) {
+    pushBack(fallback: fallback, animationEffect: animationEffect);
+  }
+
+  //
+  //
+  //
+
+  void pushBack({RouteState? fallback, AnimationEffect? animationEffect = const NoEffect()}) {
     if (_prevRouteState.path == '/') {
       push(fallback ?? fallbackRouteState(), animationEffect: animationEffect);
     } else {
       push(_prevRouteState, animationEffect: animationEffect);
     }
+  }
+
+  //
+  //
+  //
+
+  void push1({
+    RouteState? errorFallback,
+    RouteState? fallback,
+    AnimationEffect? animationEffect = const QuickForwardEffect(),
+  }) {
+    push(
+      routeState,
+      errorFallback: errorFallback,
+      fallback: fallback,
+      animationEffect: animationEffect,
+    );
   }
 
   //
@@ -174,7 +203,7 @@ class RouteController {
     RouteState? fallback,
     AnimationEffect? animationEffect,
   }) {
-    nextEffect = animationEffect ?? routeState.animationEffect ?? NoEffect();
+    nextEffect = animationEffect ?? routeState.animationEffect;
     final uri = routeState.uri;
     final skipCurrent = routeState.skipCurrent;
     if (skipCurrent && _pRouteState.value.uri == uri) {
@@ -217,7 +246,7 @@ class RouteController {
     // Remove the previous route state from the cache if it is stale.
 
     _pRouteState.value = routeState;
-    addStatesToCache([routeState]);
+    addToCache([routeState]);
     _globalKey.currentState?.setEffects([nextEffect]);
     _globalKey.currentState?.restart();
   }

@@ -20,7 +20,7 @@ class RouteState<TExtra extends Object?> {
   late final Uri uri;
   final TExtra? extra;
   final bool skipCurrent;
-  final AnimationEffect? animationEffect;
+  final AnimationEffect animationEffect;
   final TRouteConditionFn? condition;
 
   Key get key => ValueKey(uri.toString());
@@ -30,7 +30,7 @@ class RouteState<TExtra extends Object?> {
     Map<String, String>? queryParameters,
     this.extra,
     this.skipCurrent = true,
-    this.animationEffect,
+    this.animationEffect = const NoEffect(),
     this.condition,
   }) {
     final qp = {...uri.queryParameters, ...?queryParameters};
@@ -42,7 +42,7 @@ class RouteState<TExtra extends Object?> {
     Map<String, String>? queryParameters,
     this.extra,
     this.skipCurrent = true,
-    this.animationEffect,
+    this.animationEffect = const NoEffect(),
     this.condition,
   }) {
     final uri0 = Uri.parse(pathAndQuery);
@@ -81,7 +81,7 @@ class RouteState<TExtra extends Object?> {
       queryParameters: queryParameters ? this.uri.queryParameters : null,
       extra: extra ? this.extra : null,
       skipCurrent: skipCurrent ? this.skipCurrent : true,
-      animationEffect: animationEffect ? null : this.animationEffect,
+      animationEffect: animationEffect ? const NoEffect() : this.animationEffect,
       condition: condition ? this.condition : null,
     );
   }

@@ -27,27 +27,38 @@ A lightweight router designed for ease of use and efficient state management.
 Create classes that extend `RouteState` for each distinct route in your application. These classes encapsulate the path and can manage query parameters.
 
 ```dart
-// Define specific route states for type safety and clarity.
 final class HomeRouteState extends RouteState {
   HomeRouteState()
     : super.parse(
         '/home',
         // Use QuickForwardtEffect() as the default transtion effect for this
         // route. This can be overridden when pushing this route.
-        animationEffect: QuickForwardtEffect(),
+        animationEffect: const QuickForwardEffect(),
       );
 }
 
-final class ChatRouteState extends RouteState {
-  // Required chatId before pushing this route.
-  ChatRouteState({required String chatId})
+// This route is only used in the RouteManager, so it does not need to
+// be pushed directly. It is a base route for the chat feature.
+final class BaseChatRouteState extends RouteState {
+  BaseChatRouteState({Map<String, String>? queryParameters})
     : super.parse(
         '/chat',
-        // Pass chatId as a query parameter.
-        queryParameters: {chatId: chatId},
+        queryParameters: queryParameters,
         // Use a different animation effect for this route.
-        animationEffect: TopToBottomEffect(),
+        animationEffect: const SlideDownEffect(),
       );
+
+  BaseChatRouteState.from(RouteState other) : super(other.uri);
+}
+
+final class ChatRouteState extends BaseChatRouteState {
+  final String chatId;
+
+  ChatRouteState({required this.chatId}) : super(queryParameters: {'chatId': chatId});
+
+  ChatRouteState.from(super.other)
+    : chatId = other.uri.queryParameters['chatId'] ?? '',
+      super.from();
 }
 ```
 
@@ -56,86 +67,35 @@ final class ChatRouteState extends RouteState {
 In your MaterialApp (or CupertinoApp), use the RouteStateManager widget to define your application's routing configuration.
 
 ```dart
-import 'package:df_router/df_router.dart';
-import 'package:flutter/material.dart';
-
-// Your screen widgets (HomeScreen, MessagesScreen, ChatScreen)
-// ... (defined below or in separate files)
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      color: Colors.white,
-      // RouteStateManager handles the routing logic
-      builder: (context, child) { // child here is the Navigator from MaterialApp
-        return Material( // Or any root widget
-          child: RouteStateManager(
-            // The route to show if no other route matches or if the initial route is invalid
-            fallbackState: HomeRouteState(),
-            // Optional: Define an initial state for the app
-            // initialState: HomeRouteState(),
-
-            // A wrapper for persistent UI elements (e.g., AppBar, BottomNavigationBar)
-            wrapper: (context, child) { // child here is the current screen
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    color: Colors.blueGrey,
-                    padding: const EdgeInsets.all(16.0),
-                    child: const Text(
-                      'df_router Example', // Example app title
-                      style: TextStyle(color: Colors.white, fontSize: 24.0),
-                    ),
-                  ),
-                  Expanded(child: child), // Main content area for the current route
-                  Container( /* Your persistent footer/navbar */ ),
-                ],
-              );
-            },
-
-            // Define custom transitions between routes
-            transitionBuilder: (context, params) {
-              return VerticalSlideFadeTransition(
-                prev: params.prev, // Captured image of the previous screen
-                controller: params.controller,
-                duration: const Duration(milliseconds: 300),
-                child: params.child, // The incoming screen widget
-              );
-            },
-
-            // List of all available routes and their builders
-            builders: [
-              RouteBuilder(
-                state: HomeRouteState(), // The base state for this route
-                condition: () {
-                  // Check if the user is logged in or any other condition.
-                  return true;
-                },
-                builder: (context, state) {
-                  return HomeScreen(state: state); // Your screen widget
-                },
-              ),
-              RouteBuilder(
-                state: MessagesRouteState(),
-                shouldPreserve: true, // Keep this widget's state when navigating away
-                builder: (context, state) {
-                  return MessagesScreen(state: state);
-                },
-              ),
-              RouteBuilder<String>( // Specify the type for 'extra' if used
-                state: RouteState<String>.parse('/chat'), // Generic RouteState for paths
-                shouldPrebuild: true, // Build this widget proactively
-                builder: (context, state) {
-                  // state is RouteState<String?> here
-                  return ChatScreen(state: state);
-                },
-              ),
-            ],
-          ),
+      //home: // Do not use "home", as it conflicts with RouteManager. Use
+      // "builder" instead.
+      builder: (context, child) {
+        return RouteManager(
+          fallbackRouteState: () => HomeRouteState(),
+          builders: [
+            RouteBuilder(
+              routeState: HomeRouteState(),
+              // Pre-build the HomeScreen even if the initial route is not
+              // HomeRouteState. This is useful for performance optimization.
+              shouldPrebuild: true,
+              // Preserve the HomeScreen widget to avoid rebuilding it.
+              shouldPreserve: true,
+              builder: (context, routeState) => HomeScreen(routeState: HomeRouteState()),
+            ),
+            RouteBuilder(
+              // Use the BaseChatRouteState instead of the ChatRouteState
+              // since it does not require a chatId to be pushed.
+              routeState: BaseChatRouteState(),
+              builder:
+                  (context, routeState) => ChatScreen(routeState: ChatRouteState.from(routeState)),
+            ),
+          ],
         );
       },
     );
@@ -145,126 +105,85 @@ class MyApp extends StatelessWidget {
 
 ### 3. Create Your Screen Widgets
 
-Your screen widgets should use the RouteWidgetMixin to easily access the current RouteState.
+Your screen widgets should use the `RouteWidgetMixin` to easily access the current `RouteState`.
 
 ```dart
-// Stateless widget example.
 class HomeScreen extends StatelessWidget with RouteWidgetMixin {
   @override
-  final RouteState state; // The current RouteState for this screen
-
-  const HomeScreen({super.key, required this.state});
+  final HomeRouteState? routeState;
+  const HomeScreen({super.key, this.routeState});
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteStateController.of(context);
-    return Container(
-      color: Colors.yellow,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Home Screen - Path: ${state.path}'),
-            FilledButton(
-              onPressed: () => controller.push(MessagesRouteState()),
-              child: const Text('Go to Messages (No Query)'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(
-                '/messages?key1=value1', // Navigate by path string
-                extra: "Some data for messages",
-              ),
-              child: const Text('Go to Messages (with query & extra)'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(
-                ChatRouteState().copyWith(extra: "Hello from Home!"),
-              ),
-              child: const Text('Go to Chat with extra data'),
-            ),
-          ],
+    return Scaffold(
+      appBar: AppBar(title: const Text('Home')),
+      backgroundColor: Colors.green,
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            final controller = RouteController.of(context);
+            controller.push(
+              ChatRouteState(chatId: '123456'),
+              // Override the default animation effect for this push.
+              animationEffect: const CupertinoEffect(),
+            );
+          },
+          child: const Text('Go to Chat'),
         ),
       ),
     );
   }
 }
 
-// Stateful widget example.
-class MessagesScreen extends StatefulWidget with RouteWidgetMixin {
+class ChatScreen extends StatelessWidget with RouteWidgetMixin {
   @override
-  final RouteState state;
+  final ChatRouteState? routeState;
 
-  const MessagesScreen({super.key, required this.state});
-
-  @override
-  State<MessagesScreen> createState() => _MessagesScreenState();
-}
-
-class _MessagesScreenState extends State<MessagesScreen> {
-  int counter = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('MessagesScreen INIT - State: ${widget.state}');
-    debugPrint('MessagesScreen Extra: ${widget.state.extra}'); // Access extra data
-    debugPrint('MessagesScreen Query: ${widget.state.uri.queryParameters}');
-  }
+  const ChatScreen({super.key, this.routeState});
 
   @override
   Widget build(BuildContext context) {
-    final controller = RouteStateController.of(context);
-    return Container(
-      color: Colors.lightGreen,
-      child: Center(
+    return Scaffold(
+      appBar: AppBar(title: Text('Chat - ${routeState?.chatId}')),
+      backgroundColor: Colors.blue,
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Messages Screen - Path: ${widget.state.path}'),
-            Text('Query Params: ${widget.state.uri.queryParameters}'),
-            Text('Extra: ${widget.state.extra}'),
-            Text('Counter: $counter'),
-            FilledButton(
-              onPressed: () => setState(() => counter++),
-              child: const Text('Increment'),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.pushBack();
+              },
+              child: const Text('Go Back - Default Effect'),
             ),
-            FilledButton(
-              onPressed: () => controller.push(HomeRouteState()),
-              child: const Text('Go to Home'),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.pushBack(animationEffect: const QuickBackEffect());
+              },
+              child: const Text('Go Back - Quick Back Effect'),
             ),
-            FilledButton(
-              onPressed: () => controller.disposeState(widget.state),
-              child: const Text('Dispose This RouteState (if preserved)'),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState());
+              },
+              child: const Text('Go Home - Default Effect'),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Using typed data, e.g., String for chat ID.
-class ChatScreen extends StatelessWidget with RouteWidgetMixin<String> {
-  @override
-  final RouteState<String?> state; // state.extra will be String?
-
-  const ChatScreen({super.key, required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = RouteStateController.of(context);
-    return Container(
-      color: Colors.blue,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Chat Screen - Path: ${state.path}'),
-            Text('Chat ID from query: ${state.uri.queryParameters['id']}'),
-            Text('Extra data from previous route: ${state.extra ?? "No extra data"}'),
-            FilledButton(
-              onPressed: () => controller.push(HomeRouteState()),
-              child: const Text('Go to Home'),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState().copyWith(animationEffect: const MaterialEffect()));
+              },
+              child: const Text('Go Home - Material Effect'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState(), animationEffect: const PageFlapDown());
+              },
+              child: const Text('Go Home - Page Flap Down Effect'),
             ),
           ],
         ),
@@ -281,86 +200,31 @@ Access the RouteStateController to navigate:
 ```dart
 final controller = RouteStateController.of(context);
 
-// Navigate using a defined RouteState object
-controller.push(HomeRouteState());
-controller.push(MessagesWithQueryRouteState(key1Value: "example"));
+// Push the home screen with a material effect.
+controller.push(HomeRouteState(), animationEffect: const CupertinoEffect());
+controller.push(HomeRouteState().copyWith(animationEffect: const MaterialEffect()));
 
-// Navigate using a path string
-controller.push('/messages?key1=value1&key2=value2');
+// Go back.
+controller.pushBack();
 
-// Pass extra data (can be any object)
-controller.push('/chat', extra: "Some chat ID or object");
-// Or with RouteState
-controller.push(ChatRouteState().copyWith(extra: "User123"));
+// Remove a specific route to free up resources.
+controller.removeStatesFromCache([HomeRouteState()]);
 
+// Clear the entire widget cache.
+controller.clearCache([HomeRouteState()]);
 
-// Control animation
-controller.push('/detail', shouldAnimate: true);
-controller.push(HomeRouteState().copyWith(shouldAnimate: false));
+// Add a route to the cache without navigating. This will preload it.
+controller.addToCache([HomeRouteState()]);
 
-// Dispose a specific preserved RouteState instance from cache
-controller.disposeState(MessagesRouteState()); // If it matches a cached one
+// Reset the cache to its initial state. This honours the shouldPrebuild property.
+controller.resetState();
+
+// Get the current state, e.g. HomeRouteState();
+final current = controller.current;
+
+// Get the requested state, which is what was typed in the URL bar, e.g. "/home?query=123" may return an instance of HomeRouteState(). This will return nul if the URL does not match any defined route.
+final requested = controller.requested;
 ```
-
-## Key Concepts
-
-- `RouteState<TExtra>`: Represents a specific route. It's Equatable based on its Uri (path and query parameters). TExtra defines the type of the optional extra data payload.
-
-- `RouteState.parse(String pathAndQuery, {Map<String, String>? queryParameters, TExtra? extra})`: Constructor to create a state from a string.
-
-- `.copyWith()`: Useful for creating a new RouteState instance with modified properties.
-
-- `.extra`: Accesses the data passed during navigation.
-
-- `.uri`: The Uri object representing the path and query parameters.
-
-- `RouteBuilder<TExtra>`: Links a RouteState definition to a widget builder function.
-
-- `state`: The base RouteState that this builder handles (path matching).
-
-- `builder`: A function (context, previousWidget, state) => YourWidget(state: state) that builds your screen. previousWidget is a captured image of the previous screen for transitions.
-
-- `shouldPreserve`: If true, the widget's state is kept in memory even when navigated away from. Useful for screens with complex state or forms.
-
-- `shouldPrebuild`: If true, the widget is built proactively, even if not currently active. Useful for frequently accessed routes or routes that are slow to build.
-
-- `condition`: An optional function () => bool. If it returns false, navigation to this route is blocked.
-
-- `RouteStateManager`: The main widget that initializes and manages the routing system.
-
-- `fallbackState`: The RouteState to navigate to if the current URL doesn't match any defined RouteBuilder or if an error occurs.
-
-- `initialState`: (Optional) The RouteState to display when the app first loads. If not provided, it tries to infer from the platform's current URL or uses fallbackState.
-
-- `builders`: A list of RouteBuilder instances defining all navigable routes.
-
-- `wrapper`: A builder function (context, child) => Widget to wrap around the current route's widget. Ideal for persistent headers, footers, or sidebars.
-
-- `transitionBuilder`: A function (context, TransitionBuilderParams params) => Widget that defines how transitions between routes are animated.
-
-- `RouteStateController`: The core controller for managing route state and navigation.
-
-- `RouteStateController.of(context)`: Accesses the controller from the widget tree.
-
-- `state`: The current active RouteState.
-
-- `pushState(RouteState state)`: Navigates to the given RouteState.
-
-- `push(String path, {Map<String, String>? queryParameters, TExtra? extra, bool skipCurrent, bool shouldAnimate})`: Navigates to a route defined by a path string.
-
-- `disposeState(RouteState state)`: Removes a specific RouteState and its associated widget from the cache (if shouldPreserve was true and it matches).
-
-- `disposePath(Uri path)`: Removes all cached RouteState instances matching the given path.
-
-- `clear()`: Clears the entire widget cache.
-
-- `RouteWidgetMixin<TExtra>`: A mixin for your screen widgets to easily receive and hold the `RouteState<TExtra?>` state property.
-
-- `HorizontalSlideFadeTransition`: A transition that slides the new screen in from the right while fading it in, and slides the previous screen out to the left.
-
-- `VerticalSlideFadeTransition`: A transition that slides the new screen in from the bottom while fading it in, and slides the previous screen out to the top.
-
-- Custom transitions can be built by adding the `TransitionMixin` to your custom transition widget.
 
 ---
 

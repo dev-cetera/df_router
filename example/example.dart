@@ -11,7 +11,7 @@ final class HomeRouteState extends RouteState {
         '/home',
         // Use QuickForwardtEffect() as the default transtion effect for this
         // route. This can be overridden when pushing this route.
-        animationEffect: QuickForwardtEffect(),
+        animationEffect: const QuickForwardEffect(),
       );
 }
 
@@ -23,13 +23,20 @@ final class BaseChatRouteState extends RouteState {
         '/chat',
         queryParameters: queryParameters,
         // Use a different animation effect for this route.
-        animationEffect: SlideDownEffect(),
+        animationEffect: const SlideDownEffect(),
       );
+
+  BaseChatRouteState.from(RouteState other) : super(other.uri);
 }
 
 final class ChatRouteState extends BaseChatRouteState {
-  // Required chatId before pushing this route.
-  ChatRouteState({required String chatId}) : super(queryParameters: {'chatId': chatId});
+  final String chatId;
+
+  ChatRouteState({required this.chatId}) : super(queryParameters: {'chatId': chatId});
+
+  ChatRouteState.from(super.other)
+    : chatId = other.uri.queryParameters['chatId'] ?? '',
+      super.from();
 }
 
 class MyApp extends StatelessWidget {
@@ -51,13 +58,14 @@ class MyApp extends StatelessWidget {
               shouldPrebuild: true,
               // Preserve the HomeScreen widget to avoid rebuilding it.
               shouldPreserve: true,
-              builder: (context, routeState) => HomeScreen(routeState: routeState),
+              builder: (context, routeState) => HomeScreen(routeState: HomeRouteState()),
             ),
             RouteBuilder(
               // Use the BaseChatRouteState instead of the ChatRouteState
               // since it does not require a chatId to be pushed.
               routeState: BaseChatRouteState(),
-              builder: (context, routeState) => SettingsScreen(routeState: routeState),
+              builder:
+                  (context, routeState) => ChatScreen(routeState: ChatRouteState.from(routeState)),
             ),
           ],
         );
@@ -68,13 +76,14 @@ class MyApp extends StatelessWidget {
 
 class HomeScreen extends StatelessWidget with RouteWidgetMixin {
   @override
-  final RouteState<Object?>? routeState;
+  final HomeRouteState? routeState;
   const HomeScreen({super.key, this.routeState});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
+      backgroundColor: Colors.green,
       body: Center(
         child: ElevatedButton(
           onPressed: () {
@@ -82,7 +91,7 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
             controller.push(
               ChatRouteState(chatId: '123456'),
               // Override the default animation effect for this push.
-              animationEffect: CupertinoEffect(),
+              animationEffect: const CupertinoEffect(),
             );
           },
           child: const Text('Go to Chat'),
@@ -92,37 +101,58 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
   }
 }
 
-class SettingsScreen extends StatelessWidget with RouteWidgetMixin {
+class ChatScreen extends StatelessWidget with RouteWidgetMixin {
   @override
-  final RouteState<Object?>? routeState;
+  final ChatRouteState? routeState;
 
-  const SettingsScreen({super.key, this.routeState});
+  const ChatScreen({super.key, this.routeState});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
-      body: Column(
-        children: [
-          Center(
-            child: ElevatedButton(
+      appBar: AppBar(title: Text('Chat - ${routeState?.chatId}')),
+      backgroundColor: Colors.blue,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack(animationEffect: QuickBackEffect());
+                controller.pushBack();
               },
-              child: const Text('Go Back'),
+              child: const Text('Go Back - Default Effect'),
             ),
-          ),
-          Center(
-            child: ElevatedButton(
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.pushBack(animationEffect: const QuickBackEffect());
+              },
+              child: const Text('Go Back - Quick Back Effect'),
+            ),
+            ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
                 controller.push(HomeRouteState());
               },
-              child: const Text('Go Home (Same as Back)'),
+              child: const Text('Go Home - Default Effect'),
             ),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState().copyWith(animationEffect: const MaterialEffect()));
+              },
+              child: const Text('Go Home - Material Effect'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState(), animationEffect: const PageFlapDown());
+              },
+              child: const Text('Go Home - Page Flap Down Effect'),
+            ),
+          ],
+        ),
       ),
     );
   }

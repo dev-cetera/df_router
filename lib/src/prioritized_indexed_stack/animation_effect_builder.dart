@@ -36,7 +36,7 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
   @override
   void initState() {
     super.initState();
-    _initializeAnimations([NoEffect()]);
+    _initializeAnimations([const NoEffect()]);
   }
 
   void _initializeAnimations(List<AnimationEffect> effects) {

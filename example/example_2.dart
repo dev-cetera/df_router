@@ -9,15 +9,15 @@ void main() {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 final class HomeRouteState extends RouteState {
-  HomeRouteState() : super.parse('/home', animationEffect: CupertinoEffect());
+  HomeRouteState() : super.parse('/home', animationEffect: const CupertinoEffect());
 }
 
 final class MessagesRouteState extends RouteState {
-  MessagesRouteState() : super.parse('/messages', animationEffect: CupertinoEffect());
+  MessagesRouteState() : super.parse('/messages', animationEffect: const CupertinoEffect());
 }
 
 final class ChatRouteState extends RouteState<String> {
-  ChatRouteState() : super.parse('/chat', animationEffect: CupertinoEffect());
+  ChatRouteState() : super.parse('/chat', animationEffect: const CupertinoEffect());
 }
 
 final class MessagesRouteState1 extends RouteState {
@@ -25,7 +25,7 @@ final class MessagesRouteState1 extends RouteState {
     : super.parse(
         '/messages?key1=value1',
         queryParameters: {'key1': 'value1'},
-        animationEffect: CupertinoEffect(),
+        animationEffect: const CupertinoEffect(),
       );
 }
 
@@ -34,12 +34,12 @@ final class MessagesRouteState2 extends RouteState {
     : super.parse(
         '/messages?key1=value1',
         queryParameters: {'key2': 'value2'},
-        animationEffect: CupertinoEffect(),
+        animationEffect: const CupertinoEffect(),
       );
 }
 
 final class HomeDetailRouteState extends RouteState {
-  HomeDetailRouteState() : super.parse('/home_detail', animationEffect: CupertinoEffect());
+  HomeDetailRouteState() : super.parse('/home_detail', animationEffect: const CupertinoEffect());
 }
 
 class MyApp extends StatelessWidget {
