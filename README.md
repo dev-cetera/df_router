@@ -27,25 +27,27 @@ A lightweight router designed for ease of use and efficient state management.
 Create classes that extend `RouteState` for each distinct route in your application. These classes encapsulate the path and can manage query parameters.
 
 ```dart
-// Define specific route states for type safety and clarity
+// Define specific route states for type safety and clarity.
 final class HomeRouteState extends RouteState {
-  HomeRouteState() : super.parse('/home');
+  HomeRouteState()
+    : super.parse(
+        '/home',
+        // Use QuickForwardtEffect() as the default transtion effect for this
+        // route. This can be overridden when pushing this route.
+        animationEffect: QuickForwardtEffect(),
+      );
 }
 
-final class MessagesRouteState extends RouteState {
-  MessagesRouteState() : super.parse('/messages');
-}
-
-// Route state with specific query parameters
-final class MessagesWithQueryRouteState extends RouteState {
-  MessagesWithQueryRouteState({String? key1Value})
-      : super.parse('/messages', queryParameters: key1Value != null ? {'key1': key1Value} : null);
-}
-
-// Route state expecting typed 'extra' data
-final class ChatRouteState extends RouteState<String> { // Expects a String as extra data
-  ChatRouteState({String? chatId})
-      : super.parse(chatId != null ? '/chat?id=$chatId' : '/chat');
+final class ChatRouteState extends RouteState {
+  // Required chatId before pushing this route.
+  ChatRouteState({required String chatId})
+    : super.parse(
+        '/chat',
+        // Pass chatId as a query parameter.
+        queryParameters: {chatId: chatId},
+        // Use a different animation effect for this route.
+        animationEffect: TopToBottomEffect(),
+      );
 }
 ```
 

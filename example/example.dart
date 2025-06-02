@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'df_router.dart';
+import 'package:df_router/df_router.dart';
 
 void main() {
   runApp(const MyApp());
@@ -75,7 +75,6 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
-      backgroundColor: Colors.green,
       body: Center(
         child: ElevatedButton(
           onPressed: () {
@@ -103,34 +102,27 @@ class SettingsScreen extends StatelessWidget with RouteWidgetMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Chat')),
-      backgroundColor: Colors.blue,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
+      body: Column(
+        children: [
+          Center(
+            child: ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
                 controller.pushBack(animationEffect: QuickBackEffect());
               },
               child: const Text('Go Back'),
             ),
-            ElevatedButton(
+          ),
+          Center(
+            child: ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
                 controller.push(HomeRouteState());
               },
-              child: const Text('Go Home'),
+              child: const Text('Go Home (Same as Back)'),
             ),
-            ElevatedButton(
-              onPressed: () {
-                final controller = RouteController.of(context);
-                controller.push(HomeRouteState(), animationEffect: PageTurnEffect());
-              },
-              child: const Text('Go Home 2'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

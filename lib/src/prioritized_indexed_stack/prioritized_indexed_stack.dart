@@ -1,67 +1,26 @@
+//.title
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+//
+// Dart/Flutter (DF) Packages by dev-cetera.com & contributors. The use of this
+// source code is governed by an MIT-style license described in the LICENSE
+// file located in this project's root directory.
+//
+// See: https://opensource.org/license/mit
+//
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+//.title~
+
 // ignore_for_file: omit_local_variable_types
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
-import 'dart:collection'; // For LinkedHashSet
-import 'package:flutter/foundation.dart' show immutable, listEquals; // For mapEquals and @immutable
-import 'dart:ui' as ui show ImageFilter; // For ImageFilter type
+import 'dart:collection' show LinkedHashSet;
+import 'package:flutter/foundation.dart' show listEquals;
 
-// --- NEW Data Class for Effects ---
-@immutable
-class AnimationLayerEffect {
-  final Matrix4? transform;
-  final double? opacity; // 0.0 (transparent) to 1.0 (opaque)
-  final ColorFilter? colorFilter;
-  final ui.ImageFilter? imageFilter; // Note: import 'dart:ui' as ui;
-  final bool? ignorePointer; // If true, this layer won't be hittable
+import '../_src.g.dart';
 
-  const AnimationLayerEffect({
-    this.transform,
-    this.opacity,
-    this.colorFilter,
-    this.imageFilter,
-    this.ignorePointer,
-  });
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-  /// True if any visual effect is active that might require special handling like saveLayer.
-  bool get hasVisualEffects =>
-      (opacity != null && opacity! < 1.0) || // Opacity < 1.0 needs saveLayer
-      colorFilter != null ||
-      imageFilter != null;
-
-  /// True if any effect is present at all (including transform or pointer changes)
-  bool get isIdentity =>
-      transform == null && // or Matrix4.isIdentity() if non-null means default
-      (opacity == null || opacity == 1.0) &&
-      colorFilter == null &&
-      imageFilter == null &&
-      (ignorePointer == null || ignorePointer == false);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    // Note: Matrix4.operator== is by identity. This is usually fine for animation
-    // where new matrices are generated. If value-equality is needed, deep compare.
-    return other is AnimationLayerEffect &&
-        other.transform == transform &&
-        other.opacity == opacity &&
-        other.colorFilter == colorFilter && // Assumes ColorFilter has good ==
-        other.imageFilter == imageFilter && // Assumes ImageFilter has good ==
-        other.ignorePointer == ignorePointer;
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    transform, // Matrix4.hashCode
-    opacity,
-    colorFilter, // ColorFilter.hashCode
-    imageFilter, // ImageFilter.hashCode
-    ignorePointer,
-  );
-}
-
-/// A [Stack] that shows a prioritized list of children from a main list.
-/// ... (rest of the dartdoc comments) ...
 class PrioritizedIndexedStack extends StatelessWidget {
   const PrioritizedIndexedStack({
     super.key,
@@ -80,12 +39,7 @@ class PrioritizedIndexedStack extends StatelessWidget {
   final StackFit sizing;
   final List<int> indices;
   final List<Widget> children;
-
-  /// Optional effects to apply to the top layers of the stack.
-  /// The key is the stacking order (0 for the topmost child specified by `indices`,
-  /// 1 for the child below it, and so on).
-  /// The value is the `LayerEffectData` describing transformations, opacity, etc.
-  final List<AnimationLayerEffect>? layerEffects; // MODIFIED
+  final List<AnimationLayerEffect>? layerEffects;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +76,8 @@ class PrioritizedIndexedStack extends StatelessWidget {
   }
 }
 
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
 class _RawPrioritizedIndexedStack extends Stack {
   const _RawPrioritizedIndexedStack({
     super.alignment,
@@ -129,12 +85,12 @@ class _RawPrioritizedIndexedStack extends Stack {
     super.clipBehavior,
     required StackFit sizing,
     required this.indices,
-    this.layerEffects, // MODIFIED
+    this.layerEffects,
     super.children,
   }) : super(fit: sizing);
 
   final List<int?> indices;
-  final List<AnimationLayerEffect>? layerEffects; // MODIFIED
+  final List<AnimationLayerEffect>? layerEffects;
 
   @override
   RenderPrioritizedIndexedStack createRenderObject(BuildContext context) {
@@ -148,7 +104,7 @@ class _RawPrioritizedIndexedStack extends Stack {
     );
     return RenderPrioritizedIndexedStack(
       indices: indices,
-      layerEffects: layerEffects, // MODIFIED
+      layerEffects: layerEffects,
       alignment: alignment,
       textDirection: textDirection ?? Directionality.maybeOf(context),
       clipBehavior: clipBehavior,
@@ -168,8 +124,7 @@ class _RawPrioritizedIndexedStack extends Stack {
     );
     renderObject
       ..indices = indices
-      ..layerEffects =
-          layerEffects // MODIFIED
+      ..layerEffects = layerEffects
       ..alignment = alignment
       ..textDirection = textDirection ?? Directionality.maybeOf(context)
       ..clipBehavior = clipBehavior
@@ -182,17 +137,19 @@ class _RawPrioritizedIndexedStack extends Stack {
   }
 }
 
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
 class RenderPrioritizedIndexedStack extends RenderStack {
   RenderPrioritizedIndexedStack({
     required List<int?> indices,
-    List<AnimationLayerEffect>? layerEffects, // MODIFIED
+    List<AnimationLayerEffect>? layerEffects,
     super.children,
     super.alignment,
     super.textDirection,
     super.fit,
     super.clipBehavior,
   }) : _indices = indices,
-       _layerEffects = layerEffects; // MODIFIED
+       _layerEffects = layerEffects;
 
   List<int?> _indices;
   List<int?> get indices => _indices;
@@ -203,14 +160,12 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     markNeedsSemanticsUpdate();
   }
 
-  // MODIFIED: Property for LayerEffectData
   List<AnimationLayerEffect>? _layerEffects;
   List<AnimationLayerEffect>? get layerEffects => _layerEffects;
   set layerEffects(List<AnimationLayerEffect>? value) {
-    if (listEquals(_layerEffects, value)) return; // Relies on LayerEffectData.==
+    if (listEquals(_layerEffects, value)) return;
     _layerEffects = value;
     markNeedsPaint();
-    // Potentially markNeedsSemanticsUpdate if effects change accessibility significantly
   }
 
   RenderBox? _getChildRenderBox(int? targetIndex) {
@@ -312,73 +267,8 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     }
   }
 
-  // @override
-  // void paint(PaintingContext context, Offset offset) {
-  //   // MODIFIED: Apply full effects
-  //   if (firstChild == null || _indices.isEmpty) {
-  //     return;
-  //   }
-
-  //   for (var stackingOrder = _indices.length - 1; stackingOrder >= 0; stackingOrder--) {
-  //     final childOriginalIndex = _indices[stackingOrder];
-  //     if (childOriginalIndex == null) continue;
-
-  //     final childToPaint = _getChildRenderBox(childOriginalIndex);
-  //     if (childToPaint == null) continue;
-
-  //     final childParentData = childToPaint.parentData! as StackParentData;
-  //     final AnimationLayerEffect? effectData = _layerEffects?[stackingOrder];
-  //     final Offset childStackOffset =
-  //         offset + childParentData.offset; // Child's origin in stack's global coords
-
-  //     bool needsSaveLayer = effectData?.hasVisualEffects ?? false;
-  //     Paint? layerPaint;
-
-  //     if (needsSaveLayer) {
-  //       layerPaint = Paint();
-  //       if (effectData!.opacity != null) {
-  //         // Apply opacity to the layer: color's alpha channel.
-  //         // Use an opaque color with desired alpha to avoid blending issues if only opacity is set.
-  //         layerPaint.color = Color.fromRGBO(0, 0, 0, effectData.opacity!);
-  //       }
-  //       if (effectData.colorFilter != null) {
-  //         layerPaint.colorFilter = effectData.colorFilter;
-  //       }
-  //       if (effectData.imageFilter != null) {
-  //         layerPaint.imageFilter = effectData.imageFilter;
-  //       }
-  //       // The bounds for saveLayer should be the child's bounds *before* its own transform.
-  //       // If the child paints outside its nominal 'size', this might clip.
-  //       // Using null for bounds saves the entire current layer, which is safer but potentially less performant.
-  //       // For now, let's use child's bounds.
-  //       Rect layerBounds = childStackOffset & childToPaint.size;
-  //       context.canvas.saveLayer(layerBounds, layerPaint);
-  //     }
-
-  //     final Matrix4? transform = effectData?.transform;
-  //     if (transform != null) {
-  //       context.canvas.save();
-  //       // Translate to the child's position *within the current canvas context*
-  //       // (which might be inside a saveLayer already offset).
-  //       // Then apply the transform, then paint child at (0,0) in its new transformed system.
-  //       context.canvas.translate(childStackOffset.dx, childStackOffset.dy);
-  //       context.canvas.transform(transform.storage);
-  //       context.paintChild(childToPaint, Offset.zero);
-  //       context.canvas.restore();
-  //     } else {
-  //       // No transform, just paint the child at its stack position.
-  //       context.paintChild(childToPaint, childStackOffset);
-  //     }
-
-  //     if (needsSaveLayer) {
-  //       context.canvas.restore(); // Restore from saveLayer
-  //     }
-  //   }
-  // }
-
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    // MODIFIED: Account for effects
     if (firstChild == null || _indices.isEmpty) {
       return false;
     }
@@ -439,9 +329,11 @@ class RenderPrioritizedIndexedStack extends RenderStack {
         _layerEffects,
         defaultValue: null,
       ),
-    ); // MODIFIED
+    );
   }
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class _PrioritizedIndexedStackElement extends MultiChildRenderObjectElement {
   _PrioritizedIndexedStackElement(_RawPrioritizedIndexedStack super.widget);

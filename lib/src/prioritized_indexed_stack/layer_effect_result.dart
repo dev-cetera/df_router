@@ -10,12 +10,13 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
-import 'package:flutter/widgets.dart';
-
 import '/src/_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-mixin RouteWidgetMixin<TExtra extends Object?> on Widget {
-  RouteState<TExtra?>? get routeState;
+class LayerEffectResult {
+  final List<AnimationLayerEffect> data;
+  final double value;
+
+  const LayerEffectResult({required this.data, required this.value});
 }

@@ -16,6 +16,10 @@ import '/src/_src.g.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-mixin RouteWidgetMixin<TExtra extends Object?> on Widget {
-  RouteState<TExtra?>? get routeState;
+abstract class AnimationEffect {
+  final Duration duration;
+  final Curve curve;
+  final List<AnimationLayerEffect> Function(BuildContext context, double value) data;
+
+  const AnimationEffect({required this.duration, required this.curve, required this.data});
 }

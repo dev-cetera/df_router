@@ -1,6 +1,22 @@
-import 'package:flutter/material.dart';
+//.title
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+//
+// Dart/Flutter (DF) Packages by dev-cetera.com & contributors. The use of this
+// source code is governed by an MIT-style license described in the LICENSE
+// file located in this project's root directory.
+//
+// See: https://opensource.org/license/mit
+//
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+//.title~
 
-import '../_src.g.dart';
+import 'dart:math' as math;
+
+import 'package:flutter/widgets.dart';
+
+import '/src/_src.g.dart';
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class NoEffect extends AnimationEffect {
   NoEffect()
@@ -24,8 +40,8 @@ class FadeEffect extends AnimationEffect {
       );
 }
 
-class QuickLeftToRightEffect extends AnimationEffect {
-  QuickLeftToRightEffect()
+class QuickBackEffect extends AnimationEffect {
+  QuickBackEffect()
     : super(
         duration: const Duration(milliseconds: 375),
         curve: Curves.easeInOutQuint,
@@ -46,8 +62,8 @@ class QuickLeftToRightEffect extends AnimationEffect {
       );
 }
 
-class QuickRightToLeftEffect extends AnimationEffect {
-  QuickRightToLeftEffect()
+class QuickForwardtEffect extends AnimationEffect {
+  QuickForwardtEffect()
     : super(
         duration: const Duration(milliseconds: 375),
         curve: Curves.easeInOutQuint,
@@ -110,23 +126,6 @@ class TopToBottomEffect extends AnimationEffect {
       );
 }
 
-class BounceOutEffect extends AnimationEffect {
-  BounceOutEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.bounceOut,
-        data: (context, value) {
-          final size = MediaQuery.sizeOf(context);
-          return [
-            AnimationLayerEffect(
-              transform: Matrix4.translationValues(0.0, -size.height + size.height * value, 0.0),
-            ),
-            const AnimationLayerEffect(ignorePointer: true),
-          ];
-        },
-      );
-}
-
 class CupertinoEffect extends AnimationEffect {
   CupertinoEffect()
     : super(
@@ -143,6 +142,26 @@ class CupertinoEffect extends AnimationEffect {
               transform: Matrix4.translationValues(-size.width * value * 0.5, 0.0, 0.0),
               ignorePointer: true,
             ),
+          ];
+        },
+      );
+}
+
+class PageTurnEffect extends AnimationEffect {
+  PageTurnEffect()
+    : super(
+        duration: const Duration(milliseconds: 2000),
+        curve: Curves.linear,
+        data: (context, value) {
+          final size = MediaQuery.sizeOf(context);
+
+          return [
+            AnimationLayerEffect(
+              transform:
+                  Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0) +
+                  Matrix4.skew((1 - value), -0.05 * (1 - value)),
+            ),
+            const AnimationLayerEffect(ignorePointer: true),
           ];
         },
       );

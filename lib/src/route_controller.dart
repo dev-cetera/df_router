@@ -148,17 +148,19 @@ class RouteController {
   //
   //
 
-  void pushUri(Uri uri) => push(RouteState(uri));
+  void pushUri(Uri uri, {AnimationEffect? animationEffect}) {
+    push(RouteState(uri), animationEffect: animationEffect);
+  }
 
   //
   //
   //
 
-  void pushBack({RouteState? fallback}) {
+  void pushBack({RouteState? fallback, AnimationEffect? animationEffect}) {
     if (_prevRouteState.path == '/') {
-      push(fallback ?? fallbackRouteState());
+      push(fallback ?? fallbackRouteState(), animationEffect: animationEffect);
     } else {
-      push(_prevRouteState);
+      push(_prevRouteState, animationEffect: animationEffect);
     }
   }
 
@@ -173,7 +175,6 @@ class RouteController {
     AnimationEffect? animationEffect,
   }) {
     nextEffect = animationEffect ?? routeState.animationEffect ?? NoEffect();
-    print('PUSHING!!!');
     final uri = routeState.uri;
     final skipCurrent = routeState.skipCurrent;
     if (skipCurrent && _pRouteState.value.uri == uri) {
@@ -218,8 +219,8 @@ class RouteController {
     _pRouteState.value = routeState;
     addStatesToCache([routeState]);
 
-    globalKey.currentState?.setControllerValues(0.0);
-    globalKey.currentState?.forward();
+    _globalKey.currentState?.setControllerValues(0.0);
+    _globalKey.currentState?.forward();
   }
 
   //
@@ -252,18 +253,17 @@ class RouteController {
   //
   //
 
-  final globalKey = GlobalKey<AnimationEffectBuilderState>();
+  final _globalKey = GlobalKey<AnimationEffectBuilderState>();
 
   Widget buildScreen(BuildContext context, RouteState routeState) {
     return AnimationEffectBuilder(
-      key: globalKey,
+      key: _globalKey,
       effects: [nextEffect],
       onComplete: () {
         _maybeRemoveStaleRoute(_prevRouteState);
       },
       builder: (context, results) {
         final layerEffects = results.map((e) => e.data).toList()[0];
-
         return PrioritizedIndexedStack(
           indices: [
             _widgetCache.keys.toList().indexOf(routeState),
@@ -296,167 +296,5 @@ class RouteController {
       throw FlutterError('No RouteStateControllerProvider found in context');
     }
     return provider.controller;
-  }
-}
-
-// Assuming AnimationEffect and AnimationLayerEffect are defined as in the provided code
-abstract class AnimationEffect {
-  final Duration duration;
-  final Curve curve;
-  final List<AnimationLayerEffect> Function(BuildContext context, double value) data;
-
-  const AnimationEffect({required this.duration, required this.curve, required this.data});
-}
-
-class LayerEffectResult {
-  final List<AnimationLayerEffect> data;
-  final double value;
-
-  LayerEffectResult({required this.data, required this.value});
-}
-
-class AnimationEffectBuilder extends StatefulWidget {
-  final List<AnimationEffect> effects;
-  final Widget Function(BuildContext context, List<LayerEffectResult> results) builder;
-  final VoidCallback? onComplete;
-
-  const AnimationEffectBuilder({
-    super.key,
-    required this.effects,
-    required this.builder,
-    this.onComplete,
-  });
-
-  @override
-  State<AnimationEffectBuilder> createState() => AnimationEffectBuilderState();
-}
-
-class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
-    with TickerProviderStateMixin {
-  late List<AnimationController> controllers;
-  late List<Animation<double>> animations;
-  bool _hasTriggeredCompletion = false; // Track if callback has been triggered
-
-  void setControllerValues(double value) {
-    for (final controller in controllers) {
-      controller.value = value;
-    }
-    _hasTriggeredCompletion = false; // Reset completion state
-  }
-
-  void forwardControllers() {
-    for (final controller in controllers) {
-      controller.forward();
-    }
-    _hasTriggeredCompletion = false; // Reset completion state
-  }
-
-  void reverseControllers() {
-    for (final controller in controllers) {
-      controller.reverse();
-    }
-    _hasTriggeredCompletion = false; // Reset completion state
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeAnimations();
-  }
-
-  void _initializeAnimations() {
-    controllers =
-        widget.effects.map((config) {
-          final controller = AnimationController(
-            vsync: this,
-            duration: config.duration,
-            value: 1.0,
-          );
-          // Add status listener to track completion
-          controller.addStatusListener(_handleAnimationStatus);
-          return controller;
-        }).toList();
-    animations =
-        widget.effects.asMap().entries.map((entry) {
-          final index = entry.key;
-          final config = entry.value;
-          return CurvedAnimation(parent: controllers[index], curve: config.curve);
-        }).toList();
-  }
-
-  void _handleAnimationStatus(AnimationStatus status) {
-    // Check if all controllers are completed
-    if (status == AnimationStatus.completed && !_hasTriggeredCompletion) {
-      final allCompleted = controllers.every(
-        (controller) => controller.status == AnimationStatus.completed,
-      );
-      if (allCompleted) {
-        widget.onComplete?.call();
-        _hasTriggeredCompletion = true; // Prevent multiple triggers
-      }
-    }
-  }
-
-  @override
-  void didUpdateWidget(AnimationEffectBuilder oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.effects.length != oldWidget.effects.length) {
-      for (var controller in controllers) {
-        controller.removeStatusListener(_handleAnimationStatus);
-        controller.dispose();
-      }
-      _initializeAnimations();
-    } else {
-      for (var i = 0; i < widget.effects.length; i++) {
-        if (widget.effects[i].duration != oldWidget.effects[i].duration) {
-          controllers[i].duration = widget.effects[i].duration;
-        }
-        if (widget.effects[i].curve != oldWidget.effects[i].curve) {
-          animations[i] = CurvedAnimation(parent: controllers[i], curve: widget.effects[i].curve);
-        }
-      }
-    }
-    _hasTriggeredCompletion = false; // Reset completion state on widget update
-  }
-
-  @override
-  void dispose() {
-    for (final controller in controllers) {
-      controller.removeStatusListener(_handleAnimationStatus);
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  void reset() {
-    for (final controller in controllers) {
-      controller.value = 0.0;
-    }
-    _hasTriggeredCompletion = false; // Reset completion state
-  }
-
-  void forward() {
-    for (final controller in controllers) {
-      controller.forward();
-    }
-    _hasTriggeredCompletion = false; // Reset completion state
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge(animations),
-      builder: (context, child) {
-        final results =
-            animations.asMap().entries.map((entry) {
-              final index = entry.key;
-              final animation = entry.value;
-              final data = widget.effects[index].data(context, animation.value);
-              final value = animation.value;
-              return LayerEffectResult(data: data, value: value);
-            }).toList();
-        return widget.builder(context, results);
-      },
-    );
   }
 }
