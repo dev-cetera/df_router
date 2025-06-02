@@ -33,7 +33,9 @@ class AnimationLayerEffect {
   });
 
   bool get hasVisualEffects =>
-      (opacity != null && opacity! < 1.0) || colorFilter != null || imageFilter != null;
+      (opacity != null && opacity! < 1.0) ||
+      colorFilter != null ||
+      imageFilter != null;
 
   bool get isIdentity =>
       transform == null &&
@@ -54,5 +56,6 @@ class AnimationLayerEffect {
   }
 
   @override
-  int get hashCode => Object.hash(transform, opacity, colorFilter, imageFilter, ignorePointer);
+  int get hashCode =>
+      Object.hash(transform, opacity, colorFilter, imageFilter, ignorePointer);
 }
