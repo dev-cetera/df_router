@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.1]
+
+- Released @ 6/2025 (UTC)
+- update: Changed ValueNotifier to Pod, and added some logs
+
 ## [0.4.0]
 
 - Released @ 6/2025 (UTC)

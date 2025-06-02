@@ -52,7 +52,9 @@ class RouteManager extends StatelessWidget {
         pod: controller.pRouteState,
         cacheDuration: null,
         builder: (context, snapshot) {
-          final child = ClipRect(child: controller.buildScreen(context, snapshot.value!));
+          final child = ClipRect(
+            child: controller.buildScreen(context, snapshot.value!),
+          );
           return wrapper?.call(context, child) ?? child;
         },
       ),

@@ -56,7 +56,8 @@ class RouteController {
     // Set all the builder output to SizedBox.shrink.
     resetState();
     _requested = current;
-    final routeState = initialRouteState?.call() ?? _requested ?? fallbackRouteState();
+    final routeState =
+        initialRouteState?.call() ?? _requested ?? fallbackRouteState();
     push(routeState);
   }
 
@@ -64,7 +65,8 @@ class RouteController {
   //
   //
 
-  RouteState getNavigatorOrFallbackRouteState() => _requested ?? fallbackRouteState();
+  RouteState getNavigatorOrFallbackRouteState() =>
+      _requested ?? fallbackRouteState();
 
   //
   //
@@ -75,7 +77,9 @@ class RouteController {
     if (url == null) {
       return null;
     }
-    return _getBuilderByPath(url)?.routeState.copyWith(queryParameters: url.queryParameters);
+    return _getBuilderByPath(
+      url,
+    )?.routeState.copyWith(queryParameters: url.queryParameters);
   }
 
   //
@@ -118,7 +122,9 @@ class RouteController {
 
   void clearCache() {
     for (final builder in builders) {
-      _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
+      _widgetCache[builder.routeState] = SizedBox.shrink(
+        key: builder.routeState.key,
+      );
     }
   }
 
@@ -169,7 +175,10 @@ class RouteController {
   //
   //
 
-  void pushBack({RouteState? fallback, AnimationEffect? animationEffect = const NoEffect()}) {
+  void pushBack({
+    RouteState? fallback,
+    AnimationEffect? animationEffect = const NoEffect(),
+  }) {
     if (_prevRouteState.path == '/') {
       push(fallback ?? fallbackRouteState(), animationEffect: animationEffect);
     } else {
@@ -271,7 +280,9 @@ class RouteController {
   //
 
   RouteBuilder? _getBuilderByPath(Uri path) {
-    return builders.where((routeState) => routeState.routeState.path == path.path).firstOrNull;
+    return builders
+        .where((routeState) => routeState.routeState.path == path.path)
+        .firstOrNull;
   }
 
   //
@@ -315,7 +326,8 @@ class RouteController {
   //
 
   static RouteController of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteStateControllerProvider found in context');
     }
