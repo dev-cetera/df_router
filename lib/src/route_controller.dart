@@ -10,10 +10,11 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
-// ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+import 'package:df_log/df_log.dart';
+import 'package:flutter/widgets.dart';
 
+import 'package:df_pod/df_pod.dart';
 import 'package:df_pwa_utils/df_pwa_utils.dart';
-import 'package:df_widgets/_common.dart';
 
 import '_src.g.dart';
 
@@ -24,9 +25,8 @@ class RouteController {
   //
   //
 
-  // TODO: Convert to Pod once that flashing error is fixed.
-  final _pRouteState = ValueNotifier(RouteState.parse('/'));
-  ValueListenable<RouteState> get pRouteState => _pRouteState;
+  final _pRouteState = Pod(RouteState.parse('/'));
+  GenericPod<RouteState> get pRouteState => _pRouteState;
   RouteState get routeState => _pRouteState.value;
 
   final _widgetCache = <RouteState, Widget>{};
@@ -36,10 +36,11 @@ class RouteController {
   late RouteState _prevRouteState = _pRouteState.value;
   final RouteState Function()? errorRouteState;
   final RouteState Function() fallbackRouteState;
+
   RouteState? _requested;
   RouteState? get requested => _requested;
 
-  AnimationEffect nextEffect = const NoEffect();
+  AnimationEffect _nextEffect = const NoEffect();
 
   //
   //
@@ -55,8 +56,7 @@ class RouteController {
     // Set all the builder output to SizedBox.shrink.
     resetState();
     _requested = current;
-    final routeState =
-        initialRouteState?.call() ?? _requested ?? fallbackRouteState();
+    final routeState = initialRouteState?.call() ?? _requested ?? fallbackRouteState();
     push(routeState);
   }
 
@@ -64,8 +64,7 @@ class RouteController {
   //
   //
 
-  RouteState getNavigatorOrFallbackRouteState() =>
-      _requested ?? fallbackRouteState();
+  RouteState getNavigatorOrFallbackRouteState() => _requested ?? fallbackRouteState();
 
   //
   //
@@ -76,9 +75,7 @@ class RouteController {
     if (url == null) {
       return null;
     }
-    return _getBuilderByPath(
-      url,
-    )?.routeState.copyWith(queryParameters: url.queryParameters);
+    return _getBuilderByPath(url)?.routeState.copyWith(queryParameters: url.queryParameters);
   }
 
   //
@@ -121,9 +118,7 @@ class RouteController {
 
   void clearCache() {
     for (final builder in builders) {
-      _widgetCache[builder.routeState] = SizedBox.shrink(
-        key: builder.routeState.key,
-      );
+      _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
     }
   }
 
@@ -174,10 +169,7 @@ class RouteController {
   //
   //
 
-  void pushBack({
-    RouteState? fallback,
-    AnimationEffect? animationEffect = const NoEffect(),
-  }) {
+  void pushBack({RouteState? fallback, AnimationEffect? animationEffect = const NoEffect()}) {
     if (_prevRouteState.path == '/') {
       push(fallback ?? fallbackRouteState(), animationEffect: animationEffect);
     } else {
@@ -212,14 +204,14 @@ class RouteController {
     RouteState? fallback,
     AnimationEffect? animationEffect,
   }) {
-    nextEffect = animationEffect ?? routeState.animationEffect;
+    _nextEffect = animationEffect ?? routeState.animationEffect;
     final uri = routeState.uri;
     final skipCurrent = routeState.skipCurrent;
     if (skipCurrent && _pRouteState.value.uri == uri) {
       return;
     }
     if (_checkExtraTypeMismatch<TExtra>(uri) == false) {
-      debugPrint('[RouteController.push] Error!');
+      Log.err('Expected extra type $TExtra for route: $uri!');
       final errorFallback1 = errorFallback ?? errorRouteState?.call();
       if (errorFallback1 != null) {
         push(errorFallback1);
@@ -227,7 +219,7 @@ class RouteController {
       return;
     }
     if (!pathExists(uri)) {
-      debugPrint('[RouteController.push] Error!');
+      Log.err('The path $uri does not exist!');
       final errorFallback1 = errorFallback ?? errorRouteState?.call();
       if (errorFallback1 != null) {
         push(errorFallback1);
@@ -237,26 +229,22 @@ class RouteController {
     final condition = routeState.condition;
     final a = condition == null || condition();
     if (!a) {
-      debugPrint('[RouteController.push] Condition not met!');
+      Log.err('Route condition not met for $uri!');
       push(fallback ?? fallbackRouteState());
       return;
     }
     final condition2 = _getBuilderByPath(uri)?.condition;
     final b = condition2 == null || condition2.call();
     if (!b) {
-      debugPrint('[RouteController.push] Condition not met!');
+      Log.err('Builder condition not met for $uri!');
       push(fallback ?? fallbackRouteState());
       return;
     }
     platformNavigator.pushState(uri);
-
     _prevRouteState = _pRouteState.value;
-
-    // Remove the previous route state from the cache if it is stale.
-
-    _pRouteState.value = routeState;
+    _pRouteState.set(routeState, notifyImmediately: true);
     addToCache([routeState]);
-    _globalKey.currentState?.setEffects([nextEffect]);
+    _globalKey.currentState?.setEffects([_nextEffect]);
     _globalKey.currentState?.restart();
   }
 
@@ -283,9 +271,7 @@ class RouteController {
   //
 
   RouteBuilder? _getBuilderByPath(Uri path) {
-    return builders
-        .where((routeState) => routeState.routeState.path == path.path)
-        .firstOrNull;
+    return builders.where((routeState) => routeState.routeState.path == path.path).firstOrNull;
   }
 
   //
@@ -329,8 +315,7 @@ class RouteController {
   //
 
   static RouteController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteStateControllerProvider found in context');
     }

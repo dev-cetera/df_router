@@ -10,6 +10,7 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
+import 'package:df_pod/df_pod.dart';
 import 'package:flutter/widgets.dart';
 
 import '_src.g.dart';
@@ -47,10 +48,11 @@ class RouteManager extends StatelessWidget {
     onControllerCreated?.call(controller);
     return RouteControllerProvider(
       controller: controller,
-      child: ValueListenableBuilder(
-        valueListenable: controller.pRouteState,
-        builder: (context, value, snapshot) {
-          final child = ClipRect(child: controller.buildScreen(context, value));
+      child: SyncPodBuilder(
+        pod: controller.pRouteState,
+        cacheDuration: null,
+        builder: (context, snapshot) {
+          final child = ClipRect(child: controller.buildScreen(context, snapshot.value!));
           return wrapper?.call(context, child) ?? child;
         },
       ),
