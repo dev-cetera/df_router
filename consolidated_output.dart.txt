@@ -2,15 +2,383 @@
 import 'package:flutter/material.dart';
 import 'package:df_router/df_router.dart';
 import 'dart:io';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
+import 'package:flutter/rendering.dart';
 import 'dart:collection' show LinkedHashSet;
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:df_pwa_utils/df_pwa_utils.dart';
 import 'package:df_widgets/_common.dart';
 import 'package:shared_preferences_web/shared_preferences_web.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
+// Source: ./example/example_2.dart
+// import 'package:flutter/material.dart';
+// import 'package:df_router/df_router.dart';
+
+void main() {
+  //debugRepaintRainbowEnabled = true;
+  runApp(const MyApp());
+}
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+final class HomeRouteState extends RouteState {
+  HomeRouteState() : super.parse('/home', animationEffect: CupertinoEffect());
+}
+
+final class MessagesRouteState extends RouteState {
+  MessagesRouteState() : super.parse('/messages', animationEffect: CupertinoEffect());
+}
+
+final class ChatRouteState extends RouteState<String> {
+  ChatRouteState() : super.parse('/chat', animationEffect: CupertinoEffect());
+}
+
+final class MessagesRouteState1 extends RouteState {
+  MessagesRouteState1()
+    : super.parse(
+        '/messages?key1=value1',
+        queryParameters: {'key1': 'value1'},
+        animationEffect: CupertinoEffect(),
+      );
+}
+
+final class MessagesRouteState2 extends RouteState {
+  MessagesRouteState2()
+    : super.parse(
+        '/messages?key1=value1',
+        queryParameters: {'key2': 'value2'},
+        animationEffect: CupertinoEffect(),
+      );
+}
+
+final class HomeDetailRouteState extends RouteState {
+  HomeDetailRouteState() : super.parse('/home_detail', animationEffect: CupertinoEffect());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      color: Colors.white,
+      builder: (context, child) {
+        return Material(
+          child: RouteManager(
+            fallbackRouteState: () => HomeRouteState(),
+            // wrapper: (context, child) {
+            //   return Column(
+            //     crossAxisAlignment: CrossAxisAlignment.stretch,
+            //     children: [
+            //       // Persistent app header.
+            //       Container(
+            //         color: Colors.blueGrey,
+            //         padding: const EdgeInsets.all(16.0),
+            //         child: const Text(
+            //           'df_router Example',
+            //           style: TextStyle(color: Colors.white, fontSize: 24.0),
+            //         ),
+            //       ),
+            //       // Main content area.
+            //       Expanded(child: child),
+            //       // Persistent app footer with navigation buttons.
+            //       Container(
+            //         color: Colors.indigo,
+            //         padding: const EdgeInsets.all(16.0),
+            //         child: Row(
+            //           children: [
+            //             IconButton(
+            //               onPressed: () {
+            //                 final controller = RouteController.of(context);
+            //                 controller.push(HomeRouteState());
+            //               },
+            //               icon: Text(
+            //                 'HOME',
+            //                 style: TextStyle(
+            //                   color:
+            //                       RouteController.of(context).routeState.matchPath(HomeRouteState())
+            //                           ? Colors.grey
+            //                           : Colors.white,
+            //                 ),
+            //               ),
+            //             ),
+            //             IconButton(
+            //               onPressed: () {
+            //                 final controller = RouteController.of(context);
+            //                 controller.push(RouteState.parse('/chat'));
+            //               },
+            //               icon: Text(
+            //                 'CHAT',
+            //                 style: TextStyle(
+            //                   color:
+            //                       RouteController.of(context).routeState.path == '/chat'
+            //                           ? Colors.grey
+            //                           : Colors.white,
+            //                 ),
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     ],
+            //   );
+            // },
+            builders: [
+              RouteBuilder(
+                routeState: HomeRouteState(),
+                builder: (context, state) {
+                  return HomeScreen(key: state.key, routeState: state);
+                },
+              ),
+              RouteBuilder(
+                routeState: MessagesRouteState(),
+                // Preserves the RouteState when navigating away. This means it will
+                // be kept in memory and not disposed until manually disposed.
+                //shouldPreserve: true,
+                builder: (context, state) {
+                  return MessagesScreen(routeState: state);
+                },
+              ),
+              RouteBuilder<String>(
+                routeState: ChatRouteState(),
+                // Pre-builds the widget even if the RouteState is not at the top of
+                // the stack. This is useful for RouteStates that are frequently
+                // navigated to or that takes some time to build.
+                shouldPrebuild: true,
+                builder: (context, state) {
+                  return ChatScreen(routeState: state);
+                },
+              ),
+              RouteBuilder(
+                routeState: HomeDetailRouteState(),
+                shouldPreserve: true,
+                builder: (context, state) {
+                  return HomeDetailScreen(routeState: state);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+class MessagesScreen extends StatefulWidget with RouteWidgetMixin {
+  @override
+  final RouteState routeState;
+
+  const MessagesScreen({super.key, required this.routeState});
+
+  @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends State<MessagesScreen> {
+  int counter = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('INIT STATE MESSAGES - Params: ${widget.routeState.uri}');
+  }
+
+  @override
+  void dispose() {
+    debugPrint('MessagesScreen disposed - Params: ${widget.routeState.uri}');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = RouteController.of(context);
+    return Container(
+      color: Colors.lightGreen,
+      child: Center(
+        child: Column(
+          spacing: 8.0,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Extra: ${widget.routeState.extra}'),
+            Text(counter.toString()),
+            FilledButton(
+              onPressed: () => setState(() => counter++),
+              child: const Text('Increment'),
+            ),
+            FilledButton(
+              onPressed: () => controller.push(HomeRouteState()),
+              child: const Text('Go to Home'),
+            ),
+            FilledButton(
+              onPressed: () => controller.push(MessagesRouteState()),
+              child: const Text('Go to Messages (No Query)'),
+            ),
+            FilledButton(
+              onPressed: () => controller.push(MessagesRouteState1()),
+              child: const Text('Go to Messages (key1=value1)'),
+            ),
+
+            FilledButton(
+              onPressed:
+                  () => controller.push(
+                    MessagesRouteState2().copyWith(extra: 'HELLO THERE HOW ARE YOU?'),
+                  ),
+              child: const Text('Go to Messages (key2=value2)'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+class HomeScreen extends StatelessWidget with RouteWidgetMixin {
+  @override
+  final RouteState routeState;
+
+  const HomeScreen({super.key, required this.routeState});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = RouteController.of(context);
+    debugPrint('INIT STATE HOME');
+    return Container(
+      color: Colors.yellow,
+      child: Center(
+        child: Column(
+          spacing: 8.0,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FilledButton(
+              onPressed: () => controller.push(MessagesRouteState()),
+              child: const Text('Go to Messages (No Query)'),
+            ),
+            FilledButton(
+              onPressed: () => controller.push(MessagesRouteState1()),
+              child: const Text('Go to Messages (key1=value1)'),
+            ),
+            FilledButton(
+              onPressed: () => controller.push(MessagesRouteState2()),
+              child: const Text('Go to Messages (key2=value2)'),
+            ),
+            FilledButton(
+              onPressed: () => controller.push(HomeDetailRouteState()),
+              child: const Text('Go to Home Detail'),
+            ),
+            FilledButton(
+              onPressed:
+                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Home!')),
+              child: const Text('Go to Chat'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+class ChatScreen extends StatefulWidget with RouteWidgetMixin<String> {
+  @override
+  final RouteState<String?> routeState;
+
+  const ChatScreen({super.key, required this.routeState});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('INIT STATE CHAT - Params: ${widget.routeState}');
+  }
+
+  @override
+  void dispose() {
+    debugPrint('ChatScreen disposed - Params: ${widget.routeState}');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = RouteController.of(context);
+    return Container(
+      color: Colors.blue,
+      child: Center(
+        child: Column(
+          spacing: 8.0,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(widget.routeState.extra.toString()),
+            FilledButton(
+              onPressed: () => controller.push(HomeRouteState()),
+              child: const Text('Go to Home'),
+            ),
+            FilledButton(
+              onPressed:
+                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Chat!')),
+              child: const Text('Go to Chat (No ID)'),
+            ),
+            FilledButton(
+              onPressed:
+                  () => controller.push(
+                    ChatRouteState().copyWith(
+                      queryParameters: {'dude': '22'},
+                      extra: 'Hello from Chat!',
+                    ),
+                  ),
+              child: const Text('Go to Chat (ID=123)'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
+  @override
+  final RouteState? routeState;
+
+  const HomeDetailScreen({super.key, this.routeState});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = RouteController.of(context);
+    debugPrint('INIT STATE HOME DETAIL');
+    return Container(
+      color: Colors.green,
+      child: Center(
+        child: Column(
+          spacing: 8.0,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FilledButton(
+              onPressed: () => controller.push(HomeRouteState()),
+              child: const Text('Back to Home'),
+            ),
+            FilledButton(
+              onPressed: () => controller.push(MessagesRouteState()),
+              child: const Text('Go to Messages'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // Source: ./example/example.dart
 // import 'package:flutter/material.dart';
@@ -20,26 +388,63 @@ void main() {
   runApp(const MyApp());
 }
 
+final class HomeRouteState extends RouteState {
+  HomeRouteState()
+    : super.parse(
+        '/home',
+        // Use QuickForwardtEffect() as the default transtion effect for this
+        // route. This can be overridden when pushing this route.
+        animationEffect: QuickForwardtEffect(),
+      );
+}
+
+// This route is only used in the RouteManager, so it does not need to
+// be pushed directly. It is a base route for the chat feature.
+final class BaseChatRouteState extends RouteState {
+  BaseChatRouteState({Map<String, String>? queryParameters})
+    : super.parse(
+        '/chat',
+        queryParameters: queryParameters,
+        // Use a different animation effect for this route.
+        animationEffect: TopToBottomEffect(),
+      );
+}
+
+final class ChatRouteState extends BaseChatRouteState {
+  // Required chatId before pushing this route.
+  ChatRouteState({required String chatId}) : super(queryParameters: {'chatId': chatId});
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: RouteManager(
-        initialRouteState: () => RouteState.parse('/home'),
-        fallbackRouteState: () => RouteState.parse('/home'),
-        builders: [
-          RouteBuilder(
-            routeState: RouteState.parse('/home'),
-            builder: (context, routeState) => HomeScreen(routeState: routeState),
-          ),
-          RouteBuilder(
-            routeState: RouteState.parse('/settings'),
-            builder: (context, routeState) => SettingsScreen(routeState: routeState),
-          ),
-        ],
-      ),
+      //home: // Do not use "home", as it conflicts with RouteManager. Use
+      // "builder" instead.
+      builder: (context, child) {
+        return RouteManager(
+          fallbackRouteState: () => HomeRouteState(),
+          builders: [
+            RouteBuilder(
+              routeState: HomeRouteState(),
+              // Pre-build the HomeScreen even if the initial route is not
+              // HomeRouteState. This is useful for performance optimization.
+              shouldPrebuild: true,
+              // Preserve the HomeScreen widget to avoid rebuilding it.
+              shouldPreserve: true,
+              builder: (context, routeState) => HomeScreen(routeState: routeState),
+            ),
+            RouteBuilder(
+              // Use the BaseChatRouteState instead of the ChatRouteState
+              // since it does not require a chatId to be pushed.
+              routeState: BaseChatRouteState(),
+              builder: (context, routeState) => SettingsScreen(routeState: routeState),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -57,9 +462,13 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
         child: ElevatedButton(
           onPressed: () {
             final controller = RouteController.of(context);
-            controller.push(RouteState.parse('/settings', animationEffect: CupertinoEffect()));
+            controller.push(
+              ChatRouteState(chatId: '123456'),
+              // Override the default animation effect for this push.
+              animationEffect: CupertinoEffect(),
+            );
           },
-          child: const Text('Go to Settings'),
+          child: const Text('Go to Chat'),
         ),
       ),
     );
@@ -75,15 +484,28 @@ class SettingsScreen extends StatelessWidget with RouteWidgetMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            final controller = RouteController.of(context);
-            controller.pushBack();
-          },
-          child: const Text('Go Back'),
-        ),
+      appBar: AppBar(title: const Text('Chat')),
+      body: Column(
+        children: [
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.pushBack(animationEffect: QuickBackEffect());
+              },
+              child: const Text('Go Back'),
+            ),
+          ),
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState());
+              },
+              child: const Text('Go Home (Same as Back)'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -353,8 +775,32 @@ void main() {
   runApp(const MyApp());
 }
 
-final homeRoute = RouteState.parse('/home', animationEffect: CupertinoEffect());
-final settingsRoute = RouteState.parse('/settings', animationEffect: CupertinoEffect());
+final class HomeRouteState extends RouteState {
+  HomeRouteState()
+    : super.parse(
+        '/home',
+        // Use QuickForwardtEffect() as the default transtion effect for this
+        // route. This can be overridden when pushing this route.
+        animationEffect: QuickForwardtEffect(),
+      );
+}
+
+// This route is only used in the RouteManager, so it does not need to
+// be pushed directly. It is a base route for the chat feature.
+final class BaseChatRouteState extends RouteState {
+  BaseChatRouteState({Map<String, String>? queryParameters})
+    : super.parse(
+        '/chat',
+        queryParameters: queryParameters,
+        // Use a different animation effect for this route.
+        animationEffect: TopToBottomEffect(),
+      );
+}
+
+final class ChatRouteState extends BaseChatRouteState {
+  // Required chatId before pushing this route.
+  ChatRouteState({required String chatId}) : super(queryParameters: {'chatId': chatId});
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -362,17 +808,25 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      //home: // Do not use home, as it conflicts with RouteManager.
+      //home: // Do not use "home", as it conflicts with RouteManager. Use
+      // "builder" instead.
       builder: (context, child) {
         return RouteManager(
-          fallbackRouteState: () => homeRoute,
+          fallbackRouteState: () => HomeRouteState(),
           builders: [
             RouteBuilder(
-              routeState: homeRoute,
+              routeState: HomeRouteState(),
+              // Pre-build the HomeScreen even if the initial route is not
+              // HomeRouteState. This is useful for performance optimization.
+              shouldPrebuild: true,
+              // Preserve the HomeScreen widget to avoid rebuilding it.
+              shouldPreserve: true,
               builder: (context, routeState) => HomeScreen(routeState: routeState),
             ),
             RouteBuilder(
-              routeState: settingsRoute,
+              // Use the BaseChatRouteState instead of the ChatRouteState
+              // since it does not require a chatId to be pushed.
+              routeState: BaseChatRouteState(),
               builder: (context, routeState) => SettingsScreen(routeState: routeState),
             ),
           ],
@@ -391,13 +845,18 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
+      backgroundColor: Colors.green,
       body: Center(
         child: ElevatedButton(
           onPressed: () {
             final controller = RouteController.of(context);
-            controller.push(settingsRoute, animationEffect: CupertinoEffect());
+            controller.push(
+              ChatRouteState(chatId: '123456'),
+              // Override the default animation effect for this push.
+              animationEffect: CupertinoEffect(),
+            );
           },
-          child: const Text('Go to Settings'),
+          child: const Text('Go to Chat'),
         ),
       ),
     );
@@ -413,14 +872,34 @@ class SettingsScreen extends StatelessWidget with RouteWidgetMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Chat')),
+      backgroundColor: Colors.blue,
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            final controller = RouteController.of(context);
-            controller.pushBack(animationEffect: NoEffect());
-          },
-          child: const Text('Go Back'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.pushBack(animationEffect: QuickBackEffect());
+              },
+              child: const Text('Go Back'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState());
+              },
+              child: const Text('Go Home'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(HomeRouteState(), animationEffect: PageTurnEffect());
+              },
+              child: const Text('Go Home 2'),
+            ),
+          ],
         ),
       ),
     );
@@ -444,376 +923,6 @@ class SettingsScreen extends StatelessWidget with RouteWidgetMixin {
 library;
 
 export 'src/_src.g.dart';
-
-// Source: ./lib/main2.dart
-// import 'package:flutter/material.dart';
-// import 'package:flutter/rendering.dart';
-
-// import '/df_router.dart';
-
-void main() {
-  //debugRepaintRainbowEnabled = true;
-  runApp(const MyApp());
-}
-
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-
-final class HomeRouteState extends RouteState {
-  HomeRouteState() : super.parse('/home', animationEffect: CupertinoEffect());
-}
-
-final class MessagesRouteState extends RouteState {
-  MessagesRouteState() : super.parse('/messages', animationEffect: CupertinoEffect());
-}
-
-final class ChatRouteState extends RouteState<String> {
-  ChatRouteState() : super.parse('/chat', animationEffect: CupertinoEffect());
-}
-
-final class MessagesRouteState1 extends RouteState {
-  MessagesRouteState1()
-    : super.parse(
-        '/messages?key1=value1',
-        queryParameters: {'key1': 'value1'},
-        animationEffect: CupertinoEffect(),
-      );
-}
-
-final class MessagesRouteState2 extends RouteState {
-  MessagesRouteState2()
-    : super.parse(
-        '/messages?key1=value1',
-        queryParameters: {'key2': 'value2'},
-        animationEffect: CupertinoEffect(),
-      );
-}
-
-final class HomeDetailRouteState extends RouteState {
-  HomeDetailRouteState() : super.parse('/home_detail', animationEffect: CupertinoEffect());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      color: Colors.white,
-      builder: (context, child) {
-        return Material(
-          child: RouteManager(
-            fallbackRouteState: () => HomeRouteState(),
-            // wrapper: (context, child) {
-            //   return Column(
-            //     crossAxisAlignment: CrossAxisAlignment.stretch,
-            //     children: [
-            //       // Persistent app header.
-            //       Container(
-            //         color: Colors.blueGrey,
-            //         padding: const EdgeInsets.all(16.0),
-            //         child: const Text(
-            //           'df_router Example',
-            //           style: TextStyle(color: Colors.white, fontSize: 24.0),
-            //         ),
-            //       ),
-            //       // Main content area.
-            //       Expanded(child: child),
-            //       // Persistent app footer with navigation buttons.
-            //       Container(
-            //         color: Colors.indigo,
-            //         padding: const EdgeInsets.all(16.0),
-            //         child: Row(
-            //           children: [
-            //             IconButton(
-            //               onPressed: () {
-            //                 final controller = RouteController.of(context);
-            //                 controller.push(HomeRouteState());
-            //               },
-            //               icon: Text(
-            //                 'HOME',
-            //                 style: TextStyle(
-            //                   color:
-            //                       RouteController.of(context).routeState.matchPath(HomeRouteState())
-            //                           ? Colors.grey
-            //                           : Colors.white,
-            //                 ),
-            //               ),
-            //             ),
-            //             IconButton(
-            //               onPressed: () {
-            //                 final controller = RouteController.of(context);
-            //                 controller.push(RouteState.parse('/chat'));
-            //               },
-            //               icon: Text(
-            //                 'CHAT',
-            //                 style: TextStyle(
-            //                   color:
-            //                       RouteController.of(context).routeState.path == '/chat'
-            //                           ? Colors.grey
-            //                           : Colors.white,
-            //                 ),
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //       ),
-            //     ],
-            //   );
-            // },
-            builders: [
-              RouteBuilder(
-                routeState: HomeRouteState(),
-                builder: (context, state) {
-                  return HomeScreen(key: state.key, routeState: state);
-                },
-              ),
-              RouteBuilder(
-                routeState: MessagesRouteState(),
-                // Preserves the RouteState when navigating away. This means it will
-                // be kept in memory and not disposed until manually disposed.
-                //shouldPreserve: true,
-                builder: (context, state) {
-                  return MessagesScreen(routeState: state);
-                },
-              ),
-              RouteBuilder<String>(
-                routeState: ChatRouteState(),
-                // Pre-builds the widget even if the RouteState is not at the top of
-                // the stack. This is useful for RouteStates that are frequently
-                // navigated to or that takes some time to build.
-                shouldPrebuild: true,
-                builder: (context, state) {
-                  return ChatScreen(routeState: state);
-                },
-              ),
-              RouteBuilder(
-                routeState: HomeDetailRouteState(),
-                shouldPreserve: true,
-                builder: (context, state) {
-                  return HomeDetailScreen(routeState: state);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-
-class MessagesScreen extends StatefulWidget with RouteWidgetMixin {
-  @override
-  final RouteState routeState;
-
-  const MessagesScreen({super.key, required this.routeState});
-
-  @override
-  State<MessagesScreen> createState() => _MessagesScreenState();
-}
-
-class _MessagesScreenState extends State<MessagesScreen> {
-  int counter = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('INIT STATE MESSAGES - Params: ${widget.routeState.uri}');
-  }
-
-  @override
-  void dispose() {
-    debugPrint('MessagesScreen disposed - Params: ${widget.routeState.uri}');
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = RouteController.of(context);
-    return Container(
-      color: Colors.lightGreen,
-      child: Center(
-        child: Column(
-          spacing: 8.0,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Extra: ${widget.routeState.extra}'),
-            Text(counter.toString()),
-            FilledButton(
-              onPressed: () => setState(() => counter++),
-              child: const Text('Increment'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(HomeRouteState()),
-              child: const Text('Go to Home'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(MessagesRouteState()),
-              child: const Text('Go to Messages (No Query)'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(MessagesRouteState1()),
-              child: const Text('Go to Messages (key1=value1)'),
-            ),
-
-            FilledButton(
-              onPressed:
-                  () => controller.push(
-                    MessagesRouteState2().copyWith(extra: 'HELLO THERE HOW ARE YOU?'),
-                  ),
-              child: const Text('Go to Messages (key2=value2)'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-
-class HomeScreen extends StatelessWidget with RouteWidgetMixin {
-  @override
-  final RouteState routeState;
-
-  const HomeScreen({super.key, required this.routeState});
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = RouteController.of(context);
-    debugPrint('INIT STATE HOME');
-    return Container(
-      color: Colors.yellow,
-      child: Center(
-        child: Column(
-          spacing: 8.0,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(decoration: const InputDecoration(labelText: 'Home Screen'), readOnly: true),
-            FilledButton(
-              onPressed: () => controller.push(MessagesRouteState()),
-              child: const Text('Go to Messages (No Query)'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(MessagesRouteState1()),
-              child: const Text('Go to Messages (key1=value1)'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(MessagesRouteState2()),
-              child: const Text('Go to Messages (key2=value2)'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(HomeDetailRouteState()),
-              child: const Text('Go to Home Detail'),
-            ),
-            FilledButton(
-              onPressed:
-                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Home!')),
-              child: const Text('Go to Chat'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-
-class ChatScreen extends StatefulWidget with RouteWidgetMixin<String> {
-  @override
-  final RouteState<String?> routeState;
-
-  const ChatScreen({super.key, required this.routeState});
-
-  @override
-  State<ChatScreen> createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('INIT STATE CHAT - Params: ${widget.routeState}');
-  }
-
-  @override
-  void dispose() {
-    debugPrint('ChatScreen disposed - Params: ${widget.routeState}');
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = RouteController.of(context);
-    return Container(
-      color: Colors.blue,
-      child: Center(
-        child: Column(
-          spacing: 8.0,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(widget.routeState.extra.toString()),
-            FilledButton(
-              onPressed: () => controller.push(HomeRouteState()),
-              child: const Text('Go to Home'),
-            ),
-            FilledButton(
-              onPressed:
-                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Chat!')),
-              child: const Text('Go to Chat (No ID)'),
-            ),
-            FilledButton(
-              onPressed:
-                  () => controller.push(
-                    ChatRouteState().copyWith(
-                      queryParameters: {'dude': '22'},
-                      extra: 'Hello from Chat!',
-                    ),
-                  ),
-              child: const Text('Go to Chat (ID=123)'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-
-class HomeDetailScreen extends StatelessWidget with RouteWidgetMixin {
-  @override
-  final RouteState? routeState;
-
-  const HomeDetailScreen({super.key, this.routeState});
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = RouteController.of(context);
-    debugPrint('INIT STATE HOME DETAIL');
-    return Container(
-      color: Colors.green,
-      child: Center(
-        child: Column(
-          spacing: 8.0,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FilledButton(
-              onPressed: () => controller.push(HomeRouteState()),
-              child: const Text('Back to Home'),
-            ),
-            FilledButton(
-              onPressed: () => controller.push(MessagesRouteState()),
-              child: const Text('Go to Messages'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // Source: ./lib/src/route_state.dart
 //.title
@@ -1045,6 +1154,8 @@ class LayerEffectResult {
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
+// import 'dart:math' as math;
+
 // import 'package:flutter/widgets.dart';
 
 // import '/src/_src.g.dart';
@@ -1073,8 +1184,8 @@ class FadeEffect extends AnimationEffect {
       );
 }
 
-class QuickLeftToRightEffect extends AnimationEffect {
-  QuickLeftToRightEffect()
+class QuickBackEffect extends AnimationEffect {
+  QuickBackEffect()
     : super(
         duration: const Duration(milliseconds: 375),
         curve: Curves.easeInOutQuint,
@@ -1095,8 +1206,8 @@ class QuickLeftToRightEffect extends AnimationEffect {
       );
 }
 
-class QuickRightToLeftEffect extends AnimationEffect {
-  QuickRightToLeftEffect()
+class QuickForwardtEffect extends AnimationEffect {
+  QuickForwardtEffect()
     : super(
         duration: const Duration(milliseconds: 375),
         curve: Curves.easeInOutQuint,
@@ -1159,23 +1270,6 @@ class TopToBottomEffect extends AnimationEffect {
       );
 }
 
-class BounceOutEffect extends AnimationEffect {
-  BounceOutEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.bounceOut,
-        data: (context, value) {
-          final size = MediaQuery.sizeOf(context);
-          return [
-            AnimationLayerEffect(
-              transform: Matrix4.translationValues(0.0, -size.height + size.height * value, 0.0),
-            ),
-            const AnimationLayerEffect(ignorePointer: true),
-          ];
-        },
-      );
-}
-
 class CupertinoEffect extends AnimationEffect {
   CupertinoEffect()
     : super(
@@ -1192,6 +1286,26 @@ class CupertinoEffect extends AnimationEffect {
               transform: Matrix4.translationValues(-size.width * value * 0.5, 0.0, 0.0),
               ignorePointer: true,
             ),
+          ];
+        },
+      );
+}
+
+class PageTurnEffect extends AnimationEffect {
+  PageTurnEffect()
+    : super(
+        duration: const Duration(milliseconds: 2000),
+        curve: Curves.linear,
+        data: (context, value) {
+          final size = MediaQuery.sizeOf(context);
+
+          return [
+            AnimationLayerEffect(
+              transform:
+                  Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0) +
+                  Matrix4.skew((1 - value), -0.05 * (1 - value)),
+            ),
+            const AnimationLayerEffect(ignorePointer: true),
           ];
         },
       );
@@ -1321,34 +1435,23 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
     }
   }
 
-  @override
-  void didUpdateWidget(AnimationEffectBuilder oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.effects.length != oldWidget.effects.length) {
-      for (var controller in controllers) {
-        controller.removeStatusListener(_handleAnimationStatus);
-        controller.dispose();
-      }
-      _initializeAnimations();
-    } else {
-      for (var i = 0; i < widget.effects.length; i++) {
-        if (widget.effects[i].duration != oldWidget.effects[i].duration) {
-          controllers[i].duration = widget.effects[i].duration;
-        }
-        if (widget.effects[i].curve != oldWidget.effects[i].curve) {
-          animations[i] = CurvedAnimation(parent: controllers[i], curve: widget.effects[i].curve);
-        }
-      }
-    }
-    _hasTriggeredCompletion = false; // Reset completion state on widget update
-  }
-
-  @override
-  void dispose() {
+  void _disposeControllers() {
     for (final controller in controllers) {
       controller.removeStatusListener(_handleAnimationStatus);
       controller.dispose();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _disposeControllers();
+    _initializeAnimations();
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
     super.dispose();
   }
 
@@ -2049,7 +2152,9 @@ class RouteController {
   //
   //
 
-  void pushUri(Uri uri) => push(RouteState(uri));
+  void pushUri(Uri uri, {AnimationEffect? animationEffect}) {
+    push(RouteState(uri), animationEffect: animationEffect);
+  }
 
   //
   //
@@ -2074,7 +2179,6 @@ class RouteController {
     AnimationEffect? animationEffect,
   }) {
     nextEffect = animationEffect ?? routeState.animationEffect ?? NoEffect();
-    print(nextEffect);
     final uri = routeState.uri;
     final skipCurrent = routeState.skipCurrent;
     if (skipCurrent && _pRouteState.value.uri == uri) {

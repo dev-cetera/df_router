@@ -23,7 +23,7 @@ final class BaseChatRouteState extends RouteState {
         '/chat',
         queryParameters: queryParameters,
         // Use a different animation effect for this route.
-        animationEffect: TopToBottomEffect(),
+        animationEffect: SlideDownEffect(),
       );
 }
 

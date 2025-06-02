@@ -10,8 +10,6 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
-import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
 
 import '/src/_src.g.dart';
@@ -84,8 +82,8 @@ class QuickForwardtEffect extends AnimationEffect {
       );
 }
 
-class BottomToTopEffect extends AnimationEffect {
-  BottomToTopEffect()
+class SlideUpEffect extends AnimationEffect {
+  SlideUpEffect()
     : super(
         duration: const Duration(milliseconds: 375),
         curve: Curves.easeInOutQuart,
@@ -105,8 +103,8 @@ class BottomToTopEffect extends AnimationEffect {
       );
 }
 
-class TopToBottomEffect extends AnimationEffect {
-  TopToBottomEffect()
+class SlideDownEffect extends AnimationEffect {
+  SlideDownEffect()
     : super(
         duration: const Duration(milliseconds: 375),
         curve: Curves.easeInOutQuart,
@@ -147,26 +145,6 @@ class CupertinoEffect extends AnimationEffect {
       );
 }
 
-class PageTurnEffect extends AnimationEffect {
-  PageTurnEffect()
-    : super(
-        duration: const Duration(milliseconds: 2000),
-        curve: Curves.linear,
-        data: (context, value) {
-          final size = MediaQuery.sizeOf(context);
-
-          return [
-            AnimationLayerEffect(
-              transform:
-                  Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0) +
-                  Matrix4.skew((1 - value), -0.05 * (1 - value)),
-            ),
-            const AnimationLayerEffect(ignorePointer: true),
-          ];
-        },
-      );
-}
-
 class MaterialEffect extends AnimationEffect {
   MaterialEffect()
     : super(
@@ -183,6 +161,26 @@ class MaterialEffect extends AnimationEffect {
               transform: Matrix4.translationValues(-size.width * value * 0.5, 0.0, 0.0),
               ignorePointer: true,
             ),
+          ];
+        },
+      );
+}
+
+class PageTurnEffect extends AnimationEffect {
+  PageTurnEffect()
+    : super(
+        duration: const Duration(milliseconds: 2000),
+        curve: Curves.linear,
+        data: (context, value) {
+          final size = MediaQuery.sizeOf(context);
+
+          return [
+            AnimationLayerEffect(
+              transform:
+                  Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0) +
+                  Matrix4.skew((1 - value), -0.05 * (1 - value)),
+            ),
+            const AnimationLayerEffect(ignorePointer: true),
           ];
         },
       );

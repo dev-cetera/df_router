@@ -218,9 +218,8 @@ class RouteController {
 
     _pRouteState.value = routeState;
     addStatesToCache([routeState]);
-
-    _globalKey.currentState?.setControllerValues(0.0);
-    _globalKey.currentState?.forward();
+    _globalKey.currentState?.setEffects([nextEffect]);
+    _globalKey.currentState?.restart();
   }
 
   //
@@ -258,7 +257,6 @@ class RouteController {
   Widget buildScreen(BuildContext context, RouteState routeState) {
     return AnimationEffectBuilder(
       key: _globalKey,
-      effects: [nextEffect],
       onComplete: () {
         _maybeRemoveStaleRoute(_prevRouteState);
       },
