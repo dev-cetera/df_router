@@ -1,7 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:df_router/df_router.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/rendering.dart' show debugRepaintRainbowEnabled;
+
 void main() {
+  debugRepaintRainbowEnabled = kDebugMode;
   runApp(const MyApp());
 }
 
@@ -32,8 +36,7 @@ final class BaseChatRouteState extends RouteState {
 final class ChatRouteState extends BaseChatRouteState {
   final String chatId;
 
-  ChatRouteState({required this.chatId})
-    : super(queryParameters: {'chatId': chatId});
+  ChatRouteState({required this.chatId}) : super(queryParameters: {'chatId': chatId});
 
   ChatRouteState.from(super.other)
     : chatId = other.uri.queryParameters['chatId'] ?? '',
@@ -59,15 +62,14 @@ class MyApp extends StatelessWidget {
               shouldPrebuild: true,
               // Preserve the HomeScreen widget to avoid rebuilding it.
               shouldPreserve: true,
-              builder: (context, routeState) =>
-                  HomeScreen(routeState: HomeRouteState()),
+              builder: (context, routeState) => HomeScreen(routeState: HomeRouteState()),
             ),
             RouteBuilder(
               // Use the BaseChatRouteState instead of the ChatRouteState
               // since it does not require a chatId to be pushed.
               routeState: BaseChatRouteState(),
-              builder: (context, routeState) =>
-                  ChatScreen(routeState: ChatRouteState.from(routeState)),
+              builder:
+                  (context, routeState) => ChatScreen(routeState: ChatRouteState.from(routeState)),
             ),
           ],
         );
@@ -83,6 +85,7 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('Building HomeScreen with routeState: $routeState');
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
       backgroundColor: Colors.green,
@@ -111,6 +114,7 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('Building ChatScreen with routeState: $routeState');
     return Scaffold(
       appBar: AppBar(title: Text('Chat - ${routeState?.chatId}')),
       backgroundColor: Colors.blue,
@@ -128,7 +132,7 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack(animationEffect: const QuickBackEffect());
+                controller.pushBack(animationEffect: const QuickBackwardEffect());
               },
               child: const Text('Go Back - Quick Back Effect'),
             ),
@@ -142,21 +146,14 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.push(
-                  HomeRouteState().copyWith(
-                    animationEffect: const MaterialEffect(),
-                  ),
-                );
+                controller.push(HomeRouteState().copyWith(animationEffect: const MaterialEffect()));
               },
               child: const Text('Go Home - Material Effect'),
             ),
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.push(
-                  HomeRouteState(),
-                  animationEffect: const PageFlapDown(),
-                );
+                controller.push(HomeRouteState(), animationEffect: const PageFlapDown());
               },
               child: const Text('Go Home - Page Flap Down Effect'),
             ),

@@ -43,9 +43,7 @@ class PrioritizedIndexedStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveIndices = indices
-        .map((index) => index == -1 ? null : index)
-        .toList();
+    final effectiveIndices = indices.map((index) => index == -1 ? null : index).toList();
 
     final childOriginalIndexToStackingOrder = <int, int>{};
     if (children.isNotEmpty) {
@@ -101,8 +99,7 @@ class _RawPrioritizedIndexedStack extends Stack {
         context,
         alignment: alignment,
         textDirection: textDirection,
-        why: () =>
-            'to resolve $alignment for this PrioritizedIndexedStack widget',
+        why: () => 'to resolve $alignment for this PrioritizedIndexedStack widget',
       ),
     );
     return RenderPrioritizedIndexedStack(
@@ -116,17 +113,13 @@ class _RawPrioritizedIndexedStack extends Stack {
   }
 
   @override
-  void updateRenderObject(
-    BuildContext context,
-    RenderPrioritizedIndexedStack renderObject,
-  ) {
+  void updateRenderObject(BuildContext context, RenderPrioritizedIndexedStack renderObject) {
     assert(
       _debugCheckHasDirectionality(
         context,
         alignment: alignment,
         textDirection: textDirection,
-        why: () =>
-            'to resolve $alignment for this PrioritizedIndexedStack widget',
+        why: () => 'to resolve $alignment for this PrioritizedIndexedStack widget',
       ),
     );
     renderObject
@@ -196,99 +189,159 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       return;
     }
 
-    // Iterate in reverse paint order (bottom-most visible child first, then layers on top)
-    for (
-      var stackingOrder = _indices.length - 1;
-      stackingOrder >= 0;
-      stackingOrder--
-    ) {
+    for (var stackingOrder = _indices.length - 1; stackingOrder >= 0; stackingOrder--) {
       final childOriginalIndex = _indices[stackingOrder];
       if (childOriginalIndex == null) continue;
 
-      final RenderBox? childToPaint = _getChildRenderBox(childOriginalIndex);
+      final childToPaint = _getChildRenderBox(childOriginalIndex);
       if (childToPaint == null) continue;
 
-      final StackParentData childParentData =
-          childToPaint.parentData! as StackParentData;
-      final AnimationLayerEffect? effectData =
+      final childParentData = childToPaint.parentData! as StackParentData;
+      final effectData =
           (_layerEffects != null && stackingOrder < _layerEffects!.length)
-          ? _layerEffects![stackingOrder]
-          : null;
+              ? _layerEffects![stackingOrder]
+              : null;
 
-      // This is the child's position as determined by the Stack layout, relative to the Stack's origin.
-      final Offset childStackLayoutOffset = childParentData.offset;
-      // This is the absolute offset where painting related to this child will start.
-      final Offset absoluteChildPaintOrigin = offset + childStackLayoutOffset;
+      final childStackLayoutOffset = childParentData.offset;
+      final absoluteChildPaintOrigin = offset + childStackLayoutOffset;
 
-      // --- Layer for visual effects (opacity, colorFilter, imageFilter) ---
-      bool needsSaveLayerForVisualEffects =
-          (effectData?.opacity != null && effectData!.opacity! < 1.0) ||
-          effectData?.colorFilter != null ||
-          effectData?.imageFilter != null;
-      Paint? visualEffectsPaint;
+      // Cache effect properties locally
+      final animationTransform = effectData?.transform;
+      final currentOpacity = effectData?.opacity;
+      final currentColorFilter = effectData?.colorFilter;
+      final currentImageFilter = effectData?.imageFilter;
 
-      if (needsSaveLayerForVisualEffects) {
-        visualEffectsPaint = Paint();
-        if (effectData!.opacity != null) {
-          // Ensure opacity is applied correctly.
-          // Multiplying alpha by 255 for the Paint's color.
-          visualEffectsPaint.color = Color.fromRGBO(
-            0,
-            0,
-            0,
-            effectData.opacity!,
-          );
+      var needsSaveLayer = false;
+      if (effectData != null) {
+        // Check if effectData itself is non-null
+        needsSaveLayer =
+            (currentOpacity != null && currentOpacity < 1.0) ||
+            currentColorFilter != null ||
+            currentImageFilter != null;
+      }
+
+      Paint? visualEffectsPaintObject;
+      if (needsSaveLayer) {
+        visualEffectsPaintObject = Paint();
+        if (currentOpacity != null) {
+          visualEffectsPaintObject.color = Color.fromRGBO(0, 0, 0, currentOpacity);
         }
-        if (effectData.colorFilter != null) {
-          visualEffectsPaint.colorFilter = effectData.colorFilter;
+        if (currentColorFilter != null) {
+          visualEffectsPaintObject.colorFilter = currentColorFilter;
         }
-        if (effectData.imageFilter != null) {
-          visualEffectsPaint.imageFilter = effectData.imageFilter;
+        if (currentImageFilter != null) {
+          visualEffectsPaintObject.imageFilter = currentImageFilter;
         }
-        // The saveLayer is established at the child's absolute position.
-        // Subsequent drawing operations within this layer are relative to this position.
         context.canvas.saveLayer(
           absoluteChildPaintOrigin & childToPaint.size,
-          visualEffectsPaint,
+          visualEffectsPaintObject,
         );
       }
 
-      // --- Apply transform using pushTransform ---
-      final Matrix4? animationTransform = effectData?.transform;
-
-      // The offset at which the child should be painted by the painter callback of pushTransform.
-      // If we used saveLayer, we're already "at" the child's position, so paint at Offset.zero within the layer.
-      // Otherwise, paint at the child's layout offset relative to the current context (which includes the stack's `offset`).
-      final Offset offsetForPainter = needsSaveLayerForVisualEffects
-          ? Offset.zero
-          : absoluteChildPaintOrigin;
+      final offsetForPainter = needsSaveLayer ? Offset.zero : absoluteChildPaintOrigin;
 
       if (animationTransform != null && !animationTransform.isIdentity()) {
-        context.pushTransform(
-          childToPaint
-              .needsCompositing, // Crucial: hints to Flutter to use a TransformLayer if needed
-          offsetForPainter, // The offset passed to the painter callback
-          animationTransform, // The transformation matrix
-          (PaintingContext paintingContext, Offset painterOffset) {
-            // painterOffset will be the same as offsetForPainter.
-            // The canvas is already transformed by animationTransform.
-            // We paint the child at painterOffset within this transformed coordinate system.
-            paintingContext.paintChild(childToPaint, painterOffset);
-          },
-        );
+        context.pushTransform(childToPaint.needsCompositing, offsetForPainter, animationTransform, (
+          PaintingContext paintingContext,
+          Offset painterOffset,
+        ) {
+          paintingContext.paintChild(childToPaint, painterOffset);
+        });
       } else {
-        // No animationTransform or it's an identity matrix
-        // Paint the child directly at the calculated offset.
-        // If inside a saveLayer, this offset is Offset.zero (relative to layer's origin).
-        // Otherwise, it's absoluteChildPaintOrigin.
         context.paintChild(childToPaint, offsetForPainter);
       }
 
-      if (needsSaveLayerForVisualEffects) {
-        context.canvas.restore(); // Restore from saveLayer
+      if (needsSaveLayer) {
+        context.canvas.restore();
       }
     }
   }
+
+  // @override
+  // void paint(PaintingContext context, Offset offset) {
+  //   if (firstChild == null || _indices.isEmpty) {
+  //     return;
+  //   }
+
+  //   // Iterate in reverse paint order (bottom-most visible child first, then layers on top)
+  //   for (var stackingOrder = _indices.length - 1; stackingOrder >= 0; stackingOrder--) {
+  //     final childOriginalIndex = _indices[stackingOrder];
+  //     if (childOriginalIndex == null) continue;
+
+  //     final childToPaint = _getChildRenderBox(childOriginalIndex);
+  //     if (childToPaint == null) continue;
+
+  //     final childParentData = childToPaint.parentData! as StackParentData;
+  //     final effectData =
+  //         (_layerEffects != null && stackingOrder < _layerEffects!.length)
+  //             ? _layerEffects![stackingOrder]
+  //             : null;
+
+  //     // This is the child's position as determined by the Stack layout, relative to the Stack's origin.
+  //     final childStackLayoutOffset = childParentData.offset;
+  //     // This is the absolute offset where painting related to this child will start.
+  //     final absoluteChildPaintOrigin = offset + childStackLayoutOffset;
+
+  //     // --- Layer for visual effects (opacity, colorFilter, imageFilter) ---
+  //     var needsSaveLayerForVisualEffects =
+  //         (effectData?.opacity != null && effectData!.opacity! < 1.0) ||
+  //         effectData?.colorFilter != null ||
+  //         effectData?.imageFilter != null;
+  //     Paint? visualEffectsPaint;
+
+  //     if (needsSaveLayerForVisualEffects) {
+  //       visualEffectsPaint = Paint();
+  //       if (effectData!.opacity != null) {
+  //         // Ensure opacity is applied correctly.
+  //         // Multiplying alpha by 255 for the Paint's color.
+  //         visualEffectsPaint.color = Color.fromRGBO(0, 0, 0, effectData.opacity!);
+  //       }
+  //       if (effectData.colorFilter != null) {
+  //         visualEffectsPaint.colorFilter = effectData.colorFilter;
+  //       }
+  //       if (effectData.imageFilter != null) {
+  //         visualEffectsPaint.imageFilter = effectData.imageFilter;
+  //       }
+  //       // The saveLayer is established at the child's absolute position.
+  //       // Subsequent drawing operations within this layer are relative to this position.
+  //       context.canvas.saveLayer(absoluteChildPaintOrigin & childToPaint.size, visualEffectsPaint);
+  //     }
+
+  //     // --- Apply transform using pushTransform ---
+  //     final animationTransform = effectData?.transform;
+
+  //     // The offset at which the child should be painted by the painter callback of pushTransform.
+  //     // If we used saveLayer, we're already "at" the child's position, so paint at Offset.zero within the layer.
+  //     // Otherwise, paint at the child's layout offset relative to the current context (which includes the stack's `offset`).
+  //     final offsetForPainter =
+  //         needsSaveLayerForVisualEffects ? Offset.zero : absoluteChildPaintOrigin;
+
+  //     if (animationTransform != null && !animationTransform.isIdentity()) {
+  //       context.pushTransform(
+  //         childToPaint
+  //             .needsCompositing, // Crucial: hints to Flutter to use a TransformLayer if needed
+  //         offsetForPainter, // The offset passed to the painter callback
+  //         animationTransform, // The transformation matrix
+  //         (paintingContext, painterOffset) {
+  //           // painterOffset will be the same as offsetForPainter.
+  //           // The canvas is already transformed by animationTransform.
+  //           // We paint the child at painterOffset within this transformed coordinate system.
+  //           paintingContext.paintChild(childToPaint, painterOffset);
+  //         },
+  //       );
+  //     } else {
+  //       // No animationTransform or it's an identity matrix
+  //       // Paint the child directly at the calculated offset.
+  //       // If inside a saveLayer, this offset is Offset.zero (relative to layer's origin).
+  //       // Otherwise, it's absoluteChildPaintOrigin.
+  //       context.paintChild(childToPaint, offsetForPainter);
+  //     }
+
+  //     if (needsSaveLayerForVisualEffects) {
+  //       context.canvas.restore();
+  //     }
+  //   }
+  // }
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
@@ -296,46 +349,39 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       return false;
     }
 
-    for (
-      var stackingOrder = 0;
-      stackingOrder < _indices.length;
-      stackingOrder++
-    ) {
+    for (var stackingOrder = 0; stackingOrder < _indices.length; stackingOrder++) {
       final childOriginalIndex = _indices[stackingOrder];
       if (childOriginalIndex == null) continue;
 
       final childToTest = _getChildRenderBox(childOriginalIndex);
       if (childToTest == null) continue;
 
-      final AnimationLayerEffect? effectData = _layerEffects?[stackingOrder];
+      final effectData =
+          (_layerEffects != null && stackingOrder < _layerEffects!.length)
+              ? _layerEffects![stackingOrder]
+              : null;
 
-      // Check for ignorePointer or fully transparent
-      if (effectData?.ignorePointer == true ||
-          (effectData?.opacity != null && effectData!.opacity! <= 0.0)) {
-        continue; // Skip hit testing for this child
+      final effectivelyIgnorePointer = effectData?.ignorePointer ?? false;
+      final currentOpacity = effectData?.opacity;
+      final currentTransform = effectData?.transform;
+
+      final fullyTransparent = currentOpacity != null && currentOpacity <= 0.0;
+
+      if (effectivelyIgnorePointer || fullyTransparent) {
+        continue;
       }
 
       final childParentData = childToTest.parentData! as StackParentData;
-      final Offset childStackOffset =
-          childParentData.offset; // Child's offset within the Stack
-      final Matrix4? transform = effectData?.transform;
+      final childStackOffset = childParentData.offset;
 
       bool hitted;
-      if (transform != null) {
+      if (currentTransform != null && !currentTransform.isIdentity()) {
         hitted = result.addWithPaintTransform(
-          transform: transform,
-
-          position: position + childStackOffset,
-          hitTest:
-              (
-                BoxHitTestResult hitTestResult,
-                Offset transformedLocalPosition,
-              ) {
-                return childToTest.hitTest(
-                  hitTestResult,
-                  position: transformedLocalPosition,
-                );
-              },
+          transform: currentTransform,
+          position: position - childStackOffset,
+          hitTest: (BoxHitTestResult hitTestResult, Offset transformedLocalPosition) {
+            return childToTest.hitTest(hitTestResult, position: transformedLocalPosition);
+          },
         );
       } else {
         hitted = result.addWithPaintOffset(
@@ -354,12 +400,62 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     return false;
   }
 
+  // @override
+  // bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+  //   if (firstChild == null || _indices.isEmpty) {
+  //     return false;
+  //   }
+
+  //   for (var stackingOrder = 0; stackingOrder < _indices.length; stackingOrder++) {
+  //     final childOriginalIndex = _indices[stackingOrder];
+  //     if (childOriginalIndex == null) continue;
+
+  //     final childToTest = _getChildRenderBox(childOriginalIndex);
+  //     if (childToTest == null) continue;
+
+  //     final effectData = _layerEffects?[stackingOrder];
+
+  //     // Check for ignorePointer or fully transparent
+  //     if (effectData?.ignorePointer == true ||
+  //         (effectData?.opacity != null && effectData!.opacity! <= 0.0)) {
+  //       continue; // Skip hit testing for this child
+  //     }
+
+  //     final childParentData = childToTest.parentData! as StackParentData;
+  //     final childStackOffset = childParentData.offset;
+  //     final transform = effectData?.transform;
+
+  //     bool hitted;
+  //     if (transform != null) {
+  //       hitted = result.addWithPaintTransform(
+  //         transform: transform,
+
+  //         position: position + childStackOffset,
+  //         hitTest: (hitTestResult, transformedLocalPosition) {
+  //           return childToTest.hitTest(hitTestResult, position: transformedLocalPosition);
+  //         },
+  //       );
+  //     } else {
+  //       hitted = result.addWithPaintOffset(
+  //         offset: childStackOffset,
+  //         position: position,
+  //         hitTest: (hitTestResult, localPosition) {
+  //           return childToTest.hitTest(hitTestResult, position: localPosition);
+  //         },
+  //       );
+  //     }
+
+  //     if (hitted) {
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-      DiagnosticsProperty<List<int?>>('indices (effective)', _indices),
-    );
+    properties.add(DiagnosticsProperty<List<int?>>('indices (effective)', _indices));
     properties.add(
       DiagnosticsProperty<List<AnimationLayerEffect>>(
         'layerEffects',
@@ -375,8 +471,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
 class _PrioritizedIndexedStackElement extends MultiChildRenderObjectElement {
   _PrioritizedIndexedStackElement(_RawPrioritizedIndexedStack super.widget);
   @override
-  _RawPrioritizedIndexedStack get widget =>
-      super.widget as _RawPrioritizedIndexedStack;
+  _RawPrioritizedIndexedStack get widget => super.widget as _RawPrioritizedIndexedStack;
   // ... (debugVisitOnstageChildren remains the same) ...
   @override
   void debugVisitOnstageChildren(ElementVisitor visitor) {
@@ -390,9 +485,7 @@ class _PrioritizedIndexedStackElement extends MultiChildRenderObjectElement {
     // ignore: prefer_collection_literals
     final visitedChildIndices = LinkedHashSet<int>();
     for (final targetIndex in effectiveIndices) {
-      if (targetIndex != null &&
-          targetIndex >= 0 &&
-          targetIndex < children.length) {
+      if (targetIndex != null && targetIndex >= 0 && targetIndex < children.length) {
         if (visitedChildIndices.add(targetIndex)) {
           visitor(children.elementAt(targetIndex));
         }

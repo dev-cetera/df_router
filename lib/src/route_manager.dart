@@ -23,7 +23,7 @@ class RouteManager extends StatelessWidget {
   final RouteState<Enum> Function()? errorState;
   final void Function(RouteController controller)? onControllerCreated;
   final List<RouteBuilder> builders;
-
+  final bool clipToBounds;
   final TRouteWrapperFn? wrapper;
 
   const RouteManager({
@@ -33,6 +33,7 @@ class RouteManager extends StatelessWidget {
     this.errorState,
     this.onControllerCreated,
     required this.builders,
+    this.clipToBounds = false,
     this.wrapper,
   });
 
@@ -52,14 +53,17 @@ class RouteManager extends StatelessWidget {
         pod: controller.pRouteState,
         cacheDuration: null,
         builder: (context, snapshot) {
-          final child = ClipRect(
-            child: controller.buildScreen(context, snapshot.value!),
-          );
+          Widget child = RepaintBoundary(child: controller.buildScreen(context, snapshot.value!));
+          if (clipToBounds) {
+            child = ClipRect(child: child);
+          }
           return wrapper?.call(context, child) ?? child;
         },
       ),
     );
   }
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 typedef TRouteWrapperFn = Widget Function(BuildContext context, Widget child);

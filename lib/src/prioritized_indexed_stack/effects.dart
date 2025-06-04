@@ -20,9 +20,8 @@ class NoEffect extends AnimationEffect {
   const NoEffect() : super(duration: Duration.zero, curve: Curves.linear);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
+    return (context, size, value) {
       return const [AnimationLayerEffect(), AnimationLayerEffect()];
     };
   }
@@ -30,47 +29,30 @@ class NoEffect extends AnimationEffect {
 
 class FadeEffect extends AnimationEffect {
   const FadeEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeOutSine,
-      );
+    : super(duration: const Duration(milliseconds: 375), curve: Curves.easeOutSine);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      return [
-        AnimationLayerEffect(opacity: value),
-        AnimationLayerEffect(opacity: 1.0 - value),
-      ];
+    return (context, size, value) {
+      return [AnimationLayerEffect(opacity: value), AnimationLayerEffect(opacity: 1.0 - value)];
     };
   }
 }
 
-class QuickBackEffect extends AnimationEffect {
-  const QuickBackEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuint,
-      );
+class QuickBackwardEffect extends AnimationEffect {
+  const QuickBackwardEffect()
+    : super(duration: const Duration(milliseconds: 375), curve: Curves.easeInOutQuint);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      final size = MediaQuery.sizeOf(context);
-      final width90 = size.width * 0.9;
+    return (context, size, value) {
       return [
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            -width90 + width90 * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-size.width + size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(width90 * value * 0.5, 0.0, 0.0),
+          transform: Matrix4.translationValues(size.width * value * 0.5, 0.0, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -80,32 +62,18 @@ class QuickBackEffect extends AnimationEffect {
 
 class QuickForwardEffect extends AnimationEffect {
   const QuickForwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuint,
-      );
+    : super(duration: const Duration(milliseconds: 375), curve: Curves.easeInOutQuint);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      final size = MediaQuery.sizeOf(context);
-      final width90 = size.width * 0.9;
+    return (context, size, value) {
       return [
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            width90 - width90 * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            -width90 * value * 0.5,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-size.width * value * 0.5, 0.0, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -115,31 +83,18 @@ class QuickForwardEffect extends AnimationEffect {
 
 class SlideUpEffect extends AnimationEffect {
   const SlideUpEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuart,
-      );
+    : super(duration: const Duration(milliseconds: 375), curve: Curves.easeInOutQuart);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      final size = MediaQuery.sizeOf(context);
+    return (context, size, value) {
       return [
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            0.0,
-            size.height - size.height * value,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, size.height - size.height * value, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            0.0,
-            -size.height * value * 0.5,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, -size.height * value * 0.5, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -149,31 +104,18 @@ class SlideUpEffect extends AnimationEffect {
 
 class SlideDownEffect extends AnimationEffect {
   const SlideDownEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuart,
-      );
+    : super(duration: const Duration(milliseconds: 375), curve: Curves.easeInOutQuart);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      final size = MediaQuery.sizeOf(context);
+    return (context, size, value) {
       return [
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            0.0,
-            -size.height + size.height * value,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, -size.height + size.height * value, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            0.0,
-            size.height * value * 0.5,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, size.height * value * 0.5, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -183,31 +125,18 @@ class SlideDownEffect extends AnimationEffect {
 
 class CupertinoEffect extends AnimationEffect {
   const CupertinoEffect()
-    : super(
-        duration: const Duration(milliseconds: 410),
-        curve: Curves.easeInOut,
-      );
+    : super(duration: const Duration(milliseconds: 410), curve: Curves.easeInOut);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      final size = MediaQuery.sizeOf(context);
+    return (context, size, value) {
       return [
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            size.width - size.width * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            -size.width * value * 0.5,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-size.width * value * 0.5, 0.0, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -217,31 +146,18 @@ class CupertinoEffect extends AnimationEffect {
 
 class MaterialEffect extends AnimationEffect {
   const MaterialEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.fastOutSlowIn,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.fastOutSlowIn);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      final size = MediaQuery.sizeOf(context);
+    return (context, size, value) {
       return [
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            size.width - size.width * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            -size.width * value * 0.5,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-size.width * value * 0.5, 0.0, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -251,25 +167,15 @@ class MaterialEffect extends AnimationEffect {
 
 class PageFlapDown extends AnimationEffect {
   const PageFlapDown()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInSine,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.easeInSine);
 
   @override
-  List<AnimationLayerEffect> Function(BuildContext context, double value)
   get data {
-    return (context, value) {
-      final size = MediaQuery.sizeOf(context);
-
+    return (context, size, value) {
       return [
         AnimationLayerEffect(
           transform:
-              Matrix4.translationValues(
-                0.25 * (size.width - size.width * value),
-                0.0,
-                0.0,
-              ) +
+              Matrix4.translationValues(0.25 * (size.width - size.width * value), 0.0, 0.0) +
               Matrix4.skew((1 - value), -0.1 * (1 - value)) +
               Matrix4.rotationX((1 - value)),
         ),
