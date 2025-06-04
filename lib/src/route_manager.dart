@@ -53,7 +53,9 @@ class RouteManager extends StatelessWidget {
         pod: controller.pRouteState,
         cacheDuration: null,
         builder: (context, snapshot) {
-          Widget child = RepaintBoundary(child: controller.buildScreen(context, snapshot.value!));
+          var child = RepaintBoundary(
+            child: controller.buildScreen(context, snapshot.value!),
+          );
           if (clipToBounds) {
             child = ClipRect(child: child);
           }

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.3]
+
+- Released @ 6/2025 (UTC)
+- bug: Animation bugfix
+
 ## [0.4.2]
 
 - Released @ 6/2025 (UTC)
