@@ -29,47 +29,32 @@ class NoEffect extends AnimationEffect {
 
 class FadeEffect extends AnimationEffect {
   const FadeEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeOutSine,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.easeOutSine);
 
   @override
   get data {
     return (context, size, value) {
-      return [
-        AnimationLayerEffect(opacity: value),
-        AnimationLayerEffect(opacity: 1.0 - value),
-      ];
+      return [AnimationLayerEffect(opacity: value), AnimationLayerEffect(opacity: 1.0 - value)];
     };
   }
 }
 
 class QuickBackwardEffect extends AnimationEffect {
   const QuickBackwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuint,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.easeInOutQuint);
 
   @override
   get data {
     return (context, size, value) {
+      final w = size.width * value;
       return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(-size.width + w, 0.0, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            -size.width + size.width * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-size.width + size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            size.width * value * 0.5,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(w * 0.5, 0.0, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -79,29 +64,21 @@ class QuickBackwardEffect extends AnimationEffect {
 
 class QuickForwardEffect extends AnimationEffect {
   const QuickForwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuint,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.easeInOutQuint);
 
   @override
   get data {
     return (context, size, value) {
+      final w = size.width * value;
       return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            size.width - size.width * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            -size.width * value * 0.5,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
+
           ignorePointer: true,
         ),
       ];
@@ -111,29 +88,21 @@ class QuickForwardEffect extends AnimationEffect {
 
 class SlideUpEffect extends AnimationEffect {
   const SlideUpEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuart,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.easeInOutQuart);
 
   @override
   get data {
     return (context, size, value) {
+      final h = size.height * value;
       return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(0.0, size.height - h, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            0.0,
-            size.height - size.height * value,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, size.height - size.height * value, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            0.0,
-            -size.height * value * 0.5,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, -h * 0.5, 0.0),
+
           ignorePointer: true,
         ),
       ];
@@ -143,29 +112,20 @@ class SlideUpEffect extends AnimationEffect {
 
 class SlideDownEffect extends AnimationEffect {
   const SlideDownEffect()
-    : super(
-        duration: const Duration(milliseconds: 375),
-        curve: Curves.easeInOutQuart,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.easeInOutQuart);
 
   @override
   get data {
     return (context, size, value) {
+      final h = size.height * value;
       return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(0.0, -size.height + h, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            0.0,
-            -size.height + size.height * value,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, -size.height + size.height * value, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            0.0,
-            size.height * value * 0.5,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(0.0, h * 0.5, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -175,29 +135,21 @@ class SlideDownEffect extends AnimationEffect {
 
 class CupertinoEffect extends AnimationEffect {
   const CupertinoEffect()
-    : super(
-        duration: const Duration(milliseconds: 410),
-        curve: Curves.easeInOut,
-      );
+    : super(duration: const Duration(milliseconds: 410), curve: Curves.easeInOut);
 
   @override
   get data {
     return (context, size, value) {
+      final w = size.width * value;
       return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            size.width - size.width * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            -size.width * value * 0.5,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
+
           ignorePointer: true,
         ),
       ];
@@ -207,29 +159,20 @@ class CupertinoEffect extends AnimationEffect {
 
 class MaterialEffect extends AnimationEffect {
   const MaterialEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.fastOutSlowIn,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.fastOutSlowIn);
 
   @override
   get data {
     return (context, size, value) {
+      final w = size.width * value;
       return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(
-            size.width - size.width * value,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(size.width - size.width * value, 0.0, 0.0),
         ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
-          transform: Matrix4.translationValues(
-            -size.width * value * 0.5,
-            0.0,
-            0.0,
-          ),
+          transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
           ignorePointer: true,
         ),
       ];
@@ -239,10 +182,7 @@ class MaterialEffect extends AnimationEffect {
 
 class PageFlapDown extends AnimationEffect {
   const PageFlapDown()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInSine,
-      );
+    : super(duration: const Duration(milliseconds: 300), curve: Curves.easeInSine);
 
   @override
   get data {
@@ -250,11 +190,7 @@ class PageFlapDown extends AnimationEffect {
       return [
         AnimationLayerEffect(
           transform:
-              Matrix4.translationValues(
-                0.25 * (size.width - size.width * value),
-                0.0,
-                0.0,
-              ) +
+              Matrix4.translationValues(0.25 * (size.width - size.width * value), 0.0, 0.0) +
               Matrix4.skew((1 - value), -0.1 * (1 - value)) +
               Matrix4.rotationX((1 - value)),
         ),
