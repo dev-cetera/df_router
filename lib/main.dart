@@ -12,15 +12,18 @@ void main() {
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 final class HomeRouteState extends RouteState {
-  HomeRouteState() : super.parse('/home', animationEffect: const CupertinoEffect());
+  HomeRouteState()
+    : super.parse('/home', animationEffect: const CupertinoEffect());
 }
 
 final class MessagesRouteState extends RouteState {
-  MessagesRouteState() : super.parse('/messages', animationEffect: const CupertinoEffect());
+  MessagesRouteState()
+    : super.parse('/messages', animationEffect: const CupertinoEffect());
 }
 
 final class ChatRouteState extends RouteState<String> {
-  ChatRouteState() : super.parse('/chat', animationEffect: const CupertinoEffect());
+  ChatRouteState()
+    : super.parse('/chat', animationEffect: const CupertinoEffect());
 }
 
 final class MessagesRouteState1 extends RouteState {
@@ -42,7 +45,8 @@ final class MessagesRouteState2 extends RouteState {
 }
 
 final class HomeDetailRouteState extends RouteState {
-  HomeDetailRouteState() : super.parse('/home_detail', animationEffect: const CupertinoEffect());
+  HomeDetailRouteState()
+    : super.parse('/home_detail', animationEffect: const CupertinoEffect());
 }
 
 class MyApp extends StatelessWidget {
@@ -213,10 +217,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ),
 
             FilledButton(
-              onPressed:
-                  () => controller.push(
-                    MessagesRouteState2().copyWith(extra: 'HELLO THERE HOW ARE YOU?'),
-                  ),
+              onPressed: () => controller.push(
+                MessagesRouteState2().copyWith(
+                  extra: 'HELLO THERE HOW ARE YOU?',
+                ),
+              ),
               child: const Text('Go to Messages (key2=value2)'),
             ),
           ],
@@ -262,8 +267,9 @@ class HomeScreen extends StatelessWidget with RouteWidgetMixin {
               child: const Text('Go to Home Detail'),
             ),
             FilledButton(
-              onPressed:
-                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Home!')),
+              onPressed: () => controller.push(
+                ChatRouteState().copyWith(extra: 'Hello from Home!'),
+              ),
               child: const Text('Go to Chat'),
             ),
           ],
@@ -314,18 +320,18 @@ class _ChatScreenState extends State<ChatScreen> {
               child: const Text('Go to Home'),
             ),
             FilledButton(
-              onPressed:
-                  () => controller.push(ChatRouteState().copyWith(extra: 'Hello from Chat!')),
+              onPressed: () => controller.push(
+                ChatRouteState().copyWith(extra: 'Hello from Chat!'),
+              ),
               child: const Text('Go to Chat (No ID)'),
             ),
             FilledButton(
-              onPressed:
-                  () => controller.push(
-                    ChatRouteState().copyWith(
-                      queryParameters: {'dude': '22'},
-                      extra: 'Hello from Chat!',
-                    ),
-                  ),
+              onPressed: () => controller.push(
+                ChatRouteState().copyWith(
+                  queryParameters: {'dude': '22'},
+                  extra: 'Hello from Chat!',
+                ),
+              ),
               child: const Text('Go to Chat (ID=123)'),
             ),
           ],

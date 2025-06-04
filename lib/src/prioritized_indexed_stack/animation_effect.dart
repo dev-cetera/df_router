@@ -19,7 +19,11 @@ import '/src/_src.g.dart';
 abstract class AnimationEffect {
   final Duration duration;
   final Curve curve;
-  List<AnimationLayerEffect> Function(BuildContext context, Size size, double value)
+  List<AnimationLayerEffect> Function(
+    BuildContext context,
+    Size size,
+    double value,
+  )
   get data;
 
   const AnimationEffect({required this.duration, required this.curve});

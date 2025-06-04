@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.2]
+
+- Released @ 6/2025 (UTC)
+- chore: Minor performance updates
+
 ## [0.4.1]
 
 - Released @ 6/2025 (UTC)

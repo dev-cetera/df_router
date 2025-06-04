@@ -17,10 +17,15 @@ import '/src/_src.g.dart';
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class AnimationEffectBuilder extends StatefulWidget {
-  final Widget Function(BuildContext context, List<LayerEffectResult> results) builder;
+  final Widget Function(BuildContext context, List<LayerEffectResult> results)
+  builder;
   final VoidCallback? onComplete;
 
-  const AnimationEffectBuilder({super.key, required this.builder, this.onComplete});
+  const AnimationEffectBuilder({
+    super.key,
+    required this.builder,
+    this.onComplete,
+  });
 
   @override
   State<AnimationEffectBuilder> createState() => AnimationEffectBuilderState();
@@ -42,17 +47,23 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
   void _initializeAnimations(List<AnimationEffect> effects) {
     _disposeBundles();
 
-    _bundles =
-        effects.map((config) {
-          final controller = AnimationController(
-            vsync: this,
-            duration: config.duration,
-            value: 1.0,
-          );
-          controller.addStatusListener(_handleAnimationStatus);
-          final animation = CurvedAnimation(parent: controller, curve: config.curve);
-          return _AnimationBundle(effect: config, controller: controller, animation: animation);
-        }).toList();
+    _bundles = effects.map((config) {
+      final controller = AnimationController(
+        vsync: this,
+        duration: config.duration,
+        value: 1.0,
+      );
+      controller.addStatusListener(_handleAnimationStatus);
+      final animation = CurvedAnimation(
+        parent: controller,
+        curve: config.curve,
+      );
+      return _AnimationBundle(
+        effect: config,
+        controller: controller,
+        animation: animation,
+      );
+    }).toList();
   }
 
   void setEffects(List<AnimationEffect> effects) {
@@ -118,17 +129,22 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final animationsToMerge = _bundles.map((bundle) => bundle.animation).toList();
+    final animationsToMerge = _bundles
+        .map((bundle) => bundle.animation)
+        .toList();
 
     return AnimatedBuilder(
       animation: Listenable.merge(animationsToMerge),
       builder: (context, child) {
-        final results =
-            _bundles.map((bundle) {
-              final data = bundle.effect.data(context, size, bundle.animation.value);
-              final value = bundle.animation.value;
-              return LayerEffectResult(data: data, value: value);
-            }).toList();
+        final results = _bundles.map((bundle) {
+          final data = bundle.effect.data(
+            context,
+            size,
+            bundle.animation.value,
+          );
+          final value = bundle.animation.value;
+          return LayerEffectResult(data: data, value: value);
+        }).toList();
         return widget.builder(context, results);
       },
     );
@@ -140,7 +156,11 @@ class _AnimationBundle {
   final AnimationController controller;
   final Animation<double> animation;
 
-  _AnimationBundle({required this.effect, required this.controller, required this.animation});
+  _AnimationBundle({
+    required this.effect,
+    required this.controller,
+    required this.animation,
+  });
 }
 
 // class AnimationEffectBuilder extends StatefulWidget {
