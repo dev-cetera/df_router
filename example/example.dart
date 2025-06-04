@@ -36,7 +36,8 @@ final class BaseChatRouteState extends RouteState {
 final class ChatRouteState extends BaseChatRouteState {
   final String chatId;
 
-  ChatRouteState({required this.chatId}) : super(queryParameters: {'chatId': chatId});
+  ChatRouteState({required this.chatId})
+    : super(queryParameters: {'chatId': chatId});
 
   ChatRouteState.from(super.other)
     : chatId = other.uri.queryParameters['chatId'] ?? '',
@@ -62,14 +63,15 @@ class MyApp extends StatelessWidget {
               shouldPrebuild: true,
               // Preserve the HomeScreen widget to avoid rebuilding it.
               shouldPreserve: true,
-              builder: (context, routeState) => HomeScreen(routeState: HomeRouteState()),
+              builder: (context, routeState) =>
+                  HomeScreen(routeState: HomeRouteState()),
             ),
             RouteBuilder(
               // Use the BaseChatRouteState instead of the ChatRouteState
               // since it does not require a chatId to be pushed.
               routeState: BaseChatRouteState(),
-              builder:
-                  (context, routeState) => ChatScreen(routeState: ChatRouteState.from(routeState)),
+              builder: (context, routeState) =>
+                  ChatScreen(routeState: ChatRouteState.from(routeState)),
             ),
           ],
         );
@@ -146,14 +148,21 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.push(HomeRouteState().copyWith(animationEffect: const MaterialEffect()));
+                controller.push(
+                  HomeRouteState().copyWith(
+                    animationEffect: const MaterialEffect(),
+                  ),
+                );
               },
               child: const Text('Go Home - Material Effect'),
             ),
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.push(HomeRouteState(), animationEffect: const PageFlapDown());
+                controller.push(
+                  HomeRouteState(),
+                  animationEffect: const PageFlapDown(),
+                );
               },
               child: const Text('Go Home - Page Flap Down Effect'),
             ),

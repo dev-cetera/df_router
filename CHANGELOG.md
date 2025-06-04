@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.4]
+
+- Released @ 6/2025 (UTC)
+- update: Web performance updates
+
 ## [0.4.3]
 
 - Released @ 6/2025 (UTC)
