@@ -52,20 +52,16 @@ class RouteController {
     RouteState Function()? initialRouteState,
     this.errorRouteState,
     required this.fallbackRouteState,
-    required List<RouteBuilder>
-    builders, // Changed: parameter name, not assigned to a field
+    required List<RouteBuilder> builders, // Changed: parameter name, not assigned to a field
   }) {
     // Initialize the _builderMap from the `builders` parameter
-    _builderMap = {
-      for (var builder in builders) builder.routeState.path: builder,
-    };
+    _builderMap = {for (var builder in builders) builder.routeState.path: builder};
 
     platformNavigator.addStateCallback(pushUri);
     // Set all the builder output to SizedBox.shrink.
     resetState();
     _requested = current;
-    final routeState =
-        initialRouteState?.call() ?? _requested ?? fallbackRouteState();
+    final routeState = initialRouteState?.call() ?? _requested ?? fallbackRouteState();
     push(routeState);
   }
 
@@ -73,8 +69,7 @@ class RouteController {
   //
   //
 
-  RouteState getNavigatorOrFallbackRouteState() =>
-      _requested ?? fallbackRouteState();
+  RouteState getNavigatorOrFallbackRouteState() => _requested ?? fallbackRouteState();
 
   //
   //
@@ -86,9 +81,7 @@ class RouteController {
       return null;
     }
     // Uses the optimized _getBuilderByPath
-    return _getBuilderByPath(
-      url,
-    )?.routeState.copyWith(queryParameters: url.queryParameters);
+    return _getBuilderByPath(url)?.routeState.copyWith(queryParameters: url.queryParameters);
   }
 
   //
@@ -135,9 +128,7 @@ class RouteController {
     // Now iterates over _builderMap.values. Order might differ from original list,
     // but for clearing cache, order of individual items usually doesn't matter.
     for (final builder in _builderMap.values) {
-      _widgetCache[builder.routeState] = SizedBox.shrink(
-        key: builder.routeState.key,
-      );
+      _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
     }
   }
 
@@ -179,21 +170,16 @@ class RouteController {
   //
   //
 
-  void pushBack1({
+  /// Same as [pushBack] but with [BackwardEffectWeb] as the default animation effect.
+  void pushBackW({
     RouteState? fallback,
-    AnimationEffect? animationEffect = const QuickBackwardEffect(),
+    AnimationEffect? animationEffect = const BackwardEffectWeb(),
   }) {
     pushBack(fallback: fallback, animationEffect: animationEffect);
   }
 
-  //
-  //
-  //
-
-  void pushBack({
-    RouteState? fallback,
-    AnimationEffect? animationEffect = const NoEffect(),
-  }) {
+  /// Pushes the previous route state back onto the stack.
+  void pushBack({RouteState? fallback, AnimationEffect? animationEffect = const NoEffect()}) {
     if (_prevRouteState.path == '/') {
       push(fallback ?? fallbackRouteState(), animationEffect: animationEffect);
     } else {
@@ -205,11 +191,12 @@ class RouteController {
   //
   //
 
-  void push1<TExtra extends Object?>(
+  /// Same as [push] but with [ForwardEffectWeb] as the default animation effect.
+  void pushW<TExtra extends Object?>(
     RouteState<TExtra> routeState, {
     RouteState? errorFallback,
     RouteState? fallback,
-    AnimationEffect? animationEffect = const QuickForwardEffect(),
+    AnimationEffect? animationEffect = const ForwardEffectWeb(),
   }) {
     push<TExtra>(
       routeState,
@@ -219,10 +206,7 @@ class RouteController {
     );
   }
 
-  //
-  //
-  //
-
+  /// Pushes a new route state onto the stack.
   void push<TExtra extends Object?>(
     RouteState<TExtra> routeState, {
     RouteState? errorFallback,
@@ -320,10 +304,7 @@ class RouteController {
       builder: (context, results) {
         final layerEffects = results.map((e) => e.data).toList()[0];
         return PrioritizedIndexedStack(
-          indices: [
-            _indexOfRouteState(routeState),
-            _indexOfRouteState(_prevRouteState),
-          ],
+          indices: [_indexOfRouteState(routeState), _indexOfRouteState(_prevRouteState)],
           layerEffects: layerEffects,
           children: _widgetCache.values.toList(),
         );
@@ -361,8 +342,7 @@ class RouteController {
   //
 
   static RouteController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw Log.err('No RouteStateControllerProvider found in context');
     }

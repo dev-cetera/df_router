@@ -10,6 +10,7 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '/src/_src.g.dart';
@@ -27,39 +28,74 @@ class NoEffect extends AnimationEffect {
   }
 }
 
-class FadeEffect extends AnimationEffect {
-  const FadeEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutSine,
-      );
+class FadeEffectWeb extends AnimationEffect {
+  const FadeEffectWeb()
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeOutSine);
 
   @override
   get data {
     return (context, size, value) {
       return [
         AnimationLayerEffect(opacity: value),
-        AnimationLayerEffect(opacity: 1.0 - value),
+        // Web version is simple for performance reasons.
+        if (kIsWeb)
+          const AnimationLayerEffect(ignorePointer: true)
+        else
+          AnimationLayerEffect(opacity: 1.0 - value * 0.5, ignorePointer: true),
       ];
     };
   }
 }
 
-class QuickBackwardEffect extends AnimationEffect {
-  const QuickBackwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutQuint,
-      );
+class FadeEffect extends AnimationEffect {
+  const FadeEffect()
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeOutSine);
+
+  @override
+  get data {
+    return (context, size, value) {
+      return [
+        AnimationLayerEffect(opacity: value),
+        AnimationLayerEffect(opacity: 1.0 - value * 0.5, ignorePointer: true),
+      ];
+    };
+  }
+}
+
+class BackwardEffectWeb extends AnimationEffect {
+  const BackwardEffectWeb()
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeInOutQuint);
 
   @override
   get data {
     return (context, size, value) {
       final w = size.width * value;
       return [
-        AnimationLayerEffect(
-          transform: Matrix4.translationValues(-size.width + w, 0.0, 0.0),
-        ),
+        AnimationLayerEffect(transform: Matrix4.translationValues(-size.width + w, 0.0, 0.0)),
+        // Web version is simple for performance reasons.
+        if (kIsWeb)
+          const AnimationLayerEffect(ignorePointer: true)
+        else
+          AnimationLayerEffect(
+            opacity: 1.0 - value * 0.1,
+            transform: Matrix4.translationValues(w * 0.5, 0.0, 0.0),
+            ignorePointer: true,
+          ),
+      ];
+    };
+  }
+}
+
+class BackwardEffect extends AnimationEffect {
+  const BackwardEffect()
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeInOutQuint);
+
+  @override
+  get data {
+    return (context, size, value) {
+      final w = size.width * value;
+      return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(-size.width + w, 0.0, 0.0)),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(w * 0.5, 0.0, 0.0),
@@ -70,25 +106,43 @@ class QuickBackwardEffect extends AnimationEffect {
   }
 }
 
-class QuickForwardEffect extends AnimationEffect {
-  const QuickForwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutQuint,
-      );
+class ForwardEffectWeb extends AnimationEffect {
+  const ForwardEffectWeb()
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeInOutQuint);
 
   @override
   get data {
     return (context, size, value) {
       final w = size.width * value;
       return [
-        AnimationLayerEffect(
-          transform: Matrix4.translationValues(size.width - w, 0.0, 0.0),
-        ),
+        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
+        // Web version is simple for performance reasons.
+        if (kIsWeb)
+          const AnimationLayerEffect(ignorePointer: true)
+        else
+          AnimationLayerEffect(
+            opacity: 1.0 - value * 0.1,
+            transform: Matrix4.translationValues(w * 0.5, 0.0, 0.0),
+            ignorePointer: true,
+          ),
+      ];
+    };
+  }
+}
+
+class ForwardEffect extends AnimationEffect {
+  const ForwardEffect()
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeInOutQuint);
+
+  @override
+  get data {
+    return (context, size, value) {
+      final w = size.width * value;
+      return [
+        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
-
           ignorePointer: true,
         ),
       ];
@@ -98,23 +152,17 @@ class QuickForwardEffect extends AnimationEffect {
 
 class SlideUpEffect extends AnimationEffect {
   const SlideUpEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutQuart,
-      );
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeInOutQuart);
 
   @override
   get data {
     return (context, size, value) {
       final h = size.height * value;
       return [
-        AnimationLayerEffect(
-          transform: Matrix4.translationValues(0.0, size.height - h, 0.0),
-        ),
+        AnimationLayerEffect(transform: Matrix4.translationValues(0.0, size.height - h, 0.0)),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(0.0, -h * 0.5, 0.0),
-
           ignorePointer: true,
         ),
       ];
@@ -124,19 +172,14 @@ class SlideUpEffect extends AnimationEffect {
 
 class SlideDownEffect extends AnimationEffect {
   const SlideDownEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutQuart,
-      );
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeInOutQuart);
 
   @override
   get data {
     return (context, size, value) {
       final h = size.height * value;
       return [
-        AnimationLayerEffect(
-          transform: Matrix4.translationValues(0.0, -size.height + h, 0.0),
-        ),
+        AnimationLayerEffect(transform: Matrix4.translationValues(0.0, -size.height + h, 0.0)),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(0.0, h * 0.5, 0.0),
@@ -149,23 +192,17 @@ class SlideDownEffect extends AnimationEffect {
 
 class CupertinoEffect extends AnimationEffect {
   const CupertinoEffect()
-    : super(
-        duration: const Duration(milliseconds: 410),
-        curve: Curves.easeInOut,
-      );
+    : super(duration: const Duration(milliseconds: 410), curve: Curves.easeInOut);
 
   @override
   get data {
     return (context, size, value) {
       final w = size.width * value;
       return [
-        AnimationLayerEffect(
-          transform: Matrix4.translationValues(size.width - w, 0.0, 0.0),
-        ),
+        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
-
           ignorePointer: true,
         ),
       ];
@@ -175,19 +212,14 @@ class CupertinoEffect extends AnimationEffect {
 
 class MaterialEffect extends AnimationEffect {
   const MaterialEffect()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.fastOutSlowIn,
-      );
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.fastOutSlowIn);
 
   @override
   get data {
     return (context, size, value) {
       final w = size.width * value;
       return [
-        AnimationLayerEffect(
-          transform: Matrix4.translationValues(size.width - w, 0.0, 0.0),
-        ),
+        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
@@ -200,10 +232,7 @@ class MaterialEffect extends AnimationEffect {
 
 class PageFlapDown extends AnimationEffect {
   const PageFlapDown()
-    : super(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInSine,
-      );
+    : super(duration: const Duration(milliseconds: 275), curve: Curves.easeInSine);
 
   @override
   get data {
@@ -211,11 +240,7 @@ class PageFlapDown extends AnimationEffect {
       return [
         AnimationLayerEffect(
           transform:
-              Matrix4.translationValues(
-                0.25 * (size.width - size.width * value),
-                0.0,
-                0.0,
-              ) +
+              Matrix4.translationValues(0.25 * (size.width - size.width * value), 0.0, 0.0) +
               Matrix4.skew((1 - value), -0.1 * (1 - value)) +
               Matrix4.rotationX((1 - value)),
         ),
