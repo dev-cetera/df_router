@@ -50,9 +50,6 @@ class QuickBackwardEffect extends AnimationEffect {
       return [
         AnimationLayerEffect(transform: Matrix4.translationValues(-size.width + w, 0.0, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(-size.width + w, 0.0, 0.0),
-        ),
-        AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(w * 0.5, 0.0, 0.0),
           ignorePointer: true,
@@ -72,9 +69,6 @@ class QuickForwardEffect extends AnimationEffect {
       final w = size.width * value;
       return [
         AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
-        AnimationLayerEffect(
-          transform: Matrix4.translationValues(size.width - w, 0.0, 0.0),
-        ),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
@@ -97,9 +91,6 @@ class SlideUpEffect extends AnimationEffect {
       return [
         AnimationLayerEffect(transform: Matrix4.translationValues(0.0, size.height - h, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(0.0, size.height - h, 0.0),
-        ),
-        AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(0.0, -h * 0.5, 0.0),
 
@@ -121,9 +112,6 @@ class SlideDownEffect extends AnimationEffect {
       return [
         AnimationLayerEffect(transform: Matrix4.translationValues(0.0, -size.height + h, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(0.0, -size.height + h, 0.0),
-        ),
-        AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(0.0, h * 0.5, 0.0),
           ignorePointer: true,
@@ -144,9 +132,6 @@ class CupertinoEffect extends AnimationEffect {
       return [
         AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
-          transform: Matrix4.translationValues(size.width - w, 0.0, 0.0),
-        ),
-        AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
           transform: Matrix4.translationValues(-w * 0.5, 0.0, 0.0),
 
@@ -166,7 +151,6 @@ class MaterialEffect extends AnimationEffect {
     return (context, size, value) {
       final w = size.width * value;
       return [
-        AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(transform: Matrix4.translationValues(size.width - w, 0.0, 0.0)),
         AnimationLayerEffect(
           opacity: 1.0 - value * 0.1,
