@@ -10,7 +10,8 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
-import 'package:df_log/df_log.dart';
+// ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+
 import 'package:flutter/widgets.dart';
 
 import 'package:df_pod/df_pod.dart';
@@ -27,7 +28,7 @@ class RouteController {
 
   final _pRouteState = Pod(RouteState.parse('/'));
   GenericPod<RouteState> get pRouteState => _pRouteState;
-  RouteState get routeState => _pRouteState.value;
+  RouteState get routeState => _pRouteState.getValue();
 
   final _widgetCache = <RouteState, Widget>{};
 
@@ -35,7 +36,7 @@ class RouteController {
   /// This is now the single source of truth for builder definitions after construction.
   late final Map<String, RouteBuilder> _builderMap;
 
-  late RouteState _prevRouteState = _pRouteState.value;
+  late RouteState _prevRouteState = _pRouteState.getValue();
   final RouteState Function()? errorRouteState;
   final RouteState Function() fallbackRouteState;
 
