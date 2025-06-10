@@ -77,10 +77,10 @@ packages:
     dependency: "direct main"
     description:
       name: df_pod
-      sha256: "309468bdd3d9a5ea668ca92ac937173c68805eed86908a1ebf6d72510f9188a8"
+      sha256: c95c88499ac089d6cd83f572d92d30950c7e967170a1f3b71a23d75151da6042
       url: "https://pub.dev"
     source: hosted
-    version: "0.17.1"
+    version: "0.18.0"
   df_pwa_utils:
     dependency: "direct main"
     description:
@@ -93,10 +93,10 @@ packages:
     dependency: transitive
     description:
       name: df_safer_dart
-      sha256: ff25612ce04694c80c3fcc93e209e2bc291b6b37bba7fe88571bcdea04b0caa9
+      sha256: "98719916e8f9b4efa1b7e961d0dbd1f7ce511485a06efb4d87acda466382c91a"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.1"
+    version: "0.13.2"
   df_type:
     dependency: transitive
     description:
@@ -389,14 +389,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.4"
-  tuple:
-    dependency: transitive
-    description:
-      name: tuple
-      sha256: a97ce2013f240b2f3807bcbaf218765b6f301c3eff91092bcfa23a039e7dd151
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.2"
   typed_data:
     dependency: transitive
     description:
