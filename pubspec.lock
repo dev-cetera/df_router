@@ -77,10 +77,10 @@ packages:
     dependency: transitive
     description:
       name: df_type
-      sha256: cf98c3fbca7076b625bfdc2e523ffb23d42e8929c39fdf7dea1334c30f0f4f9f
+      sha256: "6746090038b3cab356723825750768488d435308db2ee62e0e74d95c751f7241"
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.4"
+    version: "0.10.5"
   equatable:
     dependency: transitive
     description:
