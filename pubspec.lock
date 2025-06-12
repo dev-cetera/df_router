@@ -26,53 +26,60 @@ packages:
     source: hosted
     version: "3.0.6"
   df_cleanup:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "../df_cleanup"
-      relative: true
-    source: path
+      name: df_cleanup
+      sha256: c767bf25c83a24acb0235a78e65ba16fa63a293e5540777d1182ab2543460044
+      url: "https://pub.dev"
+    source: hosted
     version: "0.4.1"
   df_debouncer:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "../df_debouncer"
-      relative: true
-    source: path
+      name: df_debouncer
+      sha256: "8931dcedc3f7d6cb8db290c5c8b426fcca10c26ed06ac9aa7f3314c1ce2a06f3"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.4.9"
   df_log:
     dependency: "direct main"
     description:
-      path: "../df_log"
-      relative: true
-    source: path
+      name: df_log
+      sha256: b54ab5d50d89f7b990b371f838cd0dc09b6e400e18588652ebe0475f79f9e220
+      url: "https://pub.dev"
+    source: hosted
     version: "0.3.10"
   df_pod:
     dependency: "direct main"
     description:
-      path: "../df_pod"
-      relative: true
-    source: path
+      name: df_pod
+      sha256: "77bd8fe288494982757b809beb6bc22f5c1ed701de3db2be47f0f2fce6337e86"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.18.1"
   df_pwa_utils:
     dependency: "direct main"
     description:
-      path: "../df_pwa_utils"
-      relative: true
-    source: path
+      name: df_pwa_utils
+      sha256: c4b1e888bbdcc8b1978accd3d33746398a46006460b5b6c3b4f0c05beeca4a0c
+      url: "https://pub.dev"
+    source: hosted
     version: "0.3.1"
   df_safer_dart:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "../df_safer_dart"
-      relative: true
-    source: path
+      name: df_safer_dart
+      sha256: "227ff84073bae7a2ac4d2eef835927f127b8fbb9d8e7454ea1471fe6ea708bda"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.13.8"
   df_type:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "../df_type"
-      relative: true
-    source: path
+      name: df_type
+      sha256: cf98c3fbca7076b625bfdc2e523ffb23d42e8929c39fdf7dea1334c30f0f4f9f
+      url: "https://pub.dev"
+    source: hosted
     version: "0.10.4"
   equatable:
     dependency: transitive
@@ -119,13 +126,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_test:
-    dependency: "direct dev"
-    description:
-      path: "../df_safer_dart/_test/flutter_test"
-      relative: true
-    source: path
-    version: "0.0.0"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
