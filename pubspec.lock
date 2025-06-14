@@ -60,9 +60,11 @@ packages:
   df_pwa_utils:
     dependency: "direct main"
     description:
-      path: "../df_pwa_utils"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "456d41be61a90a18e3bd8f440080fe730f17c61f"
+      url: "https://github.com/dev-cetera/df_pwa_utils"
+    source: git
     version: "0.3.1"
   df_safer_dart:
     dependency: transitive
