@@ -1,5 +1,5 @@
 name: df_router_hosted_example
-publish_to: 'none'
+publish_to: none
 version: 0.1.0
 environment:
   sdk: ^3.8.1
