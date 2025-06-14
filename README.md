@@ -8,16 +8,14 @@ Dart & Flutter Packages by dev-cetera.com & contributors.
 
 ## Summary
 
-A lightweight router designed for ease of use and efficient state management.
-
-Here is a live version of the app: `https://dev-cetera.github.io/df_router/`.
+A lightweight router designed for ease of use and efficient state management. Explore it in action with this live web app: [https://dev-cetera.github.io/df_router/chat?chatId=123456].
 
 ## Features
 
 - **Declarative Routing:** Define your routes and their corresponding widgets in a clean, list-based manner.
 - **Stateful Routes:** `RouteState` objects represent unique routes, including paths, query parameters, and strongly-typed `extra` data.
 - **Widget Caching & Preservation:** Control whether route widgets are preserved in memory (`shouldPreserve`) or pre-built (`shouldPrebuild`) for performance.
-- **Customizable Transitions:** Easily define custom page transitions or use the provided `HorizontalSlideFadeTransition` and `VerticalSlideFadeTransition`.
+- **Customizable Transitions:** Easily define custom page transitions called "effects" or use the provided `MaterialEffect` and `CupertinoEffect`.
 - **Persistent UI Wrapper:** Add common UI elements like headers, footers, or navigation bars that persist across route changes.
 - **Easy Navigation:** Navigate using `RouteState` objects or simple path strings.
 - **Typed `extra` Data:** Pass strongly-typed data between routes.
