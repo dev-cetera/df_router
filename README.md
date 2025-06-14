@@ -8,7 +8,7 @@ Dart & Flutter Packages by dev-cetera.com & contributors.
 
 ## Summary
 
-A lightweight router designed for ease of use and efficient state management. Explore it in action with this live web app: [https://dev-cetera.github.io/df_router/chat?chatId=123456].
+A lightweight router designed for ease of use and efficient state management. Explore it in action with this live web app: https://dev-cetera.github.io/df_router/chat?chatId=123456.
 
 ## Features
 
