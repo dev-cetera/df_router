@@ -53,20 +53,16 @@ class RouteController {
     RouteState Function()? initialRouteState,
     this.errorRouteState,
     required this.fallbackRouteState,
-    required List<RouteBuilder>
-    builders, // Changed: parameter name, not assigned to a field
+    required List<RouteBuilder> builders, // Changed: parameter name, not assigned to a field
   }) {
     // Initialize the _builderMap from the `builders` parameter
-    _builderMap = {
-      for (var builder in builders) builder.routeState.path: builder,
-    };
+    _builderMap = {for (var builder in builders) builder.routeState.path: builder};
 
     platformNavigator.addStateCallback(pushUri);
     // Set all the builder output to SizedBox.shrink.
     resetState();
     _requested = current;
-    final routeState =
-        initialRouteState?.call() ?? _requested ?? fallbackRouteState();
+    final routeState = initialRouteState?.call() ?? _requested ?? fallbackRouteState();
     push(routeState);
   }
 
@@ -74,22 +70,21 @@ class RouteController {
   //
   //
 
-  RouteState getNavigatorOrFallbackRouteState() =>
-      _requested ?? fallbackRouteState();
+  RouteState getNavigatorOrFallbackRouteState() => _requested ?? fallbackRouteState();
 
   //
   //
   //
 
   RouteState? get current {
-    final url = platformNavigator.getCurrentUrl();
-    if (url == null) {
+    final browserUrl = platformNavigator.getCurrentUrl();
+    if (browserUrl == null) {
       return null;
     }
-    // Uses the optimized _getBuilderByPath
+    final appRelativeUrl = platformNavigator.stripBaseHref(browserUrl);
     return _getBuilderByPath(
-      url,
-    )?.routeState.copyWith(queryParameters: url.queryParameters);
+      appRelativeUrl,
+    )?.routeState.copyWith(queryParameters: appRelativeUrl.queryParameters);
   }
 
   //
@@ -98,7 +93,6 @@ class RouteController {
 
   void addToCache(Iterable<RouteState> routeStates) {
     for (final routeState in routeStates) {
-      // Uses the optimized _getBuilderByPath
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
       if (_widgetCache[routeState] is Builder) continue;
@@ -136,9 +130,7 @@ class RouteController {
     // Now iterates over _builderMap.values. Order might differ from original list,
     // but for clearing cache, order of individual items usually doesn't matter.
     for (final builder in _builderMap.values) {
-      _widgetCache[builder.routeState] = SizedBox.shrink(
-        key: builder.routeState.key,
-      );
+      _widgetCache[builder.routeState] = SizedBox.shrink(key: builder.routeState.key);
     }
   }
 
@@ -189,10 +181,7 @@ class RouteController {
   }
 
   /// Pushes the previous route state back onto the stack.
-  void pushBack({
-    RouteState? fallback,
-    AnimationEffect? animationEffect = const NoEffect(),
-  }) {
+  void pushBack({RouteState? fallback, AnimationEffect? animationEffect = const NoEffect()}) {
     if (_prevRouteState.path == '/') {
       push(fallback ?? fallbackRouteState(), animationEffect: animationEffect);
     } else {
@@ -313,10 +302,7 @@ class RouteController {
       builder: (context, results) {
         final layerEffects = results.map((e) => e.data).toList()[0];
         return PrioritizedIndexedStack(
-          indices: [
-            _indexOfRouteState(routeState),
-            _indexOfRouteState(_prevRouteState),
-          ],
+          indices: [_indexOfRouteState(routeState), _indexOfRouteState(_prevRouteState)],
           layerEffects: layerEffects,
           children: _widgetCache.values.toList(),
         );
@@ -354,8 +340,7 @@ class RouteController {
   //
 
   static RouteController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw Log.err('No RouteStateControllerProvider found in context');
     }
