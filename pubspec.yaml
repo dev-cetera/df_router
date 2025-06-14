@@ -29,7 +29,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  df_pwa_utils: ^0.3.1
+  df_pwa_utils:
+    path: ../df_pwa_utils
   df_pod: ^0.18.2
   df_log: ^0.3.11
 

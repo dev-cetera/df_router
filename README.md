@@ -10,6 +10,8 @@ Dart & Flutter Packages by dev-cetera.com & contributors.
 
 A lightweight router designed for ease of use and efficient state management.
 
+Here is a live version of the app: `https://dev-cetera.github.io/df_router/`.
+
 ## Features
 
 - **Declarative Routing:** Define your routes and their corresponding widgets in a clean, list-based manner.
