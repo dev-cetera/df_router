@@ -1,6 +1,6 @@
 {
-    "name": "hosted",
-    "short_name": "hosted",
+    "name": "hosted_example",
+    "short_name": "hosted_example",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
