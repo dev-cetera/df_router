@@ -1,6 +1,6 @@
 {
-    "name": "df_router",
-    "short_name": "df_router",
+    "name": "hosted",
+    "short_name": "hosted",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
