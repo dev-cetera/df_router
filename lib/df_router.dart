@@ -14,3 +14,5 @@
 library;
 
 export 'src/_src.g.dart';
+
+export 'package:df_pwa_utils/df_pwa_utils.dart';

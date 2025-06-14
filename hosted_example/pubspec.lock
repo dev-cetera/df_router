@@ -60,10 +60,11 @@ packages:
   df_pwa_utils:
     dependency: transitive
     description:
-      name: df_pwa_utils
-      sha256: c4b1e888bbdcc8b1978accd3d33746398a46006460b5b6c3b4f0c05beeca4a0c
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: HEAD
+      resolved-ref: "456d41be61a90a18e3bd8f440080fe730f17c61f"
+      url: "https://github.com/dev-cetera/df_pwa_utils"
+    source: git
     version: "0.3.1"
   df_router:
     dependency: "direct main"

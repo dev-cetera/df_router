@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart' show debugRepaintRainbowEnabled;
 
 void main() {
   debugRepaintRainbowEnabled = kDebugMode;
+  setToUrlPathStrategy();
   runApp(const MyApp());
 }
 
