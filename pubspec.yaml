@@ -29,9 +29,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  df_pwa_utils:
-    git:
-      url: https://github.com/dev-cetera/df_pwa_utils
+  df_pwa_utils: ^0.3.2
   df_pod: ^0.18.2
   df_log: ^0.3.11
 
