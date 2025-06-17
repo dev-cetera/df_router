@@ -29,34 +29,34 @@ packages:
     dependency: transitive
     description:
       name: df_cleanup
-      sha256: "98c1da01c07be540ddf0f7bf8633e07022d96c08e25e152052b7dacb4b346e06"
+      sha256: "36980f586b3bd6208c141d4cafc51191aae6f039ef8474f9d2e7bb6613da9a4e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.3"
+    version: "0.4.4"
   df_debouncer:
     dependency: transitive
     description:
       name: df_debouncer
-      sha256: aef14b5c6d69ad86b7f9efeb5313a8b751bbc8c7e8afd210ad6b01d8b1ed0d52
+      sha256: d8406f8c0343707dba93a3817fec1f455c0644f1165d1bca57c1bde357b863ff
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.10"
+    version: "0.4.12"
   df_log:
     dependency: transitive
     description:
       name: df_log
-      sha256: ede97260951f098580e4c606433bd850ac312b184db542ae4b650c32266af1b8
+      sha256: "40c49ec7e720c7fa41d01c1acccf476dccbb5adbd00323972b88ed4f190ef7bf"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.11"
+    version: "0.3.13+1"
   df_pod:
     dependency: transitive
     description:
       name: df_pod
-      sha256: e513d861529ff933610205df5c8bf7ef672010cac36078833db9a38d9b28fbc3
+      sha256: "39bf51f2e6cae02d01a7e37e89f89d33ed55ac225046a420c1ece1160a48445b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.18.2"
+    version: "0.18.3"
   df_pwa_utils:
     dependency: transitive
     description:
@@ -71,15 +71,23 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.4.10"
+    version: "0.4.11"
   df_safer_dart:
     dependency: transitive
     description:
       name: df_safer_dart
-      sha256: "7c70ec0bb6e4dcba5bd7227cda09406f884aff49f76be164323d1aa9ac428a84"
+      sha256: "2a3249454268b2a9c64b278672ce9a971e891451a042287e74bfe61ef6b59245"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.14"
+    version: "0.14.10"
+  df_safer_dart_annotations:
+    dependency: transitive
+    description:
+      name: df_safer_dart_annotations
+      sha256: "7d805e65aec784c54c24dc720f9fa0d1c6e54dd67f422ba91cc57016b0e5706c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.3"
   df_type:
     dependency: transitive
     description:
