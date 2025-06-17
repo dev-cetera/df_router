@@ -53,10 +53,10 @@ packages:
     dependency: "direct main"
     description:
       name: df_pod
-      sha256: "39bf51f2e6cae02d01a7e37e89f89d33ed55ac225046a420c1ece1160a48445b"
+      sha256: "48c406ba4baa54f00ca21be9ba82191a1ecc8e53cf9dddfacf6ffff8178211a6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.18.3"
+    version: "0.18.4"
   df_pwa_utils:
     dependency: "direct main"
     description:
