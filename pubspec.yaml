@@ -11,18 +11,21 @@
 ##.title~
 
 name: df_router
-description: A lightweight router designed for ease of use and efficient state management. 
-version: 0.4.10
-repository: https://github.com/dev-cetera/df_router
+homepage: https://dev-cetera.com/
+repository: https://github.com/robmllze/df_router
 funding:
   - https://www.buymeacoffee.com/dev_cetera
+description: A lightweight router designed for ease of use and efficient state management. 
+version: 0.4.10
 topics:
   - router
   - navigation
   - state-management
 
+## -----------------------------------------------------------------------------
+
 environment:
-  sdk: ^3.7.2
+  sdk: ">=3.5.0 <4.0.0"
 
 ## -----------------------------------------------------------------------------
 
@@ -31,12 +34,10 @@ dependencies:
     sdk: flutter
   df_pwa_utils: ^0.3.2
   df_pod: ^0.18.2
-  df_log: ^0.3.11
+  df_log: ^0.3.12
 
 ## -----------------------------------------------------------------------------
 
 dev_dependencies:
   flutter_lints: ^6.0.0
 
-
-  
