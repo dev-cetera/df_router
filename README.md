@@ -4,7 +4,7 @@
 Dart & Flutter Packages by dev-cetera.com & contributors.
 
 [![pub](https://img.shields.io/pub/v/df_router.svg)](https://pub.dev/packages/df_router)
-[![tag](https://img.shields.io/badge/tag-v0.4.10-purple)](https://github.com/dev-cetera/df_router/tree/v0.4.10)
+[![tag](https://img.shields.io/badge/tag-v0.4.11-purple)](https://github.com/dev-cetera/df_router/tree/v0.4.11)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE)
 
 ---
@@ -265,4 +265,3 @@ If you're enjoying this package and find it valuable, consider showing your appr
 ## License
 
 This project is released under the [MIT License](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE). See [LICENSE](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE) for more information.
-
