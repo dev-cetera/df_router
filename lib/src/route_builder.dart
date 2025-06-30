@@ -42,7 +42,7 @@ class RouteBuilder<TExtra extends Object?> {
       routeState: routeState ?? this.routeState,
       shouldPreserve: shouldPreserve ?? this.shouldPreserve,
       shouldPrebuild: shouldPrebuild ?? this.shouldPrebuild,
-      builder: builder ?? this.builder as TRouteWidgetBuilder<TExtra>,
+      builder: builder ?? this.builder,
       condition: condition ?? this.condition,
     );
   }

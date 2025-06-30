@@ -79,12 +79,15 @@ class RouteState<TExtra extends Object?> {
       queryParameters: queryParameters ? this.uri.queryParameters : null,
       extra: extra ? this.extra : null,
       skipCurrent: skipCurrent ? this.skipCurrent : true,
-      animationEffect: animationEffect ? const NoEffect() : this.animationEffect,
+      animationEffect: animationEffect
+          ? const NoEffect()
+          : this.animationEffect,
       condition: condition ? this.condition : null,
     );
   }
 
-  RouteState<X?> cast<X extends Object?>() => RouteState<X?>(uri, extra: extra as X?);
+  RouteState<X?> cast<X extends Object?>() =>
+      RouteState<X?>(uri, extra: extra as X?);
 
   bool matchPath(RouteState other) => uri.path == other.uri.path;
 
