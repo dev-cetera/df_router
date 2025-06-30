@@ -16,7 +16,7 @@ repository: https://github.com/robmllze/df_router
 funding:
   - https://www.buymeacoffee.com/dev_cetera
 description: A lightweight router designed for ease of use and efficient state management. 
-version: 0.4.13
+version: 0.4.14
 topics:
   - router
   - navigation
@@ -33,7 +33,7 @@ dependencies:
   flutter:
     sdk: flutter
   df_log: ^0.3.19
-  df_pod: ^0.18.8
+  df_pod: ^0.18.9
   df_pwa_utils: ^0.3.3
   df_safer_dart: ^0.16.2
 
