@@ -181,10 +181,10 @@ packages:
     dependency: "direct main"
     description:
       name: df_safer_dart
-      sha256: "0df01f162d4045e96c294e9d65a47f4bfff7050feff405e076feaac50b662038"
+      sha256: "0331699abf2a4ff9692de4e3dca39f172b0541a63df31b4824c00de96456eaa6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.16.2"
+    version: "0.16.3"
   df_safer_dart_annotations:
     dependency: transitive
     description:
@@ -205,10 +205,10 @@ packages:
     dependency: transitive
     description:
       name: df_type
-      sha256: eb36a8d8dc0ea4ab520cfc740d3e5cc7b985bec7f7d87ea94c99d50c6ebaa6d5
+      sha256: ab3da91736d106264df283a91e8f0cc56372f55ff96f871062327971488ebb18
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.1"
+    version: "0.14.2"
   equatable:
     dependency: transitive
     description:
