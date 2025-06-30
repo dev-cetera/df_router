@@ -25,38 +25,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.6"
-  df_cleanup:
-    dependency: transitive
-    description:
-      name: df_cleanup
-      sha256: c030a9fde63a30b5b35c07c0a40f3aaa2392a514a7642a40049f7f3bfeaf9db2
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.6"
   df_debouncer:
     dependency: transitive
     description:
       name: df_debouncer
-      sha256: "173942dd7de6e7c26abac7a60a6b3aade2755e0cd129f503a4a0dba69a214924"
+      sha256: "2080987b8fe793921c3f935013fea5a7dac4d2299ccc7a9b9e34bfde448e9360"
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.14"
+    version: "0.4.15"
   df_log:
     dependency: transitive
     description:
       name: df_log
-      sha256: "7b4ce283f664c44d1f3ec4e63600f2d2e5532d0c8fdcb8d2c3582f211896d3c7"
+      sha256: "1504ba50e1fda654f935e3e0b34aab2cbf2bd8bb8c041f191a8f63706a99ebcd"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.18"
+    version: "0.3.19"
   df_pod:
     dependency: transitive
     description:
       name: df_pod
-      sha256: "8a31991fd2a9fa420c17891d4ef358994eeb52f0509a3fec16736293c2211cfc"
+      sha256: "1bcdf86e7768d7269bec92e2431a6e6ba5a3eb54401cb1a5110275fe52073153"
       url: "https://pub.dev"
     source: hosted
-    version: "0.18.5"
+    version: "0.18.6"
   df_pwa_utils:
     dependency: transitive
     description:
@@ -76,26 +68,26 @@ packages:
     dependency: transitive
     description:
       name: df_safer_dart
-      sha256: "9e0f1f5eb9b302e8f2c3364e17fcf0ff7f5f7df84259c328b35fe496f3e95f91"
+      sha256: "0df01f162d4045e96c294e9d65a47f4bfff7050feff405e076feaac50b662038"
       url: "https://pub.dev"
     source: hosted
-    version: "0.15.9"
+    version: "0.16.2"
   df_safer_dart_annotations:
     dependency: transitive
     description:
       name: df_safer_dart_annotations
-      sha256: f1ed7ed34473820de0ba791f5d19eb918c85f0c4a1799813b7c831cb2eb8161c
+      sha256: "154f0f7f579190a9ab8f89b0de0235e6500f46fcc3b1f2feacf8599f58fe66b2"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.7"
+    version: "0.2.0"
   df_type:
     dependency: transitive
     description:
       name: df_type
-      sha256: "4a12653c7fa9dcfef80366774c895be4b917ccc51dfd8e6279bcef85ffbfcf8b"
+      sha256: eb36a8d8dc0ea4ab520cfc740d3e5cc7b985bec7f7d87ea94c99d50c6ebaa6d5
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.7"
+    version: "0.14.1"
   equatable:
     dependency: transitive
     description:

@@ -50,7 +50,7 @@ class RouteManager extends StatelessWidget {
     return RouteControllerProvider(
       controller: controller,
       child: SyncPodBuilder(
-        pod: Sync.value(Ok(controller.pRouteState)),
+        pod: Sync.okValue(controller.pRouteState),
         cacheDuration: null,
         builder: (context, snapshot) {
           Widget child;
