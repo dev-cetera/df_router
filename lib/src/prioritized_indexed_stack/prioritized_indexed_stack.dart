@@ -12,12 +12,7 @@
 
 // ignore_for_file: omit_local_variable_types
 
-import 'package:flutter/widgets.dart';
-import 'package:flutter/rendering.dart';
-import 'dart:collection' show LinkedHashSet;
-import 'package:flutter/foundation.dart' show listEquals;
-
-import '../_src.g.dart';
+import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 

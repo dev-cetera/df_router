@@ -11,6 +11,7 @@
 //.title~
 
 import 'package:df_pod/df_pod.dart';
+import 'package:df_safer_dart/df_safer_dart.dart' show Sync;
 import 'package:flutter/widgets.dart';
 
 import '_src.g.dart';
