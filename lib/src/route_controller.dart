@@ -12,13 +12,7 @@
 
 // ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
 
-import 'package:df_log/df_log.dart' show Log;
-import 'package:flutter/widgets.dart';
-
-import 'package:df_pod/df_pod.dart';
-import 'package:df_pwa_utils/df_pwa_utils.dart';
-
-import '_src.g.dart';
+import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
@@ -54,8 +48,7 @@ class RouteController {
     RouteState Function()? initialRouteState,
     this.errorRouteState,
     required this.fallbackRouteState,
-    required List<RouteBuilder>
-    builders, // Changed: parameter name, not assigned to a field
+    required List<RouteBuilder> builders, // Changed: parameter name, not assigned to a field
   }) {
     // Initialize the _builderMap from the `builders` parameter
     _builderMap = {
@@ -66,8 +59,7 @@ class RouteController {
     // Set all the builder output to SizedBox.shrink.
     resetState();
     _requested = current;
-    final routeState =
-        initialRouteState?.call() ?? _requested ?? fallbackRouteState();
+    final routeState = initialRouteState?.call() ?? _requested ?? fallbackRouteState();
     push(routeState);
   }
 
@@ -75,8 +67,7 @@ class RouteController {
   //
   //
 
-  RouteState getNavigatorOrFallbackRouteState() =>
-      _requested ?? fallbackRouteState();
+  RouteState getNavigatorOrFallbackRouteState() => _requested ?? fallbackRouteState();
 
   //
   //
@@ -149,9 +140,8 @@ class RouteController {
   void resetState() {
     clearCache();
     // Now iterates over _builderMap.values.
-    final routeStates = _builderMap.values
-        .where((builder) => builder.shouldPrebuild)
-        .map((e) => e.routeState);
+    final routeStates =
+        _builderMap.values.where((builder) => builder.shouldPrebuild).map((e) => e.routeState);
     addToCache(routeStates);
   }
 
@@ -354,8 +344,7 @@ class RouteController {
   //
 
   static RouteController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw Log.err('No RouteStateControllerProvider found in context');
     }
