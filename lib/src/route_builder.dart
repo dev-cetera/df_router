@@ -43,7 +43,9 @@ class RouteBuilder<TExtra extends Object?> {
       shouldPreserve: shouldPreserve ?? this.shouldPreserve,
       shouldPrebuild: shouldPrebuild ?? this.shouldPrebuild,
       builder:
-          builder ?? (context, state) => this.builder(context, state) as RouteWidgetMixin<TExtra>,
+          builder ??
+          (context, state) =>
+              this.builder(context, state) as RouteWidgetMixin<TExtra>,
       condition: condition ?? this.condition,
     );
   }
@@ -57,7 +59,8 @@ class RouteBuilder<TExtra extends Object?> {
       routeState: this.routeState,
       shouldPreserve: shouldPreserve ? false : this.shouldPreserve,
       shouldPrebuild: shouldPrebuild ? false : this.shouldPrebuild,
-      builder: (context, state) => this.builder(context, state) as RouteWidgetMixin<TExtra>,
+      builder: (context, state) =>
+          this.builder(context, state) as RouteWidgetMixin<TExtra>,
       condition: condition ? null : this.condition,
     );
   }
@@ -67,7 +70,8 @@ class RouteBuilder<TExtra extends Object?> {
 
 typedef TRouteConditionFn = bool Function();
 
-typedef TRouteWidgetBuilder<TExtra extends Object?> = RouteWidgetMixin<TExtra> Function(
-  BuildContext context,
-  RouteState<TExtra?> routeState,
-);
+typedef TRouteWidgetBuilder<TExtra extends Object?> =
+    RouteWidgetMixin<TExtra> Function(
+      BuildContext context,
+      RouteState<TExtra?> routeState,
+    );
