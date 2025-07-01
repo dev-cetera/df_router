@@ -14,7 +14,9 @@ name: df_router
 homepage: https://dev-cetera.com/
 repository: https://github.com/robmllze/df_router
 funding:
-  - https://www.buymeacoffee.com/dev_cetera
+- https://www.buymeacoffee.com/dev_cetera
+- https://www.patreon.com/c/RobertMollentze
+- https://github.com/sponsors/robmllze
 description: A lightweight router designed for ease of use and efficient state management. 
 version: 0.4.14
 topics:
