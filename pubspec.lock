@@ -149,26 +149,26 @@ packages:
     dependency: transitive
     description:
       name: df_debouncer
-      sha256: "2080987b8fe793921c3f935013fea5a7dac4d2299ccc7a9b9e34bfde448e9360"
+      sha256: dded0a658834472009ea5845b9a193b002cb6de4ce50d479f1c3b94acf9d85d3
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.15"
+    version: "0.4.16"
   df_log:
     dependency: "direct main"
     description:
       name: df_log
-      sha256: "1504ba50e1fda654f935e3e0b34aab2cbf2bd8bb8c041f191a8f63706a99ebcd"
+      sha256: b440e34941756e028f22f0e667179af7ef5b76cb3d7edb9167ebd619bd27a358
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.19"
+    version: "0.3.20"
   df_pod:
     dependency: "direct main"
     description:
       name: df_pod
-      sha256: "62cc0597d584a56832614fd383b0d0114ed4dfb243ce41c42c047fe15bf4c671"
+      sha256: f38001176fce7af5272e068c1ae6868c7b552e47e6fa3902adef1f899e979c79
       url: "https://pub.dev"
     source: hosted
-    version: "0.18.9"
+    version: "0.18.10"
   df_pwa_utils:
     dependency: "direct main"
     description:
@@ -181,10 +181,10 @@ packages:
     dependency: "direct main"
     description:
       name: df_safer_dart
-      sha256: "0331699abf2a4ff9692de4e3dca39f172b0541a63df31b4824c00de96456eaa6"
+      sha256: b0e6bc21c4f2fe7de8b5f572d3a646ab01f2171d9a191627b2d9fbfa5752e7db
       url: "https://pub.dev"
     source: hosted
-    version: "0.16.3"
+    version: "0.17.3"
   df_safer_dart_annotations:
     dependency: transitive
     description:
@@ -197,10 +197,10 @@ packages:
     dependency: "direct dev"
     description:
       name: df_safer_dart_lints
-      sha256: "274f0ce5543838737e569101bcd4845f38bf8e5a1aa4e13c4548901f08f75d1a"
+      sha256: "32a741d6c7c8516d6b058ccf7bb7bd3d4caae40565a681afcddcac08a2b25f72"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.2"
+    version: "0.3.3"
   df_type:
     dependency: transitive
     description:
