@@ -1,9 +1,10 @@
 //.title
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //
-// Dart/Flutter (DF) Packages by dev-cetera.com & contributors. The use of this
-// source code is governed by an MIT-style license described in the LICENSE
-// file located in this project's root directory.
+// Copyright © dev-cetera.com & contributors.
+//
+// The use of this source code is governed by an MIT-style license described in
+// the LICENSE file located in this project's root directory.
 //
 // See: https://opensource.org/license/mit
 //
@@ -48,8 +49,7 @@ class RouteController {
     RouteState Function()? initialRouteState,
     this.errorRouteState,
     required this.fallbackRouteState,
-    required List<RouteBuilder>
-    builders, // Changed: parameter name, not assigned to a field
+    required List<RouteBuilder> builders, // Changed: parameter name, not assigned to a field
   }) {
     // Initialize the _builderMap from the `builders` parameter
     _builderMap = {
@@ -60,8 +60,7 @@ class RouteController {
     // Set all the builder output to SizedBox.shrink.
     resetState();
     _requested = current;
-    final routeState =
-        initialRouteState?.call() ?? _requested ?? fallbackRouteState();
+    final routeState = initialRouteState?.call() ?? _requested ?? fallbackRouteState();
     push(routeState);
   }
 
@@ -69,8 +68,7 @@ class RouteController {
   //
   //
 
-  RouteState getNavigatorOrFallbackRouteState() =>
-      _requested ?? fallbackRouteState();
+  RouteState getNavigatorOrFallbackRouteState() => _requested ?? fallbackRouteState();
 
   //
   //
@@ -143,9 +141,8 @@ class RouteController {
   void resetState() {
     clearCache();
     // Now iterates over _builderMap.values.
-    final routeStates = _builderMap.values
-        .where((builder) => builder.shouldPrebuild)
-        .map((e) => e.routeState);
+    final routeStates =
+        _builderMap.values.where((builder) => builder.shouldPrebuild).map((e) => e.routeState);
     addToCache(routeStates);
   }
 
@@ -348,8 +345,7 @@ class RouteController {
   //
 
   static RouteController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw Log.err('No RouteStateControllerProvider found in context');
     }

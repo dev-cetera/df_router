@@ -1,9 +1,10 @@
 //.title
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //
-// Dart/Flutter (DF) Packages by dev-cetera.com & contributors. The use of this
-// source code is governed by an MIT-style license described in the LICENSE
-// file located in this project's root directory.
+// Copyright © dev-cetera.com & contributors.
+//
+// The use of this source code is governed by an MIT-style license described in
+// the LICENSE file located in this project's root directory.
 //
 // See: https://opensource.org/license/mit
 //
@@ -33,9 +34,7 @@ class AnimationLayerEffect {
   });
 
   bool get hasVisualEffects =>
-      (opacity != null && opacity! < 1.0) ||
-      colorFilter != null ||
-      imageFilter != null;
+      (opacity != null && opacity! < 1.0) || colorFilter != null || imageFilter != null;
 
   bool get isIdentity =>
       transform == null &&
@@ -56,6 +55,5 @@ class AnimationLayerEffect {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(transform, opacity, colorFilter, imageFilter, ignorePointer);
+  int get hashCode => Object.hash(transform, opacity, colorFilter, imageFilter, ignorePointer);
 }

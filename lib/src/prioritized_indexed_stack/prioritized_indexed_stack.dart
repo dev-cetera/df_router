@@ -1,9 +1,10 @@
 //.title
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //
-// Dart/Flutter (DF) Packages by dev-cetera.com & contributors. The use of this
-// source code is governed by an MIT-style license described in the LICENSE
-// file located in this project's root directory.
+// Copyright © dev-cetera.com & contributors.
+//
+// The use of this source code is governed by an MIT-style license described in
+// the LICENSE file located in this project's root directory.
 //
 // See: https://opensource.org/license/mit
 //
@@ -36,9 +37,7 @@ class PrioritizedIndexedStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveIndices = indices
-        .map((index) => index == -1 ? null : index)
-        .toList();
+    final effectiveIndices = indices.map((index) => index == -1 ? null : index).toList();
 
     final childOriginalIndexToStackingOrder = <int, int>{};
     if (children.isNotEmpty) {
@@ -94,8 +93,7 @@ class _RawPrioritizedIndexedStack extends Stack {
         context,
         alignment: alignment,
         textDirection: textDirection,
-        why: () =>
-            'to resolve $alignment for this PrioritizedIndexedStack widget',
+        why: () => 'to resolve $alignment for this PrioritizedIndexedStack widget',
       ),
     );
     return RenderPrioritizedIndexedStack(
@@ -118,8 +116,7 @@ class _RawPrioritizedIndexedStack extends Stack {
         context,
         alignment: alignment,
         textDirection: textDirection,
-        why: () =>
-            'to resolve $alignment for this PrioritizedIndexedStack widget',
+        why: () => 'to resolve $alignment for this PrioritizedIndexedStack widget',
       ),
     );
     renderObject
@@ -148,8 +145,8 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     super.textDirection,
     super.fit,
     super.clipBehavior,
-  }) : _indices = indices,
-       _layerEffects = layerEffects;
+  })  : _indices = indices,
+        _layerEffects = layerEffects;
 
   List<int?> _indices;
   List<int?> get indices => _indices;
@@ -189,11 +186,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       return;
     }
 
-    for (
-      var stackingOrder = _indices.length - 1;
-      stackingOrder >= 0;
-      stackingOrder--
-    ) {
+    for (var stackingOrder = _indices.length - 1; stackingOrder >= 0; stackingOrder--) {
       final childOriginalIndex = _indices[stackingOrder];
       if (childOriginalIndex == null) continue;
 
@@ -201,8 +194,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       if (childToPaint == null) continue;
 
       final childParentData = childToPaint.parentData! as StackParentData;
-      final effectData =
-          (_layerEffects != null && stackingOrder < _layerEffects!.length)
+      final effectData = (_layerEffects != null && stackingOrder < _layerEffects!.length)
           ? _layerEffects![stackingOrder]
           : null;
 
@@ -218,8 +210,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       var needsSaveLayer = false;
       if (effectData != null) {
         // Check if effectData itself is non-null
-        needsSaveLayer =
-            (currentOpacity != null && currentOpacity < 1.0) ||
+        needsSaveLayer = (currentOpacity != null && currentOpacity < 1.0) ||
             currentColorFilter != null ||
             currentImageFilter != null;
       }
@@ -247,9 +238,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
         );
       }
 
-      final offsetForPainter = needsSaveLayer
-          ? Offset.zero
-          : absoluteChildPaintOrigin;
+      final offsetForPainter = needsSaveLayer ? Offset.zero : absoluteChildPaintOrigin;
 
       if (animationTransform != null && !animationTransform.isIdentity()) {
         context.pushTransform(
@@ -362,19 +351,14 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       return false;
     }
 
-    for (
-      var stackingOrder = 0;
-      stackingOrder < _indices.length;
-      stackingOrder++
-    ) {
+    for (var stackingOrder = 0; stackingOrder < _indices.length; stackingOrder++) {
       final childOriginalIndex = _indices[stackingOrder];
       if (childOriginalIndex == null) continue;
 
       final childToTest = _getChildRenderBox(childOriginalIndex);
       if (childToTest == null) continue;
 
-      final effectData =
-          (_layerEffects != null && stackingOrder < _layerEffects!.length)
+      final effectData = (_layerEffects != null && stackingOrder < _layerEffects!.length)
           ? _layerEffects![stackingOrder]
           : null;
 
@@ -396,16 +380,15 @@ class RenderPrioritizedIndexedStack extends RenderStack {
         hitted = result.addWithPaintTransform(
           transform: currentTransform,
           position: position - childStackOffset,
-          hitTest:
-              (
-                BoxHitTestResult hitTestResult,
-                Offset transformedLocalPosition,
-              ) {
-                return childToTest.hitTest(
-                  hitTestResult,
-                  position: transformedLocalPosition,
-                );
-              },
+          hitTest: (
+            BoxHitTestResult hitTestResult,
+            Offset transformedLocalPosition,
+          ) {
+            return childToTest.hitTest(
+              hitTestResult,
+              position: transformedLocalPosition,
+            );
+          },
         );
       } else {
         hitted = result.addWithPaintOffset(
@@ -497,8 +480,7 @@ class RenderPrioritizedIndexedStack extends RenderStack {
 class _PrioritizedIndexedStackElement extends MultiChildRenderObjectElement {
   _PrioritizedIndexedStackElement(_RawPrioritizedIndexedStack super.widget);
   @override
-  _RawPrioritizedIndexedStack get widget =>
-      super.widget as _RawPrioritizedIndexedStack;
+  _RawPrioritizedIndexedStack get widget => super.widget as _RawPrioritizedIndexedStack;
   // ... (debugVisitOnstageChildren remains the same) ...
   @override
   void debugVisitOnstageChildren(ElementVisitor visitor) {
@@ -512,9 +494,7 @@ class _PrioritizedIndexedStackElement extends MultiChildRenderObjectElement {
     // ignore: prefer_collection_literals
     final visitedChildIndices = LinkedHashSet<int>();
     for (final targetIndex in effectiveIndices) {
-      if (targetIndex != null &&
-          targetIndex >= 0 &&
-          targetIndex < children.length) {
+      if (targetIndex != null && targetIndex >= 0 && targetIndex < children.length) {
         if (visitedChildIndices.add(targetIndex)) {
           visitor(children.elementAt(targetIndex));
         }

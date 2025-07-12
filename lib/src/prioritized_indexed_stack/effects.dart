@@ -1,9 +1,10 @@
 //.title
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //
-// Dart/Flutter (DF) Packages by dev-cetera.com & contributors. The use of this
-// source code is governed by an MIT-style license described in the LICENSE
-// file located in this project's root directory.
+// Copyright © dev-cetera.com & contributors.
+//
+// The use of this source code is governed by an MIT-style license described in
+// the LICENSE file located in this project's root directory.
 //
 // See: https://opensource.org/license/mit
 //
@@ -27,10 +28,10 @@ class NoEffect extends AnimationEffect {
 
 class FadeEffectWeb extends AnimationEffect {
   const FadeEffectWeb()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeOutSine,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeOutSine,
+        );
 
   @override
   get data {
@@ -49,10 +50,10 @@ class FadeEffectWeb extends AnimationEffect {
 
 class FadeEffect extends AnimationEffect {
   const FadeEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeOutSine,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeOutSine,
+        );
 
   @override
   get data {
@@ -67,10 +68,10 @@ class FadeEffect extends AnimationEffect {
 
 class BackwardEffectWeb extends AnimationEffect {
   const BackwardEffectWeb()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -96,10 +97,10 @@ class BackwardEffectWeb extends AnimationEffect {
 
 class BackwardEffect extends AnimationEffect {
   const BackwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -121,10 +122,10 @@ class BackwardEffect extends AnimationEffect {
 
 class ForwardEffectWeb extends AnimationEffect {
   const ForwardEffectWeb()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -150,10 +151,10 @@ class ForwardEffectWeb extends AnimationEffect {
 
 class ForwardEffect extends AnimationEffect {
   const ForwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -175,10 +176,10 @@ class ForwardEffect extends AnimationEffect {
 
 class SlideUpEffect extends AnimationEffect {
   const SlideUpEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuart,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuart,
+        );
 
   @override
   get data {
@@ -200,10 +201,10 @@ class SlideUpEffect extends AnimationEffect {
 
 class SlideDownEffect extends AnimationEffect {
   const SlideDownEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuart,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuart,
+        );
 
   @override
   get data {
@@ -225,10 +226,10 @@ class SlideDownEffect extends AnimationEffect {
 
 class CupertinoEffect extends AnimationEffect {
   const CupertinoEffect()
-    : super(
-        duration: const Duration(milliseconds: 410),
-        curve: Curves.easeInOut,
-      );
+      : super(
+          duration: const Duration(milliseconds: 410),
+          curve: Curves.easeInOut,
+        );
 
   @override
   get data {
@@ -250,10 +251,10 @@ class CupertinoEffect extends AnimationEffect {
 
 class MaterialEffect extends AnimationEffect {
   const MaterialEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.fastOutSlowIn,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.fastOutSlowIn,
+        );
 
   @override
   get data {
@@ -275,18 +276,17 @@ class MaterialEffect extends AnimationEffect {
 
 class PageFlapDown extends AnimationEffect {
   const PageFlapDown()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInSine,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInSine,
+        );
 
   @override
   get data {
     return (context, size, value) {
       return [
         AnimationLayerEffect(
-          transform:
-              Matrix4.translationValues(
+          transform: Matrix4.translationValues(
                 0.25 * (size.width - size.width * value),
                 0.0,
                 0.0,
