@@ -11,24 +11,24 @@ void main() {
 
 final class HomeRouteState extends RouteState {
   HomeRouteState()
-      : super.parse(
-          '/home',
-          // Use QuickForwardtEffect() as the default transtion effect for this
-          // route. This can be overridden when pushing this route.
-          animationEffect: const ForwardEffectWeb(),
-        );
+    : super.parse(
+        '/home',
+        // Use QuickForwardtEffect() as the default transtion effect for this
+        // route. This can be overridden when pushing this route.
+        animationEffect: const ForwardEffectWeb(),
+      );
 }
 
 // This route is only used in the RouteManager, so it does not need to
 // be pushed directly. It is a base route for the chat feature.
 final class BaseChatRouteState extends RouteState {
   BaseChatRouteState({Map<String, String>? queryParameters})
-      : super.parse(
-          '/chat',
-          queryParameters: queryParameters,
-          // Use a different animation effect for this route.
-          animationEffect: const SlideDownEffect(),
-        );
+    : super.parse(
+        '/chat',
+        queryParameters: queryParameters,
+        // Use a different animation effect for this route.
+        animationEffect: const SlideDownEffect(),
+      );
 
   BaseChatRouteState.from(RouteState other) : super(other.uri);
 }
@@ -37,11 +37,11 @@ final class ChatRouteState extends BaseChatRouteState {
   final String chatId;
 
   ChatRouteState({required this.chatId})
-      : super(queryParameters: {'chatId': chatId});
+    : super(queryParameters: {'chatId': chatId});
 
   ChatRouteState.from(super.other)
-      : chatId = other.uri.queryParameters['chatId'] ?? '',
-        super.from();
+    : chatId = other.uri.queryParameters['chatId'] ?? '',
+      super.from();
 }
 
 class MyApp extends StatelessWidget {
