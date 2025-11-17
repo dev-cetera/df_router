@@ -15,7 +15,7 @@ import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class StatefulRouteManager extends StatefulWidget {
+class StatelessRouteManager extends StatelessWidget {
   final RouteState Function()? initialRouteState;
   final RouteState Function() fallbackRouteState;
   final RouteState<Enum> Function()? errorState;
@@ -24,7 +24,7 @@ class StatefulRouteManager extends StatefulWidget {
   final bool clipToBounds;
   final TRouteWrapperFn? wrapper;
 
-  const StatefulRouteManager({
+  const StatelessRouteManager({
     super.key,
     this.initialRouteState,
     required this.fallbackRouteState,
@@ -36,46 +36,39 @@ class StatefulRouteManager extends StatefulWidget {
   });
 
   @override
-  State<StatefulRouteManager> createState() => _StatefulRouteManagerState();
-}
-
-class _StatefulRouteManagerState extends State<StatefulRouteManager> {
-  late final RouteController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = RouteController(
-      initialRouteState: widget.initialRouteState,
-      fallbackRouteState: widget.fallbackRouteState,
-      errorRouteState: widget.errorState,
-      builders: widget.builders,
-    );
-    widget.onControllerCreated?.call(_controller);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final controller = RouteController(
+      initialRouteState: initialRouteState,
+      fallbackRouteState: fallbackRouteState,
+      errorRouteState: errorState,
+      builders: builders,
+    );
+
+    onControllerCreated?.call(controller);
     return RouteControllerProvider(
-      controller: _controller,
+      controller: controller,
       child: SyncPodBuilder(
-        pod: Sync.okValue(_controller.pRouteState),
+        pod: Sync.okValue(controller.pRouteState),
         cacheDuration: null,
         builder: (context, snapshot) {
           Widget child;
           UNSAFE:
           child = RepaintBoundary(
-            child: _controller.buildScreen(
+            child: controller.buildScreen(
               context,
               snapshot.value.unwrap().unwrap(),
             ),
           );
-          if (widget.clipToBounds) {
+          if (clipToBounds) {
             child = ClipRect(child: child);
           }
-          return widget.wrapper?.call(context, child) ?? child;
+          return wrapper?.call(context, child) ?? child;
         },
       ),
     );
   }
 }
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+typedef TRouteWrapperFn = Widget Function(BuildContext context, Widget child);

@@ -3,7 +3,6 @@
 ## [0.4.16]
 
 - Released @ 11/2025 (UTC)
-- Add StatefulRouteManager
 
 ## [0.4.15]
 
