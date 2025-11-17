@@ -46,7 +46,7 @@ class RouteState<TExtra extends Object?> {
   }) {
     final uri0 = Uri.parse(pathAndQuery);
     final qp = {...uri0.queryParameters, ...?queryParameters};
-    this.uri = uri0.replace(queryParameters: qp.isNotEmpty ? qp : null);
+    uri = uri0.replace(queryParameters: qp.isNotEmpty ? qp : null);
   }
 
   RouteState<TExtra> copyWith({
@@ -63,7 +63,7 @@ class RouteState<TExtra extends Object?> {
       extra: extra ?? this.extra,
       skipCurrent: skipCurrent ?? this.skipCurrent,
       animationEffect: animationEffect ?? this.animationEffect,
-      condition: condition ?? this.condition,
+      condition: condition ?? condition,
     );
   }
 
@@ -80,12 +80,15 @@ class RouteState<TExtra extends Object?> {
       queryParameters: queryParameters ? this.uri.queryParameters : null,
       extra: extra ? this.extra : null,
       skipCurrent: skipCurrent ? this.skipCurrent : true,
-      animationEffect: animationEffect ? const NoEffect() : this.animationEffect,
+      animationEffect: animationEffect
+          ? const NoEffect()
+          : this.animationEffect,
       condition: condition ? this.condition : null,
     );
   }
 
-  RouteState<X?> cast<X extends Object?>() => RouteState<X?>(uri, extra: extra as X?);
+  RouteState<X?> cast<X extends Object?>() =>
+      RouteState<X?>(uri, extra: extra as X?);
 
   bool matchPath(RouteState other) => uri.path == other.uri.path;
 

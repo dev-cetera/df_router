@@ -16,7 +16,8 @@ import '/_common.dart';
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class AnimationEffectBuilder extends StatefulWidget {
-  final Widget Function(BuildContext context, List<LayerEffectResult> results) builder;
+  final Widget Function(BuildContext context, List<LayerEffectResult> results)
+  builder;
   final VoidCallback? onComplete;
 
   const AnimationEffectBuilder({
@@ -127,7 +128,9 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final animationsToMerge = _bundles.map((bundle) => bundle.animation).toList();
+    final animationsToMerge = _bundles
+        .map((bundle) => bundle.animation)
+        .toList();
 
     return AnimatedBuilder(
       animation: Listenable.merge(animationsToMerge),

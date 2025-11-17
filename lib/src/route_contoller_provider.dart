@@ -25,5 +25,6 @@ class RouteControllerProvider extends InheritedWidget {
   });
 
   @override
-  bool updateShouldNotify(RouteControllerProvider oldWidget) => controller != oldWidget.controller;
+  bool updateShouldNotify(RouteControllerProvider oldWidget) =>
+      controller != oldWidget.controller;
 }
