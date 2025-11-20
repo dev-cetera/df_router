@@ -131,8 +131,9 @@ class RouteController {
       _preservationStrategy = shouldPreserve;
 
   void _maybeRemoveStaleRoute(RouteState routeState) {
-    final routeBuilder =
-        _getBuilderByPath(routeState.uri)?.copyWith(routeState: routeState);
+    final routeBuilder = _getBuilderByPath(
+      routeState.uri,
+    )?.copyWith(routeState: routeState);
     if (routeBuilder == null) return;
     if (!_preservationStrategy(routeBuilder)) {
       _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
@@ -244,8 +245,9 @@ class RouteController {
     if (index < 0 || index >= state.routes.length) return false;
 
     _previousRouteForTransition = currentRouteState;
-    _nextAnimationEffect =
-        index < state.index ? backwardAnimationEffect : forwardAnimationEffect;
+    _nextAnimationEffect = index < state.index
+        ? backwardAnimationEffect
+        : forwardAnimationEffect;
 
     final newRoute = state.routes[index];
     addToCache([newRoute]); // Ensure widget exists before navigating.
@@ -385,8 +387,9 @@ class RouteController {
       },
       builder: (context, results) {
         final children = _widgetCache.values.toList();
-        final layerEffects =
-            results.isNotEmpty ? results.map((e) => e.data).first : null;
+        final layerEffects = results.isNotEmpty
+            ? results.map((e) => e.data).first
+            : null;
         return PrioritizedIndexedStack(
           indices: [
             _indexOfRouteState(routeState),
@@ -411,8 +414,8 @@ class RouteController {
   }
 
   static RouteController of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteControllerProvider found in context');
     }

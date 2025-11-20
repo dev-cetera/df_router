@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.4]
+
+- Released @ 11/2025 (UTC)
+- Simplify setPreservationStrategy
+
 ## [0.5.3]
 
 - Released @ 11/2025 (UTC)
