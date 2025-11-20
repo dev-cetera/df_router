@@ -235,8 +235,9 @@ class RouteController {
     if (index < 0 || index >= state.routes.length) return false;
 
     _previousRouteForTransition = currentRouteState;
-    _nextAnimationEffect =
-        index < state.index ? backwardAnimationEffect : forwardAnimationEffect;
+    _nextAnimationEffect = index < state.index
+        ? backwardAnimationEffect
+        : forwardAnimationEffect;
 
     final newRoute = state.routes[index];
     addToCache([newRoute]); // Ensure widget exists before navigating.
@@ -307,7 +308,7 @@ class RouteController {
   /// Checks a [RouteState] at a relative position from the current
   /// one without performing navigation. The [step] determines
   /// the direction and distance (e.g., -1 for the previous route,1 for the next).
-  /// 
+  ///
   /// Returns the result of the [checker] or
   bool checkRouteFromStep(
     int step,
@@ -378,8 +379,9 @@ class RouteController {
       },
       builder: (context, results) {
         final children = _widgetCache.values.toList();
-        final layerEffects =
-            results.isNotEmpty ? results.map((e) => e.data).first : null;
+        final layerEffects = results.isNotEmpty
+            ? results.map((e) => e.data).first
+            : null;
         return PrioritizedIndexedStack(
           indices: [
             _indexOfRouteState(routeState),
@@ -404,8 +406,8 @@ class RouteController {
   }
 
   static RouteController of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteControllerProvider found in context');
     }

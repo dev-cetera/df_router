@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.1]
+
+- Released @ 11/2025 (UTC)
+- Add checkRouteFromIndex, checkRouteFromStep, checkBackwardRoute and checkForwardRoute functions
+
 ## [0.5.0]
 
 - Released @ 11/2025 (UTC)
