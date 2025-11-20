@@ -59,7 +59,7 @@ class _RouteManagerState extends State<RouteManager> {
     return RouteControllerProvider(
       controller: _controller,
       child: SyncPodBuilder(
-        pod: Sync.okValue(_controller.pRouteState),
+        pod: Sync.okValue(_controller.pCurrentRouteState),
         cacheDuration: null,
         builder: (context, snapshot) {
           Widget child;

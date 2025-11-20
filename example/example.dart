@@ -11,24 +11,24 @@ void main() {
 
 final class HomeRouteState extends RouteState {
   HomeRouteState()
-    : super.parse(
-        '/home',
-        // Use QuickForwardtEffect() as the default transtion effect for this
-        // route. This can be overridden when pushing this route.
-        animationEffect: const ForwardEffectWeb(),
-      );
+      : super.parse(
+          '/home',
+          // Use QuickForwardtEffect() as the default transtion effect for this
+          // route. This can be overridden when pushing this route.
+          animationEffect: const ForwardEffectWeb(),
+        );
 }
 
 // This route is only used in the RouteManager, so it does not need to
 // be pushed directly. It is a base route for the chat feature.
 final class BaseChatRouteState extends RouteState {
   BaseChatRouteState({Map<String, String>? queryParameters})
-    : super.parse(
-        '/chat',
-        queryParameters: queryParameters,
-        // Use a different animation effect for this route.
-        animationEffect: const SlideDownEffect(),
-      );
+      : super.parse(
+          '/chat',
+          queryParameters: queryParameters,
+          // Use a different animation effect for this route.
+          animationEffect: const SlideDownEffect(),
+        );
 
   BaseChatRouteState.from(RouteState other) : super(other.uri);
 }
@@ -37,11 +37,11 @@ final class ChatRouteState extends BaseChatRouteState {
   final String chatId;
 
   ChatRouteState({required this.chatId})
-    : super(queryParameters: {'chatId': chatId});
+      : super(queryParameters: {'chatId': chatId});
 
   ChatRouteState.from(super.other)
-    : chatId = other.uri.queryParameters['chatId'] ?? '',
-      super.from();
+      : chatId = other.uri.queryParameters['chatId'] ?? '',
+        super.from();
 }
 
 class MyApp extends StatelessWidget {
@@ -50,32 +50,41 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      //home: // Do not use "home", as it conflicts with RouteManager. Use
-      // "builder" instead.
-      builder: (context, child) {
-        return RouteManager(
-          fallbackRouteState: () => HomeRouteState(),
-          builders: [
-            RouteBuilder(
-              routeState: HomeRouteState(),
-              // Pre-build the HomeScreen even if the initial route is not
-              // HomeRouteState. This is useful for performance optimization.
-              shouldPrebuild: true,
-              // Preserve the HomeScreen widget to avoid rebuilding it.
-              shouldPreserve: true,
-              builder: (context, routeState) =>
-                  HomeScreen(routeState: HomeRouteState()),
-            ),
-            RouteBuilder(
-              // Use the BaseChatRouteState instead of the ChatRouteState
-              // since it does not require a chatId to be pushed.
-              routeState: BaseChatRouteState(),
-              builder: (context, routeState) =>
-                  ChatScreen(routeState: ChatRouteState.from(routeState)),
+      home: Material(
+        type: MaterialType.transparency,
+        child: Overlay(
+          initialEntries: [
+            OverlayEntry(
+              maintainState: true,
+              builder: (context) {
+                return RouteManager(
+                  fallbackRouteState: () => HomeRouteState(),
+                  builders: [
+                    RouteBuilder(
+                      routeState: HomeRouteState(),
+                      // Pre-build the HomeScreen even if the initial route is not
+                      // HomeRouteState. This is useful for performance optimization.
+                      shouldPrebuild: true,
+                      // Preserve the HomeScreen widget to avoid rebuilding it.
+                      shouldPreserve: true,
+                      builder: (context, routeState) =>
+                          HomeScreen(routeState: HomeRouteState()),
+                    ),
+                    RouteBuilder(
+                      // Use the BaseChatRouteState instead of the ChatRouteState
+                      // since it does not require a chatId to be pushed.
+                      routeState: BaseChatRouteState(),
+                      builder: (context, routeState) => ChatScreen(
+                        routeState: ChatRouteState.from(routeState),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -127,14 +136,14 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack();
+                controller.goBack();
               },
               child: const Text('Go Back - Default Effect'),
             ),
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack(animationEffect: const BackwardEffectWeb());
+                controller.goBack(animationEffect: const BackwardEffectWeb());
               },
               child: const Text('Go Back - Quick Back Effect'),
             ),

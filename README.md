@@ -69,9 +69,9 @@ final class ChatRouteState extends BaseChatRouteState {
 }
 ```
 
-### 2. Configure RouteStateManager
+### 2. Configure RouteManager
 
-In your MaterialApp (or CupertinoApp), use the RouteStateManager widget to define your application's routing configuration.
+In your MaterialApp (or CupertinoApp), use the RouteManager widget to define your application's routing configuration.
 
 ```dart
 class MyApp extends StatelessWidget {
@@ -80,31 +80,40 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      //home: // Do not use "home", as it conflicts with RouteManager. Use
-      // "builder" instead.
-      builder: (context, child) {
-        return RouteManager(
-          fallbackRouteState: () => HomeRouteState(),
-          builders: [
-            RouteBuilder(
-              routeState: HomeRouteState(),
-              // Pre-build the HomeScreen even if the initial route is not
-              // HomeRouteState. This is useful for performance optimization.
-              shouldPrebuild: true,
-              // Preserve the HomeScreen widget to avoid rebuilding it.
-              shouldPreserve: true,
-              builder: (context, routeState) => HomeScreen(routeState: HomeRouteState()),
-            ),
-            RouteBuilder(
-              // Use the BaseChatRouteState instead of the ChatRouteState
-              // since it does not require a chatId to be pushed.
-              routeState: BaseChatRouteState(),
-              builder:
-                  (context, routeState) => ChatScreen(routeState: ChatRouteState.from(routeState)),
+      home: Material(
+        type: MaterialType.transparency,
+        child: Overlay(
+          initialEntries: [
+            OverlayEntry(
+              maintainState: true,
+              builder: (context) {
+                return RouteManager(
+                  fallbackRouteState: () => HomeRouteState(),
+                  builders: [
+                    RouteBuilder(
+                      routeState: HomeRouteState(),
+                      // Pre-build the HomeScreen even if the initial route is not
+                      // HomeRouteState. This is useful for performance optimization.
+                      shouldPrebuild: true,
+                      // Preserve the HomeScreen widget to avoid rebuilding it.
+                      shouldPreserve: true,
+                      builder: (context, routeState) =>
+                          HomeScreen(routeState: HomeRouteState()),
+                    ),
+                    RouteBuilder(
+                      // Use the BaseChatRouteState instead of the ChatRouteState
+                      // since it does not require a chatId to be pushed.
+                      routeState: BaseChatRouteState(),
+                      builder: (context, routeState) => ChatScreen(
+                          routeState: ChatRouteState.from(routeState)),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -160,14 +169,14 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack();
+                controller.goBack();
               },
               child: const Text('Go Back - Default Effect'),
             ),
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack(animationEffect: const QuickBackEffect());
+                controller.goBack(animationEffect: const QuickBackEffect());
               },
               child: const Text('Go Back - Quick Back Effect'),
             ),
