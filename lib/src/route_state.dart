@@ -11,16 +11,19 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
+import 'package:df_safer_dart/_common.dart';
+
 import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-class RouteState<TExtra extends Object?> {
+class RouteState<TExtra extends Object?> extends Equatable {
   late final Uri uri;
   final TExtra? extra;
   final bool skipCurrent;
   final AnimationEffect animationEffect;
   final TRouteConditionFn? condition;
+  final bool shouldPreserve;
 
   Key get key => ValueKey(uri.toString());
 
@@ -31,6 +34,7 @@ class RouteState<TExtra extends Object?> {
     this.skipCurrent = true,
     this.animationEffect = const NoEffect(),
     this.condition,
+    this.shouldPreserve = false,
   }) {
     final qp = {...uri.queryParameters, ...?queryParameters};
     this.uri = uri.replace(queryParameters: qp.isNotEmpty ? qp : null);
@@ -43,6 +47,7 @@ class RouteState<TExtra extends Object?> {
     this.skipCurrent = true,
     this.animationEffect = const NoEffect(),
     this.condition,
+    this.shouldPreserve = false,
   }) {
     final uri0 = Uri.parse(pathAndQuery);
     final qp = {...uri0.queryParameters, ...?queryParameters};
@@ -55,7 +60,8 @@ class RouteState<TExtra extends Object?> {
     TExtra? extra,
     bool? skipCurrent,
     AnimationEffect? animationEffect,
-    TRouteConditionFn? condiiton,
+    TRouteConditionFn? condition,
+    bool? shouldPreserve,
   }) {
     return RouteState<TExtra>(
       uri ?? this.uri,
@@ -63,7 +69,8 @@ class RouteState<TExtra extends Object?> {
       extra: extra ?? this.extra,
       skipCurrent: skipCurrent ?? this.skipCurrent,
       animationEffect: animationEffect ?? this.animationEffect,
-      condition: condition ?? condition,
+      condition: condition ?? this.condition,
+      shouldPreserve: shouldPreserve ?? this.shouldPreserve,
     );
   }
 
@@ -74,16 +81,17 @@ class RouteState<TExtra extends Object?> {
     bool skipCurrent = true,
     bool animationEffect = true,
     bool condition = true,
+    bool shouldPreserve = true,
   }) {
     return RouteState<TExtra>(
       uri ? this.uri : Uri(),
       queryParameters: queryParameters ? this.uri.queryParameters : null,
       extra: extra ? this.extra : null,
       skipCurrent: skipCurrent ? this.skipCurrent : true,
-      animationEffect: animationEffect
-          ? const NoEffect()
-          : this.animationEffect,
+      animationEffect:
+          animationEffect ? const NoEffect() : this.animationEffect,
       condition: condition ? this.condition : null,
+      shouldPreserve: shouldPreserve ? this.shouldPreserve : false,
     );
   }
 
@@ -93,14 +101,5 @@ class RouteState<TExtra extends Object?> {
   bool matchPath(RouteState other) => uri.path == other.uri.path;
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! RouteState) return false;
-    return uri == other.uri && extra == other.extra;
-  }
-
-  String get path => uri.path;
-
-  @override
-  int get hashCode => (RouteState).hashCode ^ uri.hashCode;
+  List<Object?> get props => [uri, extra];
 }

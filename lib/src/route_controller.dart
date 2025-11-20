@@ -58,7 +58,7 @@ class RouteController {
     required List<RouteBuilder> builders,
   }) {
     _builderMap = {
-      for (var builder in builders) builder.routeState.path: builder,
+      for (var builder in builders) builder.routeState.uri.path: builder,
     };
 
     platformNavigator.addStateCallback(pushUri);
@@ -125,7 +125,7 @@ class RouteController {
   void _maybeRemoveStaleRoute(RouteState routeState) {
     final builder = _getBuilderByPath(routeState.uri);
     if (builder == null) return;
-    if (!builder.shouldPreserve) {
+    if (!builder.shouldPreserve && !routeState.shouldPreserve) {
       _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
     }
   }
@@ -235,9 +235,8 @@ class RouteController {
     if (index < 0 || index >= state.routes.length) return false;
 
     _previousRouteForTransition = currentRouteState;
-    _nextAnimationEffect = index < state.index
-        ? backwardAnimationEffect
-        : forwardAnimationEffect;
+    _nextAnimationEffect =
+        index < state.index ? backwardAnimationEffect : forwardAnimationEffect;
 
     final newRoute = state.routes[index];
     addToCache([newRoute]); // Ensure widget exists before navigating.
@@ -377,9 +376,8 @@ class RouteController {
       },
       builder: (context, results) {
         final children = _widgetCache.values.toList();
-        final layerEffects = results.isNotEmpty
-            ? results.map((e) => e.data).first
-            : null;
+        final layerEffects =
+            results.isNotEmpty ? results.map((e) => e.data).first : null;
         return PrioritizedIndexedStack(
           indices: [
             _indexOfRouteState(routeState),
@@ -404,8 +402,8 @@ class RouteController {
   }
 
   static RouteController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider =
+        context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteControllerProvider found in context');
     }
