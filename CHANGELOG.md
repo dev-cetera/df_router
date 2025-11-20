@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.2]
+
+- Released @ 11/2025 (UTC)
+- Rename canGoBack to canGoBackward for consistency
+
 ## [0.5.1]
 
 - Released @ 11/2025 (UTC)
