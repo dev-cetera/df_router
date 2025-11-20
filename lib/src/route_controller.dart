@@ -75,7 +75,7 @@ class RouteController {
   //
   //
 
-  bool get canGoBack => _pNavigationState.getValue().index > 0;
+  bool get canGoBackward => _pNavigationState.getValue().index > 0;
   bool get canGoForward =>
       _pNavigationState.getValue().index <
       _pNavigationState.getValue().routes.length - 1;
