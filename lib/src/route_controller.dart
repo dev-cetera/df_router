@@ -297,9 +297,7 @@ class RouteController {
   ) {
     if (index > 0) {
       final b = pNavigationState.getValue().routes[index];
-      if (checker(b)) {
-        return true;
-      }
+      return checker(b);
     }
     return false;
   }
