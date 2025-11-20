@@ -1,7 +1,7 @@
-[![banner](https://github.com/dev-cetera/df_router/blob/v0.4.16/doc/assets/banner.png?raw=true)](https://github.com/dev-cetera)
+[![banner](https://github.com/dev-cetera/df_router/blob/v0.5.0/doc/assets/banner.png?raw=true)](https://github.com/dev-cetera)
 
 [![pub](https://img.shields.io/pub/v/df_router.svg)](https://pub.dev/packages/df_router)
-[![tag](https://img.shields.io/badge/Tag-v0.4.16-purple?logo=github)](https://github.com/dev-cetera/df_router/tree/v0.4.16)
+[![tag](https://img.shields.io/badge/Tag-v0.5.0-purple?logo=github)](https://github.com/dev-cetera/df_router/tree/v0.5.0)
 [![buymeacoffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dev_cetera)
 [![sponsor](https://img.shields.io/badge/Sponsor-grey?logo=github-sponsors&logoColor=pink)](https://github.com/sponsors/dev-cetera)
 [![patreon](https://img.shields.io/badge/Patreon-grey?logo=patreon)](https://www.patreon.com/t0mb3rr)
@@ -69,9 +69,9 @@ final class ChatRouteState extends BaseChatRouteState {
 }
 ```
 
-### 2. Configure RouteManager
+### 2. Configure RouteStateManager
 
-In your MaterialApp (or CupertinoApp), use the RouteManager widget to define your application's routing configuration.
+In your MaterialApp (or CupertinoApp), use the RouteStateManager widget to define your application's routing configuration.
 
 ```dart
 class MyApp extends StatelessWidget {
@@ -80,40 +80,31 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Material(
-        type: MaterialType.transparency,
-        child: Overlay(
-          initialEntries: [
-            OverlayEntry(
-              maintainState: true,
-              builder: (context) {
-                return RouteManager(
-                  fallbackRouteState: () => HomeRouteState(),
-                  builders: [
-                    RouteBuilder(
-                      routeState: HomeRouteState(),
-                      // Pre-build the HomeScreen even if the initial route is not
-                      // HomeRouteState. This is useful for performance optimization.
-                      shouldPrebuild: true,
-                      // Preserve the HomeScreen widget to avoid rebuilding it.
-                      shouldPreserve: true,
-                      builder: (context, routeState) =>
-                          HomeScreen(routeState: HomeRouteState()),
-                    ),
-                    RouteBuilder(
-                      // Use the BaseChatRouteState instead of the ChatRouteState
-                      // since it does not require a chatId to be pushed.
-                      routeState: BaseChatRouteState(),
-                      builder: (context, routeState) => ChatScreen(
-                          routeState: ChatRouteState.from(routeState)),
-                    ),
-                  ],
-                );
-              },
+      //home: // Do not use "home", as it conflicts with RouteManager. Use
+      // "builder" instead.
+      builder: (context, child) {
+        return RouteManager(
+          fallbackRouteState: () => HomeRouteState(),
+          builders: [
+            RouteBuilder(
+              routeState: HomeRouteState(),
+              // Pre-build the HomeScreen even if the initial route is not
+              // HomeRouteState. This is useful for performance optimization.
+              shouldPrebuild: true,
+              // Preserve the HomeScreen widget to avoid rebuilding it.
+              shouldPreserve: true,
+              builder: (context, routeState) => HomeScreen(routeState: HomeRouteState()),
+            ),
+            RouteBuilder(
+              // Use the BaseChatRouteState instead of the ChatRouteState
+              // since it does not require a chatId to be pushed.
+              routeState: BaseChatRouteState(),
+              builder:
+                  (context, routeState) => ChatScreen(routeState: ChatRouteState.from(routeState)),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -169,14 +160,14 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.goBack();
+                controller.pushBack();
               },
               child: const Text('Go Back - Default Effect'),
             ),
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.goBack(animationEffect: const QuickBackEffect());
+                controller.pushBack(animationEffect: const QuickBackEffect());
               },
               child: const Text('Go Back - Quick Back Effect'),
             ),

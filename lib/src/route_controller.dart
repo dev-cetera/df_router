@@ -28,8 +28,9 @@ class RouteController {
 
   GenericPod<_NavigationState> get pNavigationState => _pNavigationState;
 
-  late final pCurrentRouteState =
-      _pNavigationState.map((state) => state.routes[state.index]);
+  late final pCurrentRouteState = _pNavigationState.map(
+    (state) => state.routes[state.index],
+  );
   RouteState get currentRouteState => pCurrentRouteState.value;
 
   late RouteState _previousRouteForTransition = currentRouteState;
@@ -86,9 +87,9 @@ class RouteController {
     final browserUrl = platformNavigator.getCurrentUrl();
     if (browserUrl == null) return null;
     final appRelativeUrl = platformNavigator.stripBaseHref(browserUrl);
-    return _getBuilderByPath(appRelativeUrl)?.routeState.copyWith(
-          queryParameters: appRelativeUrl.queryParameters,
-        );
+    return _getBuilderByPath(
+      appRelativeUrl,
+    )?.routeState.copyWith(queryParameters: appRelativeUrl.queryParameters);
   }
 
   //
@@ -104,10 +105,7 @@ class RouteController {
     );
 
     _pNavigationState.set(
-      _NavigationState(
-        routes: [currentRoute],
-        index: 0,
-      ),
+      _NavigationState(routes: [currentRoute], index: 0),
       notifyImmediately: true,
     );
   }
@@ -202,22 +200,12 @@ class RouteController {
     }
   }
 
-  bool goBack({
-    AnimationEffect animationEffect = const NoEffect(),
-  }) {
-    return step(
-      -1,
-      backwardAnimationEffect: animationEffect,
-    );
+  bool goBack({AnimationEffect animationEffect = const NoEffect()}) {
+    return step(-1, backwardAnimationEffect: animationEffect);
   }
 
-  bool goForward({
-    AnimationEffect animationEffect = const NoEffect(),
-  }) {
-    return step(
-      1,
-      forwardAnimationEffect: animationEffect,
-    );
+  bool goForward({AnimationEffect animationEffect = const NoEffect()}) {
+    return step(1, forwardAnimationEffect: animationEffect);
   }
 
   bool step(
@@ -242,17 +230,13 @@ class RouteController {
     if (index < 0 || index >= state.routes.length) return false;
 
     _previousRouteForTransition = currentRouteState;
-    _nextAnimationEffect =
-        index < state.index ? backwardAnimationEffect : forwardAnimationEffect;
+    _nextAnimationEffect = index < state.index
+        ? backwardAnimationEffect
+        : forwardAnimationEffect;
 
     final newRoute = state.routes[index];
     addToCache([newRoute]); // Ensure widget exists before navigating.
-    _pNavigationState.set(
-      _NavigationState(
-        routes: state.routes,
-        index: index,
-      ),
-    );
+    _pNavigationState.set(_NavigationState(routes: state.routes, index: index));
 
     platformNavigator.pushState(newRoute.uri);
     _globalKey.currentState?.setEffects([_nextAnimationEffect]);
@@ -346,8 +330,9 @@ class RouteController {
       },
       builder: (context, results) {
         final children = _widgetCache.values.toList();
-        final layerEffects =
-            results.isNotEmpty ? results.map((e) => e.data).first : null;
+        final layerEffects = results.isNotEmpty
+            ? results.map((e) => e.data).first
+            : null;
         return PrioritizedIndexedStack(
           indices: [
             _indexOfRouteState(routeState),
@@ -372,8 +357,8 @@ class RouteController {
   }
 
   static RouteController of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteControllerProvider found in context');
     }
@@ -394,15 +379,9 @@ class _NavigationState {
   final List<RouteState> routes;
   final int index;
 
-  const _NavigationState({
-    required this.routes,
-    required this.index,
-  });
+  const _NavigationState({required this.routes, required this.index});
 
-  _NavigationState copyWith({
-    List<RouteState>? routes,
-    int? index,
-  }) {
+  _NavigationState copyWith({List<RouteState>? routes, int? index}) {
     return _NavigationState(
       routes: routes ?? this.routes,
       index: index ?? this.index,

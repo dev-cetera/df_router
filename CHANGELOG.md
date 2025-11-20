@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.0]
+
+- Released @ 11/2025 (UTC)
+- Implement proper backward and forward routing
+
 ## [0.4.16]
 
 - Released @ 11/2025 (UTC)
