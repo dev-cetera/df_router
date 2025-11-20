@@ -160,14 +160,14 @@ class ChatScreen extends StatelessWidget with RouteWidgetMixin {
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack();
+                controller.goBackward();
               },
               child: const Text('Go Back - Default Effect'),
             ),
             ElevatedButton(
               onPressed: () {
                 final controller = RouteController.of(context);
-                controller.pushBack(animationEffect: const QuickBackEffect());
+                controller.goBackward(animationEffect: const QuickBackEffect());
               },
               child: const Text('Go Back - Quick Back Effect'),
             ),
