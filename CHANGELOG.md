@@ -3,7 +3,7 @@
 ## [0.5.3]
 
 - Released @ 11/2025 (UTC)
-- Add shouldPreserve to RouteState
+- Add preservation strategy function
 
 ## [0.5.2]
 
