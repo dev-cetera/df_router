@@ -78,16 +78,37 @@ RouteController.of(context).goBackward();
 - Widget caching with `shouldPreserve` and `shouldPrebuild`
 - Custom transitions (`MaterialEffect`, `CupertinoEffect`, etc.)
 
+
 <!-- END _README_CONTENT -->
 
 ---
 
-For more details, see the [API reference](https://pub.dev/documentation/df_router/).
+🔍 For more information, refer to the [API reference](https://pub.dev/documentation/df_router/).
 
-## Contributing
+---
 
-Join our [Discord](https://discord.gg/gEQ8y2nfyX) or support us on [Buy Me A Coffee](https://www.buymeacoffee.com/dev_cetera).
+## 💬 Contributing and Discussions
 
-## License
+This is an open-source project, and we warmly welcome contributions from everyone, regardless of experience level. Whether you're a seasoned developer or just starting out, contributing to this project is a fantastic way to learn, share your knowledge, and make a meaningful impact on the community.
 
-[MIT License](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE)
+### ☝️ Ways you can contribute
+
+- **Find us on Discord:** Feel free to ask questions and engage with the community here: https://discord.gg/gEQ8y2nfyX.
+- **Share your ideas:** Every perspective matters, and your ideas can spark innovation.
+- **Help others:** Engage with other users by offering advice, solutions, or troubleshooting assistance.
+- **Report bugs:** Help us identify and fix issues to make the project more robust.
+- **Suggest improvements or new features:** Your ideas can help shape the future of the project.
+- **Help clarify documentation:** Good documentation is key to accessibility. You can make it easier for others to get started by improving or expanding our documentation.
+- **Write articles:** Share your knowledge by writing tutorials, guides, or blog posts about your experiences with the project. It's a great way to contribute and help others learn.
+
+No matter how you choose to contribute, your involvement is greatly appreciated and valued!
+
+### ☕ We drink a lot of coffee...
+
+If you're enjoying this package and find it valuable, consider showing your appreciation with a small donation. Every bit helps in supporting future development. You can donate here: https://www.buymeacoffee.com/dev_cetera
+
+<a href="https://www.buymeacoffee.com/dev_cetera" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" height="40"></a>
+
+## LICENSE
+
+This project is released under the [MIT License](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE). See [LICENSE](https://raw.githubusercontent.com/dev-cetera/df_router/main/LICENSE) for more information.

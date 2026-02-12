@@ -11,10 +11,10 @@ final class HomeRoute extends RouteState {
 final class ChatRoute extends RouteState {
   final String chatId;
   ChatRoute({required this.chatId})
-      : super.parse('/chat', queryParameters: {'chatId': chatId});
+    : super.parse('/chat', queryParameters: {'chatId': chatId});
   ChatRoute.from(RouteState other)
-      : chatId = other.uri.queryParameters['chatId'] ?? '',
-        super(other.uri);
+    : chatId = other.uri.queryParameters['chatId'] ?? '',
+      super(other.uri);
 }
 
 class MyApp extends StatelessWidget {

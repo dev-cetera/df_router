@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.5]
+
+- Released @ 2/2026 (UTC)
+- Fix critical bugs and simplify docs
+
 ## [0.5.4]
 
 - Released @ 11/2025 (UTC)
