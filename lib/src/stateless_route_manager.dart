@@ -15,6 +15,10 @@ import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
+@Deprecated(
+  'Use RouteManager instead. StatelessRouteManager creates a new controller '
+  'on every rebuild which causes memory leaks and state loss.',
+)
 class StatelessRouteManager extends StatelessWidget {
   final RouteState Function()? initialRouteState;
   final RouteState Function() fallbackRouteState;
@@ -37,6 +41,8 @@ class StatelessRouteManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // WARNING: This creates a new controller on every rebuild which is
+    // incorrect. Use RouteManager instead.
     final controller = RouteController(
       initialRouteState: initialRouteState,
       fallbackRouteState: fallbackRouteState,

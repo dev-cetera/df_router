@@ -156,31 +156,35 @@ packages:
   df_log:
     dependency: "direct main"
     description:
-      path: "../df_log"
-      relative: true
-    source: path
-    version: "0.3.28"
+      name: df_log
+      sha256: "1de0241d75d2c821d776d58cef8b1e9afdd61e304c2e71eb47a00d03239f3f9d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.30"
   df_pod:
     dependency: "direct main"
     description:
-      path: "../df_pod"
-      relative: true
-    source: path
-    version: "0.18.11"
+      name: df_pod
+      sha256: d4cb5ca3a30ac663c76b2a53c317647386ec008773c6586cf86ddd46c50869fd
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.18.14"
   df_pwa_utils:
     dependency: "direct main"
     description:
-      path: "../df_pwa_utils"
-      relative: true
-    source: path
+      name: df_pwa_utils
+      sha256: "1bef6719e110ca7dc4e067b4ce542232df0c190c78e4ad48c73568a8de403861"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.3.5"
   df_safer_dart:
     dependency: "direct main"
     description:
-      path: "../df_safer_dart"
-      relative: true
-    source: path
-    version: "0.17.8"
+      name: df_safer_dart
+      sha256: df926ef31f16f751caa70d44c19f233b98a9bc1f3da44867897d2a806a02e2c9
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.17.10"
   df_safer_dart_annotations:
     dependency: transitive
     description:
@@ -192,10 +196,11 @@ packages:
   df_safer_dart_lints:
     dependency: "direct dev"
     description:
-      path: "../df_safer_dart_lints"
-      relative: true
-    source: path
-    version: "0.3.3"
+      name: df_safer_dart_lints
+      sha256: "466ba6a5c0debb5486c9c4cfe7c94a5f479905db700553fff791aaccf6b14554"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.5"
   df_type:
     dependency: transitive
     description:
@@ -410,10 +415,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences
-      sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"
+      sha256: "2939ae520c9024cb197fc20dee269cd8cdbf564c8b5746374ec6cacdc5169e64"
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.3"
+    version: "2.5.4"
   shared_preferences_android:
     dependency: transitive
     description:
@@ -596,5 +601,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.8.0 <4.0.0"
-  flutter: ">=3.27.0"
+  dart: ">=3.9.0 <4.0.0"
+  flutter: ">=3.35.0"

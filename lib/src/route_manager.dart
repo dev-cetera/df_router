@@ -55,6 +55,13 @@ class _RouteManagerState extends State<RouteManager> {
   }
 
   @override
+  void dispose() {
+    // ignore: invalid_use_of_visible_for_testing_member
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return RouteControllerProvider(
       controller: _controller,

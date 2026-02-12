@@ -305,8 +305,9 @@ class RouteController {
     int index,
     bool Function(RouteState routeState) checker,
   ) {
-    if (index > 0) {
-      final b = pNavigationState.getValue().routes[index];
+    final routes = pNavigationState.getValue().routes;
+    if (index >= 0 && index < routes.length) {
+      final b = routes[index];
       return checker(b);
     }
     return false;
@@ -420,7 +421,7 @@ class RouteController {
     return provider.controller;
   }
 
-  @visibleForTesting
+  @visibleForTesting // TODO: Why did I mark this as visibleForTesting again?
   void dispose() {
     platformNavigator.removeStateCallback(pushUri);
     _pNavigationState.dispose();

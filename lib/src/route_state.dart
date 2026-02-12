@@ -88,9 +88,8 @@ class RouteState<TExtra extends Object?> extends Equatable {
       queryParameters: queryParameters ? this.uri.queryParameters : null,
       extra: extra ? this.extra : null,
       skipCurrent: skipCurrent ? this.skipCurrent : true,
-      animationEffect: animationEffect
-          ? const NoEffect()
-          : this.animationEffect,
+      animationEffect:
+          animationEffect ? const NoEffect() : this.animationEffect,
       condition: condition ? this.condition : null,
       shouldPreserve: shouldPreserve ? this.shouldPreserve : false,
     );
