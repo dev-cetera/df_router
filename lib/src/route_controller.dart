@@ -85,8 +85,8 @@ class RouteController {
     platformNavigator.addStateCallback(pushUri);
     // Pre-build routes marked shouldPrebuild so they're ready before first nav.
     resetState();
-    // Capture the browser's current URL to honour deep links.
-    _requested = current;
+    // Resolve the browser URL as a deep link (checks isRedirectable + condition).
+    _requested = _resolveDeepLink();
     // Priority: explicit initial → deep link → fallback. This order lets the
     // host app override the deep link when needed (e.g. auth redirects).
     final routeState =
@@ -94,6 +94,15 @@ class RouteController {
 
     _pNavigationState.set(_NavigationState(routes: [routeState], index: 0));
     addToCache([routeState]);
+    // Sync the browser URL AFTER the current frame. This must be deferred
+    // because MaterialApp's Navigator overwrites the URL with "/" during its
+    // build phase. A post-frame callback ensures we write last.
+    // Capture the URI now so the callback doesn't access the Pod (which may
+    // be disposed by the time the callback fires, e.g. in tests).
+    final initialUri = routeState.uri;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      platformNavigator.replaceState(initialUri);
+    });
   }
 
   //
@@ -108,6 +117,8 @@ class RouteController {
   RouteState getNavigatorOrFallbackRouteState() =>
       _requested ?? fallbackRouteState();
 
+  /// Returns the RouteState for the current browser URL, or null if the URL
+  /// doesn't match any registered route.
   RouteState? get current {
     final browserUrl = platformNavigator.getCurrentUrl();
     if (browserUrl == null) return null;
@@ -115,6 +126,21 @@ class RouteController {
     return _getBuilderByPath(
       appRelativeUrl,
     )?.routeState.copyWith(queryParameters: appRelativeUrl.queryParameters);
+  }
+
+  /// Resolves the current browser URL into a deep link RouteState. Returns null
+  /// if no matching route exists, the route is not redirectable, or its
+  /// condition is not met.
+  RouteState? _resolveDeepLink() {
+    final browserUrl = platformNavigator.getCurrentUrl();
+    if (browserUrl == null) return null;
+    final relative = platformNavigator.stripBaseHref(browserUrl);
+    final builder = _getBuilderByPath(relative);
+    if (builder == null) return null;
+    if (!builder.isRedirectable) return null;
+    if (!(builder.condition?.call() ?? true)) return null;
+    return builder.routeState
+        .copyWith(queryParameters: relative.queryParameters);
   }
 
   //
@@ -157,8 +183,9 @@ class RouteController {
 
   _TPreservationStrategy _preservationStrategy = defaultPreservationStrategy;
 
-  static _TPreservationStrategy defaultPreservationStrategy = (routeBuider) =>
-      routeBuider.shouldPreserve || routeBuider.routeState.shouldPreserve;
+  static _TPreservationStrategy defaultPreservationStrategy =
+      (routeBuilder, routeState) =>
+          routeBuilder.shouldPreserve || routeState.shouldPreserve;
 
   void setPreservationStrategy(_TPreservationStrategy preservationStrategy) =>
       _preservationStrategy = preservationStrategy;
@@ -167,11 +194,11 @@ class RouteController {
   // so the PrioritizedIndexedStack's child indices remain stable. Preserved
   // routes skip this step entirely to keep their state alive across navigations.
   void _maybeRemoveStaleRoute(RouteState routeState) {
-    final routeBuilder = _getBuilderByPath(
-      routeState.uri,
-    )?.copyWith(routeState: routeState);
+    final routeBuilder = _getBuilderByPath(routeState.uri);
     if (routeBuilder == null) return;
-    if (!_preservationStrategy(routeBuilder)) {
+    // Pass both the builder and the actual history route state separately,
+    // avoiding copyWith which fails due to generic type mismatch.
+    if (!_preservationStrategy(routeBuilder, routeState)) {
       _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
     }
   }
@@ -247,12 +274,24 @@ class RouteController {
           );
         }
       } else {
-        // Unknown URI (typed in manually or external link) — treat as a new push.
-        push(
-          RouteState(uri),
-          errorFallback: errorFallback,
-          animationEffect: forwardAnimationEffect,
-        );
+        // Unknown URI (typed in manually or external link) — treat as a new
+        // push if a builder exists and is redirectable, otherwise fall back.
+        final builder = _getBuilderByPath(uri);
+        if (builder != null && builder.isRedirectable) {
+          push(
+            RouteState(uri),
+            errorFallback: errorFallback,
+            animationEffect: forwardAnimationEffect,
+          );
+        } else {
+          if (builder != null && !builder.isRedirectable) {
+            Log.alert('Route $uri is not redirectable from browser URL.');
+          }
+          push(
+            errorFallback ?? fallbackRouteState(),
+            animationEffect: forwardAnimationEffect,
+          );
+        }
       }
     } finally {
       _isBrowserTriggered = false;
@@ -300,19 +339,21 @@ class RouteController {
     _previousRouteForTransition = currentRouteState;
     // Pick the right animation direction based on whether we're going
     // backward or forward in the history.
-    _nextAnimationEffect = index < state.index
-        ? backwardAnimationEffect
-        : forwardAnimationEffect;
+    _nextAnimationEffect =
+        index < state.index ? backwardAnimationEffect : forwardAnimationEffect;
 
     final newRoute = state.routes[index];
     // Ensure the target widget is built before we show it.
     addToCache([newRoute]);
     _pNavigationState.set(_NavigationState(routes: state.routes, index: index));
 
-    // Only push to browser when the navigation was app-initiated. Browser-
-    // initiated navigations (popstate) have already updated the URL bar.
+    // Only sync the browser URL when the navigation was app-initiated.
+    // Browser-initiated navigations (popstate) have already updated the URL.
+    // Use replaceState (not pushState) because go() moves within existing
+    // history — pushState would add duplicate browser entries and cause
+    // back/forward oscillation loops.
     if (!_isBrowserTriggered) {
-      platformNavigator.pushState(newRoute.uri);
+      platformNavigator.replaceState(newRoute.uri);
     }
     _globalKey.currentState?.setEffects([_nextAnimationEffect]);
     _globalKey.currentState?.restart();
@@ -416,14 +457,16 @@ class RouteController {
     RouteState<TExtra> routeState,
     RouteState? errorFallback,
   ) {
-    if (!_checkExtraTypeMismatch<TExtra>(uri)) {
-      Log.err('Expected extra type $TExtra for route: $uri!');
+    // Check path existence first — a missing path is a different problem
+    // than a type mismatch, and deserves a distinct error message.
+    if (!pathExists(uri)) {
+      Log.err('The path $uri does not exist!');
       final error = errorFallback ?? errorRouteState?.call();
       if (error != null) push(error);
       return false;
     }
-    if (!pathExists(uri)) {
-      Log.err('The path $uri does not exist!');
+    if (!_checkExtraTypeMismatch<TExtra>(uri)) {
+      Log.err('Expected extra type $TExtra for route: $uri!');
       final error = errorFallback ?? errorRouteState?.call();
       if (error != null) push(error);
       return false;
@@ -443,7 +486,9 @@ class RouteController {
 
   bool _checkExtraTypeMismatch<TExtra extends Object?>(Uri path) {
     final builder = _builderMap[path.path];
-    return builder != null && builder is RouteBuilder<TExtra>;
+    // If no builder exists, pathExists already handles it — no type mismatch.
+    if (builder == null) return true;
+    return builder is RouteBuilder<TExtra>;
   }
 
   RouteBuilder? _getBuilderByPath(Uri path) => _builderMap[path.path];
@@ -464,9 +509,8 @@ class RouteController {
       },
       builder: (context, results) {
         final children = _widgetCache.values.toList();
-        final layerEffects = results.isNotEmpty
-            ? results.map((e) => e.data).first
-            : null;
+        final layerEffects =
+            results.isNotEmpty ? results.map((e) => e.data).first : null;
         return PrioritizedIndexedStack(
           // Two indices: current on top, previous underneath. The stack
           // renders bottom-up so index 0 is the topmost visible layer.
@@ -493,8 +537,8 @@ class RouteController {
   }
 
   static RouteController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider =
+        context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteControllerProvider found in context');
     }
@@ -527,4 +571,7 @@ class _NavigationState {
   }
 }
 
-typedef _TPreservationStrategy = bool Function(RouteBuilder routeBuider);
+typedef _TPreservationStrategy = bool Function(
+  RouteBuilder routeBuilder,
+  RouteState routeState,
+);

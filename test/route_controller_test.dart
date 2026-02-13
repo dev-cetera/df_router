@@ -41,8 +41,7 @@ RouteController _makeController({
     initialRouteState: initialRouteState,
     errorRouteState: errorRouteState,
     fallbackRouteState: () => RouteState.parse('/home'),
-    builders:
-        builders ??
+    builders: builders ??
         [
           _builder('/home'),
           _builder('/gallery'),
@@ -179,6 +178,32 @@ void main() {
       final builder = _builder('/home', shouldPreserve: true);
       final copy = builder.copyWith();
       expect(copy.shouldPreserve, true);
+    });
+
+    test('isRedirectable defaults to true', () {
+      final builder = _builder('/home');
+      expect(builder.isRedirectable, true);
+    });
+
+    test('isRedirectable can be set to false', () {
+      final builder = RouteBuilder(
+        routeState: RouteState.parse('/secret'),
+        isRedirectable: false,
+        builder: (context, routeState) =>
+            _TestScreen(routeState: routeState, label: '/secret'),
+      );
+      expect(builder.isRedirectable, false);
+    });
+
+    test('copyWith preserves isRedirectable', () {
+      final builder = RouteBuilder(
+        routeState: RouteState.parse('/secret'),
+        isRedirectable: false,
+        builder: (context, routeState) =>
+            _TestScreen(routeState: routeState, label: '/secret'),
+      );
+      final copy = builder.copyWith();
+      expect(copy.isRedirectable, false);
     });
   });
 
@@ -569,6 +594,42 @@ void main() {
       expect(stateAfter.index, stateBefore.index);
       controller.dispose();
     });
+
+    test('pushUri falls back when route is not redirectable', () {
+      final controller = _makeController(
+        builders: [
+          _builder('/home'),
+          _builder('/gallery'),
+          RouteBuilder(
+            routeState: RouteState.parse('/secret'),
+            isRedirectable: false,
+            builder: (context, routeState) =>
+                _TestScreen(routeState: routeState, label: '/secret'),
+          ),
+        ],
+      );
+      // Browser tries to navigate to /secret — should fall back to /home.
+      controller.pushUri(Uri.parse('/secret'));
+      expect(controller.currentRouteState.uri.path, '/home');
+      controller.dispose();
+    });
+
+    test('pushUri navigates when route is redirectable', () {
+      final controller = _makeController(
+        builders: [
+          _builder('/home'),
+          RouteBuilder(
+            routeState: RouteState.parse('/public'),
+            isRedirectable: true,
+            builder: (context, routeState) =>
+                _TestScreen(routeState: routeState, label: '/public'),
+          ),
+        ],
+      );
+      controller.pushUri(Uri.parse('/public'));
+      expect(controller.currentRouteState.uri.path, '/public');
+      controller.dispose();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -882,18 +943,26 @@ void main() {
   group('Preservation strategy', () {
     test('default strategy checks builder and state shouldPreserve', () {
       final builder = _builder('/home', shouldPreserve: true);
-      expect(RouteController.defaultPreservationStrategy(builder), true);
+      final routeState = RouteState.parse('/home');
+      expect(
+        RouteController.defaultPreservationStrategy(builder, routeState),
+        true,
+      );
     });
 
     test('default strategy returns false when neither is preserved', () {
       final builder = _builder('/home');
-      expect(RouteController.defaultPreservationStrategy(builder), false);
+      final routeState = RouteState.parse('/home');
+      expect(
+        RouteController.defaultPreservationStrategy(builder, routeState),
+        false,
+      );
     });
 
     test('custom strategy can be set', () {
       final controller = _makeController();
       // Strategy that preserves everything.
-      controller.setPreservationStrategy((_) => true);
+      controller.setPreservationStrategy((_, __) => true);
       // Push and go back — the old route should still be preserved.
       controller.push(RouteState.parse('/gallery'));
       controller.goBackward();

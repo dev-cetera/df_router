@@ -28,6 +28,10 @@ class RouteBuilder<TExtra extends Object?> {
   // than on first visit. Use for screens that need instant display without
   // a build delay (e.g. the home screen).
   final bool shouldPrebuild;
+  // When true, this route can be navigated to via browser URL. When false,
+  // the route is only reachable programmatically (e.g. screens that require
+  // internal parameters not available from a URL).
+  final bool isRedirectable;
   // Stored as the type-erased TRouteWidgetBuilder so the RouteController can
   // invoke it without knowing TExtra at call sites.
   late final TRouteWidgetBuilder builder;
@@ -39,6 +43,7 @@ class RouteBuilder<TExtra extends Object?> {
     required this.routeState,
     this.shouldPreserve = false,
     this.shouldPrebuild = false,
+    this.isRedirectable = true,
     required TRouteWidgetBuilder<TExtra> builder,
     this.condition,
   }) {
@@ -51,6 +56,7 @@ class RouteBuilder<TExtra extends Object?> {
     RouteState<TExtra>? routeState,
     bool? shouldPreserve,
     bool? shouldPrebuild,
+    bool? isRedirectable,
     TRouteWidgetBuilder<TExtra>? builder,
     TRouteConditionFn? condition,
   }) {
@@ -58,8 +64,8 @@ class RouteBuilder<TExtra extends Object?> {
       routeState: routeState ?? this.routeState,
       shouldPreserve: shouldPreserve ?? this.shouldPreserve,
       shouldPrebuild: shouldPrebuild ?? this.shouldPrebuild,
-      builder:
-          builder ??
+      isRedirectable: isRedirectable ?? this.isRedirectable,
+      builder: builder ??
           (context, state) =>
               this.builder(context, state) as RouteWidgetMixin<TExtra>,
       condition: condition ?? this.condition,
@@ -69,12 +75,14 @@ class RouteBuilder<TExtra extends Object?> {
   RouteBuilder<TExtra> copyWithout({
     bool shouldPreserve = true,
     bool shouldPrebuild = true,
+    bool isRedirectable = false,
     bool condition = true,
   }) {
     return RouteBuilder<TExtra>(
       routeState: routeState,
       shouldPreserve: shouldPreserve ? false : this.shouldPreserve,
       shouldPrebuild: shouldPrebuild ? false : this.shouldPrebuild,
+      isRedirectable: isRedirectable ? false : this.isRedirectable,
       builder: (context, state) =>
           builder(context, state) as RouteWidgetMixin<TExtra>,
       condition: condition ? null : this.condition,
@@ -86,8 +94,8 @@ class RouteBuilder<TExtra extends Object?> {
 
 typedef TRouteConditionFn = bool Function();
 
-typedef TRouteWidgetBuilder<TExtra extends Object?> =
-    RouteWidgetMixin<TExtra> Function(
-      BuildContext context,
-      RouteState<TExtra?> routeState,
-    );
+typedef TRouteWidgetBuilder<TExtra extends Object?> = RouteWidgetMixin<TExtra>
+    Function(
+  BuildContext context,
+  RouteState<TExtra?> routeState,
+);

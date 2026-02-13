@@ -24,22 +24,25 @@ void main() {
 
 final class PrebuiltPreservedRoute extends RouteState {
   PrebuiltPreservedRoute()
-    : super.parse('/prebuilt-preserved', animationEffect: const FadeEffect());
+      : super.parse('/prebuilt-preserved', animationEffect: const FadeEffect());
 }
 
 final class PreservedOnlyRoute extends RouteState {
   PreservedOnlyRoute()
-    : super.parse('/preserved-only', animationEffect: const CupertinoEffect());
+      : super.parse(
+          '/preserved-only',
+          animationEffect: const CupertinoEffect(),
+        );
 }
 
 final class PrebuiltOnlyRoute extends RouteState {
   PrebuiltOnlyRoute()
-    : super.parse('/prebuilt-only', animationEffect: const SlideUpEffect());
+      : super.parse('/prebuilt-only', animationEffect: const SlideUpEffect());
 }
 
 final class DefaultRoute extends RouteState {
   DefaultRoute()
-    : super.parse('/default', animationEffect: const MaterialEffect());
+      : super.parse('/default', animationEffect: const MaterialEffect());
 }
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -69,8 +72,7 @@ class SimpleApp extends StatelessWidget {
                   return DemoScreen(
                     routeState: routeState,
                     title: 'PREBUILT + PRESERVED',
-                    subtitle:
-                        'Built at startup. State lives forever.\n'
+                    subtitle: 'Built at startup. State lives forever.\n'
                         'Counter & text survive navigation.',
                     color: Colors.green,
                   );
@@ -84,8 +86,7 @@ class SimpleApp extends StatelessWidget {
                   return DemoScreen(
                     routeState: routeState,
                     title: 'PRESERVED ONLY',
-                    subtitle:
-                        'Built on first visit. State lives forever.\n'
+                    subtitle: 'Built on first visit. State lives forever.\n'
                         'Counter & text survive navigation.',
                     color: Colors.blue,
                   );
@@ -99,8 +100,7 @@ class SimpleApp extends StatelessWidget {
                   return DemoScreen(
                     routeState: routeState,
                     title: 'PREBUILT ONLY',
-                    subtitle:
-                        'Built at startup. Disposed on leave.\n'
+                    subtitle: 'Built at startup. Disposed on leave.\n'
                         'Counter & text RESET every navigation.',
                     color: Colors.orange,
                   );
@@ -113,8 +113,7 @@ class SimpleApp extends StatelessWidget {
                   return DemoScreen(
                     routeState: routeState,
                     title: 'DEFAULT',
-                    subtitle:
-                        'Built each visit. Disposed on leave.\n'
+                    subtitle: 'Built each visit. Disposed on leave.\n'
                         'Counter & text RESET every navigation.',
                     color: Colors.red,
                   );
@@ -330,9 +329,8 @@ class _NavBar extends StatelessWidget {
               IconButton(
                 icon: Icon(
                   Icons.arrow_back,
-                  color: controller.canGoBackward
-                      ? Colors.white
-                      : Colors.white24,
+                  color:
+                      controller.canGoBackward ? Colors.white : Colors.white24,
                   size: 20.0,
                 ),
                 onPressed: controller.canGoBackward
@@ -409,9 +407,8 @@ class _NavBar extends StatelessWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           foregroundColor: active ? color : Colors.white70,
-          backgroundColor: active
-              ? color.withValues(alpha: 0.2)
-              : Colors.transparent,
+          backgroundColor:
+              active ? color.withValues(alpha: 0.2) : Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
           minimumSize: Size.zero,
         ),

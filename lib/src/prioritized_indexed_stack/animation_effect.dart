@@ -29,8 +29,7 @@ abstract class AnimationEffect {
     BuildContext context,
     Size size,
     double value,
-  )
-  get data;
+  ) get data;
 
   const AnimationEffect({required this.duration, required this.curve});
 }
