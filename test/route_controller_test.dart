@@ -41,7 +41,8 @@ RouteController _makeController({
     initialRouteState: initialRouteState,
     errorRouteState: errorRouteState,
     fallbackRouteState: () => RouteState.parse('/home'),
-    builders: builders ??
+    builders:
+        builders ??
         [
           _builder('/home'),
           _builder('/gallery'),

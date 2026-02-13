@@ -20,7 +20,7 @@ class RouteWidgetBuilder<TExtra extends Object?> extends StatelessWidget
   @override
   final RouteState<TExtra?>? routeState;
   final Widget Function(BuildContext context, RouteState<TExtra?>? routeState)
-      builder;
+  builder;
 
   const RouteWidgetBuilder({super.key, this.routeState, required this.builder});
 

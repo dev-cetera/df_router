@@ -31,27 +31,27 @@ final class HomeRoute extends RouteState {
 
 final class GalleryRoute extends RouteState {
   GalleryRoute()
-      : super.parse('/gallery', animationEffect: const CupertinoEffect());
+    : super.parse('/gallery', animationEffect: const CupertinoEffect());
 }
 
 final class CanvasRoute extends RouteState {
   CanvasRoute()
-      : super.parse('/canvas', animationEffect: const SlideUpEffect());
+    : super.parse('/canvas', animationEffect: const SlideUpEffect());
 }
 
 final class StacksRoute extends RouteState {
   StacksRoute()
-      : super.parse('/stacks', animationEffect: const MaterialEffect());
+    : super.parse('/stacks', animationEffect: const MaterialEffect());
 }
 
 final class AnimationsRoute extends RouteState {
   AnimationsRoute()
-      : super.parse('/animations', animationEffect: const ForwardEffect());
+    : super.parse('/animations', animationEffect: const ForwardEffect());
 }
 
 final class TransitionsRoute extends RouteState {
   TransitionsRoute()
-      : super.parse('/transitions', animationEffect: const SlideDownEffect());
+    : super.parse('/transitions', animationEffect: const SlideDownEffect());
 }
 
 final class GridRoute extends RouteState {
@@ -328,8 +328,8 @@ class _NavBar extends StatelessWidget {
                       color: isCurrent
                           ? Colors.amber
                           : i > historyIndex
-                              ? Colors.greenAccent.withValues(alpha: 0.3)
-                              : Colors.white.withValues(alpha: 0.15),
+                          ? Colors.greenAccent.withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(3.0),
                     ),
                     child: Text(
@@ -337,8 +337,9 @@ class _NavBar extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 9.0,
                         color: isCurrent ? Colors.black : Colors.white54,
-                        fontWeight:
-                            isCurrent ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -363,8 +364,9 @@ class _NavBar extends StatelessWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           foregroundColor: active ? Colors.amber : Colors.white70,
-          backgroundColor:
-              active ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
+          backgroundColor: active
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.transparent,
         ),
         onPressed: active
             ? null
@@ -1356,7 +1358,8 @@ class _AnimationsScreenState extends State<AnimationsScreen>
                             return Expanded(
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 100),
-                                height: 40.0 +
+                                height:
+                                    40.0 +
                                     30.0 *
                                         math.sin(
                                           _bounce.value * math.pi + i * 0.5,
@@ -1785,8 +1788,9 @@ class _GridScreenState extends State<GridScreen> {
                       '${index + 1}',
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.black54,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         fontSize: 12.0,
                       ),
                     ),

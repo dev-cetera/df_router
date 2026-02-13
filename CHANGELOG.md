@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.8]
+
+- Released @ 2/2026 (UTC)
+- Fix deepLink issie
+
 ## [0.5.7]
 
 - Released @ 2/2026 (UTC)

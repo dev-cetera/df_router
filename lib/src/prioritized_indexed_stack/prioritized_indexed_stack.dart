@@ -74,8 +74,9 @@ class _PrioritizedIndexedStackState extends State<PrioritizedIndexedStack> {
   }
 
   void _rebuildWrappedChildren() {
-    _effectiveIndices =
-        widget.indices.map((index) => index == -1 ? null : index).toList();
+    _effectiveIndices = widget.indices
+        .map((index) => index == -1 ? null : index)
+        .toList();
 
     final activeSet = <int>{};
     for (final childIdx in _effectiveIndices) {
@@ -196,8 +197,8 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     super.textDirection,
     super.fit,
     super.clipBehavior,
-  })  : _indices = indices,
-        _layerEffects = layerEffects;
+  }) : _indices = indices,
+       _layerEffects = layerEffects;
 
   List<int?> _indices;
   List<int?> get indices => _indices;
@@ -237,9 +238,11 @@ class RenderPrioritizedIndexedStack extends RenderStack {
 
     final childList = _buildChildList();
 
-    for (var stackingOrder = _indices.length - 1;
-        stackingOrder >= 0;
-        stackingOrder--) {
+    for (
+      var stackingOrder = _indices.length - 1;
+      stackingOrder >= 0;
+      stackingOrder--
+    ) {
       final childOriginalIndex = _indices[stackingOrder];
       if (childOriginalIndex == null ||
           childOriginalIndex < 0 ||
@@ -251,8 +254,8 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       final childParentData = childToPaint.parentData! as StackParentData;
       final effectData =
           (_layerEffects != null && stackingOrder < _layerEffects!.length)
-              ? _layerEffects![stackingOrder]
-              : null;
+          ? _layerEffects![stackingOrder]
+          : null;
 
       final childStackLayoutOffset = childParentData.offset;
       final absoluteChildPaintOrigin = offset + childStackLayoutOffset;
@@ -346,9 +349,11 @@ class RenderPrioritizedIndexedStack extends RenderStack {
 
     final childList = _buildChildList();
 
-    for (var stackingOrder = 0;
-        stackingOrder < _indices.length;
-        stackingOrder++) {
+    for (
+      var stackingOrder = 0;
+      stackingOrder < _indices.length;
+      stackingOrder++
+    ) {
       final childOriginalIndex = _indices[stackingOrder];
       if (childOriginalIndex == null ||
           childOriginalIndex < 0 ||
@@ -360,8 +365,8 @@ class RenderPrioritizedIndexedStack extends RenderStack {
 
       final effectData =
           (_layerEffects != null && stackingOrder < _layerEffects!.length)
-              ? _layerEffects![stackingOrder]
-              : null;
+          ? _layerEffects![stackingOrder]
+          : null;
 
       final effectivelyIgnorePointer = effectData?.ignorePointer ?? false;
       final currentOpacity = effectData?.opacity;
@@ -381,15 +386,16 @@ class RenderPrioritizedIndexedStack extends RenderStack {
         hitted = result.addWithPaintTransform(
           transform: currentTransform,
           position: position - childStackOffset,
-          hitTest: (
-            BoxHitTestResult hitTestResult,
-            Offset transformedLocalPosition,
-          ) {
-            return childToTest.hitTest(
-              hitTestResult,
-              position: transformedLocalPosition,
-            );
-          },
+          hitTest:
+              (
+                BoxHitTestResult hitTestResult,
+                Offset transformedLocalPosition,
+              ) {
+                return childToTest.hitTest(
+                  hitTestResult,
+                  position: transformedLocalPosition,
+                );
+              },
         );
       } else {
         hitted = result.addWithPaintOffset(
