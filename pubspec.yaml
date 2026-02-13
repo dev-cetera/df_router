@@ -21,7 +21,7 @@ funding:
 - https://github.com/sponsors/robelator
 - https://www.buymeacoffee.com/dev_cetera
 description: A lightweight router designed for ease of use and efficient state management. 
-version: 0.5.7
+version: 0.5.8
 topics:
   - router
   - navigation
