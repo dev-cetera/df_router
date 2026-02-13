@@ -41,7 +41,8 @@ RouteController _makeController({
     initialRouteState: initialRouteState,
     errorRouteState: errorRouteState,
     fallbackRouteState: () => RouteState.parse('/home'),
-    builders: builders ??
+    builders:
+        builders ??
         [
           _builder('/home'),
           _builder('/gallery'),
@@ -81,10 +82,7 @@ void main() {
     });
 
     test('query parameters are merged', () {
-      final state = RouteState.parse(
-        '/home?a=1',
-        queryParameters: {'b': '2'},
-      );
+      final state = RouteState.parse('/home?a=1', queryParameters: {'b': '2'});
       expect(state.uri.queryParameters, {'a': '1', 'b': '2'});
     });
 
@@ -497,9 +495,7 @@ void main() {
 
     test('routeState condition blocks navigation', () {
       final controller = _makeController();
-      controller.push(
-        RouteState.parse('/gallery', condition: () => false),
-      );
+      controller.push(RouteState.parse('/gallery', condition: () => false));
       expect(controller.currentRouteState.uri.path, '/home');
       controller.dispose();
     });
@@ -770,10 +766,7 @@ void main() {
                 RouteBuilder(
                   routeState: RouteState.parse('/home'),
                   builder: (context, routeState) {
-                    return _TestScreen(
-                      routeState: routeState,
-                      label: 'Home',
-                    );
+                    return _TestScreen(routeState: routeState, label: 'Home');
                   },
                 ),
               ],
@@ -796,10 +789,7 @@ void main() {
                 RouteBuilder(
                   routeState: RouteState.parse('/home'),
                   builder: (context, routeState) {
-                    return _TestScreen(
-                      routeState: routeState,
-                      label: 'Home',
-                    );
+                    return _TestScreen(routeState: routeState, label: 'Home');
                   },
                 ),
               ],
@@ -824,10 +814,7 @@ void main() {
                 RouteBuilder(
                   routeState: RouteState.parse('/home'),
                   builder: (context, routeState) {
-                    return _TestScreen(
-                      routeState: routeState,
-                      label: 'Home',
-                    );
+                    return _TestScreen(routeState: routeState, label: 'Home');
                   },
                 ),
               ],
@@ -851,10 +838,7 @@ void main() {
                 RouteBuilder(
                   routeState: RouteState.parse('/home'),
                   builder: (context, routeState) {
-                    return _TestScreen(
-                      routeState: routeState,
-                      label: 'Home',
-                    );
+                    return _TestScreen(routeState: routeState, label: 'Home');
                   },
                 ),
               ],
@@ -898,18 +882,12 @@ void main() {
   group('Preservation strategy', () {
     test('default strategy checks builder and state shouldPreserve', () {
       final builder = _builder('/home', shouldPreserve: true);
-      expect(
-        RouteController.defaultPreservationStrategy(builder),
-        true,
-      );
+      expect(RouteController.defaultPreservationStrategy(builder), true);
     });
 
     test('default strategy returns false when neither is preserved', () {
       final builder = _builder('/home');
-      expect(
-        RouteController.defaultPreservationStrategy(builder),
-        false,
-      );
+      expect(RouteController.defaultPreservationStrategy(builder), false);
     });
 
     test('custom strategy can be set', () {

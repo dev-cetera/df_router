@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.7]
+
+- Released @ 2/2026 (UTC)
+- Performance updates, better examples
+
 ## [0.5.6]
 
 - Released @ 2/2026 (UTC)

@@ -300,8 +300,9 @@ class RouteController {
     _previousRouteForTransition = currentRouteState;
     // Pick the right animation direction based on whether we're going
     // backward or forward in the history.
-    _nextAnimationEffect =
-        index < state.index ? backwardAnimationEffect : forwardAnimationEffect;
+    _nextAnimationEffect = index < state.index
+        ? backwardAnimationEffect
+        : forwardAnimationEffect;
 
     final newRoute = state.routes[index];
     // Ensure the target widget is built before we show it.
@@ -463,8 +464,9 @@ class RouteController {
       },
       builder: (context, results) {
         final children = _widgetCache.values.toList();
-        final layerEffects =
-            results.isNotEmpty ? results.map((e) => e.data).first : null;
+        final layerEffects = results.isNotEmpty
+            ? results.map((e) => e.data).first
+            : null;
         return PrioritizedIndexedStack(
           // Two indices: current on top, previous underneath. The stack
           // renders bottom-up so index 0 is the topmost visible layer.
@@ -491,8 +493,8 @@ class RouteController {
   }
 
   static RouteController of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<RouteControllerProvider>();
     if (provider == null) {
       throw FlutterError('No RouteControllerProvider found in context');
     }

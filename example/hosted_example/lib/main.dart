@@ -31,27 +31,27 @@ final class HomeRoute extends RouteState {
 
 final class GalleryRoute extends RouteState {
   GalleryRoute()
-      : super.parse('/gallery', animationEffect: const CupertinoEffect());
+    : super.parse('/gallery', animationEffect: const CupertinoEffect());
 }
 
 final class CanvasRoute extends RouteState {
   CanvasRoute()
-      : super.parse('/canvas', animationEffect: const SlideUpEffect());
+    : super.parse('/canvas', animationEffect: const SlideUpEffect());
 }
 
 final class StacksRoute extends RouteState {
   StacksRoute()
-      : super.parse('/stacks', animationEffect: const MaterialEffect());
+    : super.parse('/stacks', animationEffect: const MaterialEffect());
 }
 
 final class AnimationsRoute extends RouteState {
   AnimationsRoute()
-      : super.parse('/animations', animationEffect: const ForwardEffect());
+    : super.parse('/animations', animationEffect: const ForwardEffect());
 }
 
 final class TransitionsRoute extends RouteState {
   TransitionsRoute()
-      : super.parse('/transitions', animationEffect: const SlideDownEffect());
+    : super.parse('/transitions', animationEffect: const SlideDownEffect());
 }
 
 final class GridRoute extends RouteState {
@@ -70,10 +70,7 @@ class MyApp extends StatelessWidget {
     _log('App', 'build');
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
       builder: (context, child) {
         return Scaffold(
           body: RouteManager(
@@ -291,18 +288,8 @@ class _NavBar extends StatelessWidget {
                           '/gallery',
                           GalleryRoute(),
                         ),
-                        _navBtn(
-                          controller,
-                          'Canvas',
-                          '/canvas',
-                          CanvasRoute(),
-                        ),
-                        _navBtn(
-                          controller,
-                          'Stacks',
-                          '/stacks',
-                          StacksRoute(),
-                        ),
+                        _navBtn(controller, 'Canvas', '/canvas', CanvasRoute()),
+                        _navBtn(controller, 'Stacks', '/stacks', StacksRoute()),
                         _navBtn(
                           controller,
                           'Anim',
@@ -341,8 +328,8 @@ class _NavBar extends StatelessWidget {
                       color: isCurrent
                           ? Colors.amber
                           : i > historyIndex
-                              ? Colors.greenAccent.withValues(alpha: 0.3)
-                              : Colors.white.withValues(alpha: 0.15),
+                          ? Colors.greenAccent.withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(3.0),
                     ),
                     child: Text(
@@ -350,8 +337,9 @@ class _NavBar extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 9.0,
                         color: isCurrent ? Colors.black : Colors.white54,
-                        fontWeight:
-                            isCurrent ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -376,8 +364,9 @@ class _NavBar extends StatelessWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           foregroundColor: active ? Colors.amber : Colors.white70,
-          backgroundColor:
-              active ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
+          backgroundColor: active
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.transparent,
         ),
         onPressed: active
             ? null
@@ -511,8 +500,9 @@ class _HomeScreenState extends State<HomeScreen>
                     const SizedBox(height: 4.0),
                     Text(
                       'build() called $_buildCount times',
-                      style:
-                          TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
                     ),
                     const SizedBox(height: 4.0),
                     const Text(
@@ -882,13 +872,17 @@ class _SimpleSlider extends StatelessWidget {
         final trackWidth = constraints.maxWidth;
         return GestureDetector(
           onHorizontalDragUpdate: (details) {
-            final newFraction =
-                (details.localPosition.dx / trackWidth).clamp(0.0, 1.0);
+            final newFraction = (details.localPosition.dx / trackWidth).clamp(
+              0.0,
+              1.0,
+            );
             onChanged(min + newFraction * (max - min));
           },
           onTapDown: (details) {
-            final newFraction =
-                (details.localPosition.dx / trackWidth).clamp(0.0, 1.0);
+            final newFraction = (details.localPosition.dx / trackWidth).clamp(
+              0.0,
+              1.0,
+            );
             onChanged(min + newFraction * (max - min));
           },
           child: Container(
@@ -914,8 +908,10 @@ class _SimpleSlider extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  left: (trackWidth * fraction - 8.0)
-                      .clamp(0.0, trackWidth - 16.0),
+                  left: (trackWidth * fraction - 8.0).clamp(
+                    0.0,
+                    trackWidth - 16.0,
+                  ),
                   child: Container(
                     width: 16.0,
                     height: 16.0,
@@ -983,8 +979,12 @@ class _SpirographPainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     paint
-      ..color =
-          HSLColor.fromAHSL(0.3, (hue + 120.0) % 360.0, 0.8, 0.5).toColor()
+      ..color = HSLColor.fromAHSL(
+        0.3,
+        (hue + 120.0) % 360.0,
+        0.8,
+        0.5,
+      ).toColor()
       ..strokeWidth = 0.5;
     canvas.drawPath(path, paint);
   }
@@ -1358,7 +1358,8 @@ class _AnimationsScreenState extends State<AnimationsScreen>
                             return Expanded(
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 100),
-                                height: 40.0 +
+                                height:
+                                    40.0 +
                                     30.0 *
                                         math.sin(
                                           _bounce.value * math.pi + i * 0.5,
@@ -1401,10 +1402,7 @@ class _AnimationsScreenState extends State<AnimationsScreen>
           color: color.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12.0),
           boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.4),
-              blurRadius: 12.0,
-            ),
+            BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 12.0),
           ],
         ),
         alignment: Alignment.center,
@@ -1544,8 +1542,10 @@ class _TransitionsScreenState extends State<TransitionsScreen> {
                   const SizedBox(height: 4.0),
                   Text(
                     'Last used: $_lastUsed',
-                    style:
-                        TextStyle(fontSize: 11.0, color: Colors.cyan.shade700),
+                    style: TextStyle(
+                      fontSize: 11.0,
+                      color: Colors.cyan.shade700,
+                    ),
                   ),
                 ],
               ],
@@ -1734,8 +1734,10 @@ class _GridScreenState extends State<GridScreen> {
                       _log('Grid', 'cleared ${_selected.length} selections');
                       setState(() => _selected.clear());
                     },
-                    child:
-                        const Text('Clear', style: TextStyle(fontSize: 12.0)),
+                    child: const Text(
+                      'Clear',
+                      style: TextStyle(fontSize: 12.0),
+                    ),
                   ),
               ],
             ),
@@ -1786,8 +1788,9 @@ class _GridScreenState extends State<GridScreen> {
                       '${index + 1}',
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.black54,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         fontSize: 12.0,
                       ),
                     ),

@@ -21,7 +21,7 @@ import '/_common.dart';
 // listener setup on every route change.
 class AnimationEffectBuilder extends StatefulWidget {
   final Widget Function(BuildContext context, List<LayerEffectResult> results)
-      builder;
+  builder;
   // Called when ALL animation controllers complete. The RouteController uses
   // this to dispose the previous screen's widget only after the transition
   // finishes, preventing a visual flash.
@@ -152,8 +152,9 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final animationsToMerge =
-        _bundles.map((bundle) => bundle.animation).toList();
+    final animationsToMerge = _bundles
+        .map((bundle) => bundle.animation)
+        .toList();
 
     return AnimatedBuilder(
       animation: Listenable.merge(animationsToMerge),
