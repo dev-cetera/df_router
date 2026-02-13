@@ -34,7 +34,7 @@ This workflow provides a manual trigger for publishing. It activates **only** wh
 
 ### 3. `deploy-example.yml` (Optional)
 
-If your project contains a Flutter web example in a `hosted_example` directory, this workflow will automatically build it and deploy it to GitHub Pages on every push to the `main` branch. This is great for providing live demos of your package.
+If your project contains a Flutter web example in an `example/hosted_example` directory, this workflow will automatically build it and deploy it to GitHub Pages on every push to the `main` branch. This is great for providing live demos of your package.
 
 ---
 

@@ -1,6 +1,6 @@
 ## Summary
 
-A lightweight Flutter router with state management. [Live demo](https://dev-cetera.github.io/df_router/chat?chatId=123456).
+A lightweight Flutter router with state management. [Live demo](https://dev-cetera.github.io/df_router/).
 
 ## Quick Start
 

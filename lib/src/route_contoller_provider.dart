@@ -15,6 +15,12 @@ import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
+// InheritedWidget that exposes the RouteController to the widget tree.
+// RouteController.of(context) uses dependOnInheritedWidgetOfExactType to
+// find this, which also registers a rebuild dependency — so when the
+// provider changes (e.g. hot reload), dependents automatically rebuild.
+// updateShouldNotify only fires when the controller instance itself changes
+// (which normally only happens on hot reload), not on route changes.
 class RouteControllerProvider extends InheritedWidget {
   final RouteController controller;
 

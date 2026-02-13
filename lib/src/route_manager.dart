@@ -15,13 +15,23 @@ import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
+// StatefulWidget wrapper that owns the RouteController's lifecycle. Must be
+// stateful so the controller survives rebuilds — StatelessRouteManager was
+// deprecated because it recreated the controller on every rebuild, leaking
+// listeners and losing all navigation state.
 class RouteManager extends StatefulWidget {
   final RouteState Function()? initialRouteState;
   final RouteState Function() fallbackRouteState;
+  // Typed as Enum to guarantee the error route carries a categorized error
+  // code rather than arbitrary data.
   final RouteState<Enum> Function()? errorState;
   final void Function(RouteController controller)? onControllerCreated;
   final List<RouteBuilder> builders;
+  // When true, clips animation overflow so transitioning screens don't
+  // paint outside the router's bounds.
   final bool clipToBounds;
+  // Lets the host app inject a wrapper widget (e.g. for overlays, drawers)
+  // without subclassing RouteManager.
   final TRouteWrapperFn? wrapper;
 
   const RouteManager({
@@ -63,13 +73,21 @@ class _RouteManagerState extends State<RouteManager> {
 
   @override
   Widget build(BuildContext context) {
+    // RouteControllerProvider makes the controller available to descendants
+    // via RouteController.of(context), mirroring the InheritedWidget pattern.
     return RouteControllerProvider(
       controller: _controller,
+      // SyncPodBuilder rebuilds only when the current route actually changes,
+      // not on every Pod notification. cacheDuration: null disables debouncing
+      // so route changes reflect immediately.
       child: SyncPodBuilder(
         pod: Sync.okValue(_controller.pCurrentRouteState),
         cacheDuration: null,
         builder: (context, snapshot) {
           Widget child;
+          // UNSAFE label: unwrap() will throw if the Pod is in an error state.
+          // Acceptable here because pCurrentRouteState is derived from an
+          // internal Pod that should never error.
           UNSAFE:
           child = RepaintBoundary(
             child: _controller.buildScreen(
