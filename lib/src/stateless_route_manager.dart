@@ -16,8 +16,9 @@ import '/_common.dart';
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 @Deprecated(
-  'Use RouteManager instead. StatelessRouteManager creates a new controller '
-  'on every rebuild which causes memory leaks and state loss.',
+  'Use RouteManager. StatelessRouteManager constructed a new RouteController '
+  'on every parent rebuild, leaking the previous controller and its '
+  'platformNavigator callback. This class now delegates to RouteManager.',
 )
 class StatelessRouteManager extends StatelessWidget {
   final RouteState Function()? initialRouteState;
@@ -41,36 +42,14 @@ class StatelessRouteManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // WARNING: This creates a new controller on every rebuild which is
-    // incorrect. Use RouteManager instead.
-    final controller = RouteController(
+    return RouteManager(
       initialRouteState: initialRouteState,
       fallbackRouteState: fallbackRouteState,
-      errorRouteState: errorState,
+      errorState: errorState,
+      onControllerCreated: onControllerCreated,
       builders: builders,
-    );
-
-    onControllerCreated?.call(controller);
-    return RouteControllerProvider(
-      controller: controller,
-      child: SyncPodBuilder(
-        pod: Sync.okValue(controller.pCurrentRouteState),
-        cacheDuration: null,
-        builder: (context, snapshot) {
-          Widget child;
-          UNSAFE:
-          child = RepaintBoundary(
-            child: controller.buildScreen(
-              context,
-              snapshot.value.unwrap().unwrap(),
-            ),
-          );
-          if (clipToBounds) {
-            child = ClipRect(child: child);
-          }
-          return wrapper?.call(context, child) ?? child;
-        },
-      ),
+      clipToBounds: clipToBounds,
+      wrapper: wrapper,
     );
   }
 }
