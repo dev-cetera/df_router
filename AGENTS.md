@@ -14,8 +14,8 @@ flutter analyze                      # uses analysis_options.yaml (strict-casts/
 dart run custom_lint                 # runs df_safer_dart_lints
 dart format .
 dart fix --apply
-flutter run -t lib/main.dart         # ad-hoc demo app inside the package
-cd hosted_example && flutter run -d chrome   # the published live demo
+cd example/hosted_example && flutter run -d chrome   # the published live demo (deployed via .github/workflows/deploy-example.yml)
+cd example/simple_example && flutter run -d chrome   # smaller standalone demo
 ```
 
 There is no test suite — `flutter test` will be empty. The `example/example.dart` file is a single-file pub.dev example, not a runnable app.
@@ -63,7 +63,7 @@ This design is what enables the "stateful routes" feature: a `shouldPreserve: tr
 
 ### `MaterialApp` integration gotcha
 
-Mount `RouteManager` inside `MaterialApp.builder`, not `MaterialApp.home` — `home` conflicts with the router's screen swapping. The README and `lib/main.dart` demonstrate the correct pattern.
+Mount `RouteManager` inside `MaterialApp.builder`, not `MaterialApp.home` — `home` conflicts with the router's screen swapping. The README and `example/hosted_example/lib/main.dart` demonstrate the correct pattern.
 
 ## Style rules from `analysis_options.yaml`
 
