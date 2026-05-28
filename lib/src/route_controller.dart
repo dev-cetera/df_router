@@ -187,8 +187,7 @@ class RouteController {
     // If this route is still referenced (current or pending transition), keep
     // it as a placeholder so PrioritizedIndexedStack indices stay stable.
     // Otherwise drop it entirely to let GC reclaim the widget tree.
-    final stillReferenced =
-        routeState == currentRouteState ||
+    final stillReferenced = routeState == currentRouteState ||
         routeState == _previousRouteForTransition;
     if (stillReferenced) {
       _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
@@ -213,8 +212,7 @@ class RouteController {
     for (final routeState in routeStates) {
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
-      final stillReferenced =
-          routeState == currentRouteState ||
+      final stillReferenced = routeState == currentRouteState ||
           routeState == _previousRouteForTransition;
       if (stillReferenced) {
         if (_widgetCache[routeState] is SizedBox) continue;

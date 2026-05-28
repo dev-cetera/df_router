@@ -28,10 +28,10 @@ class NoEffect extends AnimationEffect {
 
 class FadeEffectWeb extends AnimationEffect {
   const FadeEffectWeb()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeOutSine,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeOutSine,
+        );
 
   @override
   get data {
@@ -50,10 +50,10 @@ class FadeEffectWeb extends AnimationEffect {
 
 class FadeEffect extends AnimationEffect {
   const FadeEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeOutSine,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeOutSine,
+        );
 
   @override
   get data {
@@ -68,10 +68,10 @@ class FadeEffect extends AnimationEffect {
 
 class BackwardEffectWeb extends AnimationEffect {
   const BackwardEffectWeb()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -97,10 +97,10 @@ class BackwardEffectWeb extends AnimationEffect {
 
 class BackwardEffect extends AnimationEffect {
   const BackwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -122,10 +122,10 @@ class BackwardEffect extends AnimationEffect {
 
 class ForwardEffectWeb extends AnimationEffect {
   const ForwardEffectWeb()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -151,10 +151,10 @@ class ForwardEffectWeb extends AnimationEffect {
 
 class ForwardEffect extends AnimationEffect {
   const ForwardEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuint,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuint,
+        );
 
   @override
   get data {
@@ -176,10 +176,10 @@ class ForwardEffect extends AnimationEffect {
 
 class SlideUpEffect extends AnimationEffect {
   const SlideUpEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuart,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuart,
+        );
 
   @override
   get data {
@@ -201,10 +201,10 @@ class SlideUpEffect extends AnimationEffect {
 
 class SlideDownEffect extends AnimationEffect {
   const SlideDownEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.easeInOutQuart,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.easeInOutQuart,
+        );
 
   @override
   get data {
@@ -226,10 +226,10 @@ class SlideDownEffect extends AnimationEffect {
 
 class CupertinoEffect extends AnimationEffect {
   const CupertinoEffect()
-    : super(
-        duration: const Duration(milliseconds: 410),
-        curve: Curves.easeInOut,
-      );
+      : super(
+          duration: const Duration(milliseconds: 410),
+          curve: Curves.easeInOut,
+        );
 
   @override
   get data {
@@ -251,10 +251,10 @@ class CupertinoEffect extends AnimationEffect {
 
 class MaterialEffect extends AnimationEffect {
   const MaterialEffect()
-    : super(
-        duration: const Duration(milliseconds: 275),
-        curve: Curves.fastOutSlowIn,
-      );
+      : super(
+          duration: const Duration(milliseconds: 275),
+          curve: Curves.fastOutSlowIn,
+        );
 
   @override
   get data {
@@ -279,10 +279,10 @@ class MaterialEffect extends AnimationEffect {
 // while the outgoing page stays flat underneath with a darkening shadow overlay.
 class PageFlapLeft extends AnimationEffect {
   const PageFlapLeft()
-    : super(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOutCubic,
-      );
+      : super(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOutCubic,
+        );
 
   @override
   get data {
@@ -317,10 +317,10 @@ class PageFlapLeft extends AnimationEffect {
 // in from the right like turning a page backward.
 class PageFlapRight extends AnimationEffect {
   const PageFlapRight()
-    : super(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOutCubic,
-      );
+      : super(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOutCubic,
+        );
 
   @override
   get data {
@@ -334,8 +334,7 @@ class PageFlapRight extends AnimationEffect {
 
       // Translate to right edge, rotate, then translate back — this makes the
       // page hinge on its right edge instead of the left.
-      final hinge =
-          Matrix4.translationValues(size.width, 0.0, 0.0) *
+      final hinge = Matrix4.translationValues(size.width, 0.0, 0.0) *
           rotation *
           Matrix4.translationValues(-size.width, 0.0, 0.0);
 
