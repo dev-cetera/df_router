@@ -29,8 +29,10 @@ final class PrebuiltPreservedRoute extends RouteState {
 
 final class PreservedOnlyRoute extends RouteState {
   PreservedOnlyRoute()
-      : super.parse('/preserved-only',
-            animationEffect: const CupertinoEffect());
+      : super.parse(
+          '/preserved-only',
+          animationEffect: const CupertinoEffect(),
+        );
 }
 
 final class PrebuiltOnlyRoute extends RouteState {
