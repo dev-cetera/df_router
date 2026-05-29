@@ -40,6 +40,31 @@ class RouteController {
   //
 
   final _widgetCache = <RouteState, Widget>{};
+  // Memoized derivatives of `_widgetCache`, invalidated by `_invalidateCache`.
+  // `buildScreen`'s AnimatedBuilder builder fires on every animation frame
+  // (60–120 Hz). Without these, every frame would allocate a new `List<Widget>`
+  // and run two O(n) linear scans of the cache keys.
+  List<Widget>? _cachedChildren;
+  Map<RouteState, int>? _cachedIndexMap;
+
+  void _invalidateCachedViews() {
+    _cachedChildren = null;
+    _cachedIndexMap = null;
+  }
+
+  List<Widget> _childrenSnapshot() =>
+      _cachedChildren ??= _widgetCache.values.toList(growable: false);
+
+  Map<RouteState, int> _indexMap() {
+    if (_cachedIndexMap != null) return _cachedIndexMap!;
+    final map = <RouteState, int>{};
+    var i = 0;
+    for (final key in _widgetCache.keys) {
+      map[key] = i++;
+    }
+    return _cachedIndexMap = map;
+  }
+
   late final Map<String, RouteBuilder> _builderMap;
   final RouteState Function()? errorRouteState;
   final RouteState Function() fallbackRouteState;
@@ -159,6 +184,7 @@ class RouteController {
   }
 
   void addToCache(Iterable<RouteState> routeStates) {
+    var mutated = false;
     for (final routeState in routeStates) {
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
@@ -167,7 +193,9 @@ class RouteController {
         key: routeState.key,
         builder: (context) => builder.builder(context, routeState),
       );
+      mutated = true;
     }
+    if (mutated) _invalidateCachedViews();
   }
 
   _TPreservationStrategy _preservationStrategy = defaultPreservationStrategy;
@@ -191,8 +219,12 @@ class RouteController {
         routeState == _previousRouteForTransition;
     if (stillReferenced) {
       _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
+      // The map order/keys are unchanged but the widget at this slot is now a
+      // different instance, so the children snapshot has to be rebuilt.
+      _cachedChildren = null;
     } else {
       _widgetCache.remove(routeState);
+      _invalidateCachedViews();
     }
   }
 
@@ -209,6 +241,7 @@ class RouteController {
   }
 
   void removeFromCache(Iterable<RouteState> routeStates) {
+    var mutated = false;
     for (final routeState in routeStates) {
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
@@ -217,10 +250,12 @@ class RouteController {
       if (stillReferenced) {
         if (_widgetCache[routeState] is SizedBox) continue;
         _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
+        mutated = true;
       } else {
-        _widgetCache.remove(routeState);
+        if (_widgetCache.remove(routeState) != null) mutated = true;
       }
     }
+    if (mutated) _invalidateCachedViews();
   }
 
   void resetState() {
@@ -233,6 +268,7 @@ class RouteController {
 
   void clearCache() {
     _widgetCache.clear();
+    _invalidateCachedViews();
   }
 
   //
@@ -471,30 +507,23 @@ class RouteController {
         _maybeRemoveStaleRoute(_previousRouteForTransition);
       },
       builder: (context, results) {
-        final children = _widgetCache.values.toList();
-        final layerEffects =
-            results.isNotEmpty ? results.map((e) => e.data).first : null;
+        // Both the children list and the indices are stable for the duration
+        // of an animation — only `layerEffects` changes per frame. Reuse the
+        // memoized list/map; the cache invalidates whenever `_widgetCache`
+        // mutates (navigation, addToCache, removeFromCache, etc.).
+        final children = _childrenSnapshot();
+        final indexMap = _indexMap();
+        final layerEffects = results.isNotEmpty ? results.first.data : null;
         return PrioritizedIndexedStack(
           indices: [
-            _indexOfRouteState(routeState),
-            _indexOfRouteState(_previousRouteForTransition),
+            indexMap[routeState] ?? -1,
+            indexMap[_previousRouteForTransition] ?? -1,
           ],
           layerEffects: layerEffects,
           children: children,
         );
       },
     );
-  }
-
-  int _indexOfRouteState(RouteState routeState) {
-    var n = -1;
-    for (final key in _widgetCache.keys) {
-      n++;
-      if (key == routeState) {
-        return n;
-      }
-    }
-    return -1;
   }
 
   static RouteController of(BuildContext context) {

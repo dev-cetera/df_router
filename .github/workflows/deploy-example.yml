@@ -18,7 +18,7 @@ name: Deploy Example on Commit
 on:
   push:
     branches:
-      - main
+      - prod
 
 ## -----------------------------------------------------------------------------
 

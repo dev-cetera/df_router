@@ -18,9 +18,7 @@ void main() {
   runApp(const SimpleApp());
 }
 
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 // ROUTES
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 final class PrebuiltPreservedRoute extends RouteState {
   PrebuiltPreservedRoute()
@@ -45,9 +43,7 @@ final class DefaultRoute extends RouteState {
       : super.parse('/default', animationEffect: const MaterialEffect());
 }
 
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 // APP
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class SimpleApp extends StatelessWidget {
   const SimpleApp({super.key});
@@ -127,9 +123,7 @@ class SimpleApp extends StatelessWidget {
   }
 }
 
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 // DEMO SCREEN
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class DemoScreen extends StatefulWidget with RouteWidgetMixin {
   @override
@@ -185,7 +179,13 @@ class _DemoScreenState extends State<DemoScreen> {
         _NavBar(current: _tag),
         Expanded(
           child: Container(
-            color: widget.color.withValues(alpha: 0.05),
+            // Opaque so the previous route doesn't bleed through during
+            // transitions — the router intentionally keeps the outgoing
+            // screen mounted directly beneath the incoming one.
+            color: Color.alphaBlend(
+              widget.color.withValues(alpha: 0.05),
+              Colors.white,
+            ),
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(32.0),
@@ -307,9 +307,7 @@ class _DemoScreenState extends State<DemoScreen> {
   }
 }
 
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 // NAV BAR
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class _NavBar extends StatelessWidget {
   final String current;
@@ -425,9 +423,7 @@ class _NavBar extends StatelessWidget {
   }
 }
 
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 // STAT ROW
-// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 class _StatRow extends StatelessWidget {
   final String label;

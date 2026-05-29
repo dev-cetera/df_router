@@ -216,9 +216,13 @@ class RenderPrioritizedIndexedStack extends RenderStack {
     markNeedsPaint();
   }
 
-  /// Builds an indexed lookup table from the child linked list once per
-  /// paint/hitTest pass, replacing the old O(n)-per-lookup traversal.
+  /// Builds an indexed lookup table from the child linked list, cached until
+  /// the children change. Without the cache, every paint AND every hit test
+  /// would walk the linked list — that's at least one walk per animation frame
+  /// plus one per pointer event.
+  List<RenderBox>? _childListCache;
   List<RenderBox> _buildChildList() {
+    if (_childListCache != null) return _childListCache!;
     final list = <RenderBox>[];
     var child = firstChild;
     while (child != null) {
@@ -226,7 +230,33 @@ class RenderPrioritizedIndexedStack extends RenderStack {
       final pd = child.parentData! as StackParentData;
       child = pd.nextSibling;
     }
-    return list;
+    return _childListCache = list;
+  }
+
+  void _invalidateChildList() => _childListCache = null;
+
+  @override
+  void insert(RenderBox child, {RenderBox? after}) {
+    _invalidateChildList();
+    super.insert(child, after: after);
+  }
+
+  @override
+  void remove(RenderBox child) {
+    _invalidateChildList();
+    super.remove(child);
+  }
+
+  @override
+  void removeAll() {
+    _invalidateChildList();
+    super.removeAll();
+  }
+
+  @override
+  void move(RenderBox child, {RenderBox? after}) {
+    _invalidateChildList();
+    super.move(child, after: after);
   }
 
   @override
