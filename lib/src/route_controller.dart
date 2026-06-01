@@ -35,6 +35,19 @@ class RouteController {
 
   late RouteState _previousRouteForTransition = currentRouteState;
 
+  // Tentative-navigation state. When `_tentativeTarget` is non-null, an
+  // interactive gesture (e.g. `DragNavigable`) is mid-transition: the
+  // animation controller's value is driven by the gesture rather than the
+  // standard restart() pipeline, and `buildScreen` renders the tentative
+  // target as the incoming layer over the current route. Calling
+  // `commitTentative()` flips the controller's state machine into the
+  // committed navigation; `abortTentative()` reverses the animation and
+  // discards the target.
+  RouteState? _tentativeTarget;
+
+  /// Whether a tentative (gesture-driven) navigation is currently active.
+  bool get isTentativeActive => _tentativeTarget != null;
+
   //
   //
   //
@@ -76,11 +89,14 @@ class RouteController {
   //
   //
 
+  final UrlStrategy urlStrategy;
+
   RouteController({
     RouteState Function()? initialRouteState,
     this.errorRouteState,
     required this.fallbackRouteState,
     required List<RouteBuilder> builders,
+    this.urlStrategy = UrlStrategy.flat,
   }) {
     assert(() {
       final seen = <String>{};
@@ -88,6 +104,14 @@ class RouteController {
         final path = _normalizePath(b.routeState.uri);
         if (!seen.add(path)) {
           Log.err('Duplicate RouteBuilder for path "$path"');
+        }
+        if (urlStrategy == UrlStrategy.stacked &&
+            path.contains(RouteStackUri.delimiter)) {
+          Log.err(
+            'Route path "$path" contains the stacked-URL delimiter '
+            '"${RouteStackUri.delimiter}". Stacked URLs reserve this '
+            'character to separate routes in the path; rename the route.',
+          );
         }
       }
       return true;
@@ -100,20 +124,105 @@ class RouteController {
 
     platformNavigator.addStateCallback(_handlePopState);
     resetState();
-    _requested = current;
-    var routeState =
-        initialRouteState?.call() ?? _requested ?? fallbackRouteState();
 
-    // Validate the cold-boot route — deep links must honor conditions and
-    // path existence just like programmatic pushes do.
-    if (!_isRouteValidForBoot(routeState)) {
-      routeState = errorRouteState?.call() ?? fallbackRouteState();
+    final initialRoutes = _resolveInitialRoutes(initialRouteState);
+
+    _pNavigationState.set(
+      _NavigationState(
+        routes: initialRoutes,
+        index: initialRoutes.length - 1,
+      ),
+    );
+    // When cold-booting directly into a stack of two or more routes (typical
+    // for `UrlStrategy.stacked` deep links like `/home+/sheet`), prime the
+    // "previous for transition" slot with the entry directly below the top.
+    // Without this, the `late` initializer on `_previousRouteForTransition`
+    // assigns `currentRouteState` — i.e. the TOP — on first read, so
+    // `buildScreen` produces `indices = [top, top]` and the base never gets
+    // painted even though it's already in the cache.
+    if (initialRoutes.length >= 2) {
+      _previousRouteForTransition = initialRoutes[initialRoutes.length - 2];
     }
+    addToCache(initialRoutes);
+    // Canonicalize the browser URL to whatever stack we actually resolved.
+    platformNavigator.replaceState(_encodeBrowserUri());
+  }
 
-    _pNavigationState.set(_NavigationState(routes: [routeState], index: 0));
-    addToCache([routeState]);
-    // Canonicalize the browser URL to whatever route we actually resolved to.
-    platformNavigator.replaceState(routeState.uri);
+  /// Decides what `pNavigationState.routes` should look like at construction
+  /// time. Honors `initialRouteState` first; otherwise falls back to the
+  /// browser URL — which, under `UrlStrategy.stacked`, can rehydrate an
+  /// entire stack (cold-booting `/home+/sheet` lands you with the sheet on
+  /// top of the home page).
+  List<RouteState> _resolveInitialRoutes(
+    RouteState Function()? initialRouteState,
+  ) {
+    if (initialRouteState != null) {
+      var rs = initialRouteState();
+      if (!_isRouteValidForBoot(rs)) {
+        rs = errorRouteState?.call() ?? fallbackRouteState();
+      }
+      return [rs];
+    }
+    if (urlStrategy == UrlStrategy.stacked) {
+      final stack = _readStackFromUrl();
+      if (stack != null && stack.isNotEmpty) return stack;
+    }
+    _requested = current;
+    var rs = _requested ?? fallbackRouteState();
+    if (!_isRouteValidForBoot(rs)) {
+      rs = errorRouteState?.call() ?? fallbackRouteState();
+    }
+    return [rs];
+  }
+
+  /// Reads the browser URL, decodes it as a stacked URI, and returns the
+  /// VALID prefix of route states (segments whose paths are registered AND
+  /// whose conditions all pass). Returns null when the URL isn't shaped
+  /// like a stacked URI; returns an empty list when nothing in the stack
+  /// validates — callers treat both as "fall back to single-route boot."
+  List<RouteState>? _readStackFromUrl() {
+    final browserUrl = platformNavigator.getCurrentUrl();
+    if (browserUrl == null) return null;
+    final appRelativeUrl = platformNavigator.stripBaseHref(browserUrl);
+    if (!RouteStackUri.isStacked(appRelativeUrl)) return null;
+
+    final segments = RouteStackUri.decode(appRelativeUrl);
+    final valid = <RouteState>[];
+    for (final segUri in segments) {
+      final rs = _routeStateForSegment(segUri);
+      if (rs == null) continue;
+      valid.add(rs);
+    }
+    return valid.isEmpty ? null : valid;
+  }
+
+  /// Resolves a single URL segment (path + optional query) into a
+  /// `RouteState` ready to live in the navigation history. Returns null if
+  /// the segment names an unregistered path or fails any guard condition.
+  RouteState? _routeStateForSegment(Uri segUri) {
+    final builder = _getBuilderByPath(segUri);
+    if (builder == null) return null;
+    final rs = builder.routeState.copyWith(
+      queryParameters: segUri.queryParameters,
+    );
+    if (!(rs.condition?.call() ?? true)) return null;
+    if (!(builder.condition?.call() ?? true)) return null;
+    return rs;
+  }
+
+  /// The current authoritative URL representation — what we send to
+  /// `pushState` / `replaceState`. For `UrlStrategy.flat` this is just the
+  /// current route's URI; for `UrlStrategy.stacked` it's the encoded
+  /// visible stack (`routes.take(index + 1)`).
+  Uri _encodeBrowserUri() {
+    if (urlStrategy == UrlStrategy.flat) {
+      return currentRouteState.uri;
+    }
+    final state = _pNavigationState.getValue();
+    final visibleRoutes = [
+      for (var i = 0; i <= state.index; i++) state.routes[i].uri,
+    ];
+    return RouteStackUri.encode(visibleRoutes);
   }
 
   bool _isRouteValidForBoot(RouteState routeState) {
@@ -133,15 +242,76 @@ class RouteController {
   void _handlePopState(Uri uri) {
     _suppressBrowserSync = true;
     try {
-      pushUri(uri);
+      if (urlStrategy == UrlStrategy.stacked && RouteStackUri.isStacked(uri)) {
+        _syncStackFromPopState(uri);
+      } else {
+        pushUri(uri);
+      }
     } finally {
       _suppressBrowserSync = false;
     }
   }
 
+  /// Reconciles the in-memory navigation history with a stacked URI that
+  /// just arrived via browser popstate. If the URL is a strict prefix of
+  /// the existing routes (e.g., `/A+/B` while we hold `[A, B, C]`) we keep
+  /// the routes intact and just move the index back, preserving the
+  /// forward stack so `canGoForward` / `goForward` still work after a
+  /// browser back. Otherwise the URL describes a stack we haven't seen
+  /// (e.g., a freshly typed URL), so we rebuild routes from the URL.
+  void _syncStackFromPopState(Uri uri) {
+    final newStack = RouteStackUri.decode(uri);
+    final state = _pNavigationState.getValue();
+
+    final isPrefix = newStack.length <= state.routes.length &&
+        () {
+          for (var i = 0; i < newStack.length; i++) {
+            if (!_urisMatch(state.routes[i].uri, newStack[i])) return false;
+          }
+          return true;
+        }();
+
+    if (isPrefix) {
+      final newIndex = newStack.length - 1;
+      if (newIndex == state.index) return;
+      _previousRouteForTransition = currentRouteState;
+      _pNavigationState.set(
+        _NavigationState(routes: state.routes, index: newIndex),
+      );
+      _globalKey.currentState?.setEffects([_nextAnimationEffect]);
+      _globalKey.currentState?.restart();
+      return;
+    }
+
+    final validRoutes = <RouteState>[];
+    for (final segUri in newStack) {
+      final rs = _routeStateForSegment(segUri);
+      if (rs == null) continue;
+      validRoutes.add(rs);
+    }
+    if (validRoutes.isEmpty) {
+      validRoutes.add(fallbackRouteState());
+    }
+
+    _previousRouteForTransition = currentRouteState;
+    _clearStaleRoutesFromCache(
+      newRouteTimeline: validRoutes,
+      existingCacheKeys: _widgetCache.keys.toList(),
+    );
+    addToCache(validRoutes);
+    _pNavigationState.set(
+      _NavigationState(
+        routes: validRoutes,
+        index: validRoutes.length - 1,
+      ),
+    );
+    _globalKey.currentState?.setEffects([_nextAnimationEffect]);
+    _globalKey.currentState?.restart();
+  }
+
   void _maybePushBrowserState(Uri uri) {
     if (_suppressBrowserSync) return;
-    platformNavigator.pushState(uri);
+    platformNavigator.pushState(_encodeBrowserUri());
   }
 
   //
@@ -535,6 +705,24 @@ class RouteController {
         final children = _childrenSnapshot();
         final indexMap = _indexMap();
         final layerEffects = results.isNotEmpty ? results.first.data : null;
+
+        // During a tentative navigation (e.g. user mid-drag), `pNavigationState`
+        // has NOT yet been mutated — the actual current route is still the
+        // page the user is leaving. We render the tentative target as the
+        // "incoming" layer so the dragged-in page is visible while the
+        // gesture is in flight; on commit the routes update and the
+        // tentative slot clears; on abort the tentative slot clears and the
+        // user is back where they started.
+        final RouteState incomingForRender;
+        final RouteState outgoingForRender;
+        if (_tentativeTarget != null) {
+          incomingForRender = _tentativeTarget!;
+          outgoingForRender = routeState;
+        } else {
+          incomingForRender = routeState;
+          outgoingForRender = _previousRouteForTransition;
+        }
+
         // Most effects animate the incoming layer on top (CupertinoEffect,
         // FadeEffect, SlideUp, …), but page-turn effects let the OUTGOING
         // page do the visible motion — it needs to be the top layer so the
@@ -543,13 +731,13 @@ class RouteController {
         final List<int> indices;
         if (_nextAnimationEffect.previousOnTop) {
           indices = [
-            indexMap[_previousRouteForTransition] ?? -1,
-            indexMap[routeState] ?? -1,
+            indexMap[outgoingForRender] ?? -1,
+            indexMap[incomingForRender] ?? -1,
           ];
         } else {
           indices = [
-            indexMap[routeState] ?? -1,
-            indexMap[_previousRouteForTransition] ?? -1,
+            indexMap[incomingForRender] ?? -1,
+            indexMap[outgoingForRender] ?? -1,
           ];
         }
         return PrioritizedIndexedStack(
@@ -559,6 +747,124 @@ class RouteController {
         );
       },
     );
+  }
+
+  // ─── Tentative navigation ─────────────────────────────────────────────────
+  //
+  // Driving the route animation directly from a user gesture (drag, swipe,
+  // edge-pull). The flow:
+  //   1. `beginTentativeNavigation(target, effect: ...)` — wires the target
+  //      route into the cache, configures the animation effect, and parks
+  //      the animation controller at value=0 without forwarding.
+  //   2. `updateTentativeProgress(value)` — called repeatedly from the
+  //      gesture handler. Maps drag distance → controller value [0..1].
+  //   3. `commitTentative()` — at release-past-threshold; mutates
+  //      `pNavigationState` to make the target the new current route,
+  //      flushes the browser URL, and forwards the animation from the
+  //      current value to 1. The visual transition is continuous with the
+  //      drag — no snap.
+  //   4. `abortTentative()` — at release-below-threshold; reverses the
+  //      animation back to 0, awaits it, then clears the tentative slot
+  //      and (if the target wasn't already in the stack) drops it from
+  //      the cache.
+
+  /// Start a tentative navigation toward [target] using [effect] as the
+  /// transition animation. The controller's animation parks at value=0
+  /// and waits for `updateTentativeProgress` calls to drive it forward.
+  ///
+  /// Calling this while another tentative is active aborts the previous
+  /// one synchronously (without animation) so the gesture can take over.
+  /// Returns `true` if the tentative was successfully started, `false` if
+  /// [target] is unregistered or fails a guard condition.
+  bool beginTentativeNavigation(
+    RouteState target, {
+    required AnimationEffect effect,
+  }) {
+    if (target == currentRouteState) return false;
+    if (_getBuilderByPath(target.uri) == null) return false;
+    if (!(target.condition?.call() ?? true)) return false;
+    final builder = _getBuilderByPath(target.uri);
+    if (!(builder?.condition?.call() ?? true)) return false;
+
+    // Take over from any prior tentative without animating.
+    _tentativeTarget = target;
+    _nextAnimationEffect = effect;
+
+    addToCache([target]);
+
+    _globalKey.currentState
+      ?..setEffects([effect])
+      ..setControllerValues(0.0);
+    return true;
+  }
+
+  /// Set the tentative animation's progress (clamped to `[0, 1]`). Called
+  /// from a gesture handler; ignored if no tentative is active.
+  void updateTentativeProgress(double value) {
+    if (!isTentativeActive) return;
+    _globalKey.currentState?.setControllerValues(value.clamp(0.0, 1.0));
+  }
+
+  /// Commit the tentative as a real navigation: mutate `pNavigationState`,
+  /// flush the URL, and forward the animation from the current value to 1.
+  /// Safe no-op if no tentative is active.
+  void commitTentative() {
+    if (!isTentativeActive) return;
+    final target = _tentativeTarget!;
+    _tentativeTarget = null;
+
+    final state = _pNavigationState.getValue();
+    final indexInHistory = state.routes.indexWhere(
+      (r) => _urisMatch(r.uri, target.uri),
+    );
+
+    _previousRouteForTransition = currentRouteState;
+
+    if (indexInHistory != -1) {
+      _pNavigationState.set(
+        _NavigationState(routes: state.routes, index: indexInHistory),
+      );
+    } else {
+      final newRoutes = state.routes.sublist(0, state.index + 1)..add(target);
+      _clearStaleRoutesFromCache(
+        newRouteTimeline: newRoutes,
+        existingCacheKeys: _widgetCache.keys.toList(),
+      );
+      addToCache([target]);
+      _pNavigationState.set(
+        _NavigationState(routes: newRoutes, index: newRoutes.length - 1),
+      );
+    }
+
+    _maybePushBrowserState(target.uri);
+    // Continue the animation from wherever the gesture left it — no
+    // restart() here, that would snap value back to 0 first.
+    _globalKey.currentState?.forward();
+  }
+
+  /// Abort the tentative navigation: reverse the animation back to 0,
+  /// wait for it to settle, then drop the tentative target. The committed
+  /// `pNavigationState` is unchanged — the user ends up where they started.
+  Future<void> abortTentative() async {
+    if (!isTentativeActive) return;
+    final target = _tentativeTarget!;
+    final keyState = _globalKey.currentState;
+    if (keyState != null) {
+      await keyState.reverseAndAwait();
+    }
+    // Tentative may have been replaced/cleared by another call during the
+    // reverse; only clear if it still points at our target.
+    if (_tentativeTarget == target) {
+      _tentativeTarget = null;
+    }
+    // If the target was added to cache solely to support the tentative
+    // (i.e. it isn't part of the live navigation timeline), let stale-
+    // route cleanup reclaim it.
+    final state = _pNavigationState.getValue();
+    final inTimeline = state.routes.any((r) => _urisMatch(r.uri, target.uri));
+    if (!inTimeline) {
+      _maybeRemoveStaleRoute(target);
+    }
   }
 
   static RouteController of(BuildContext context) {

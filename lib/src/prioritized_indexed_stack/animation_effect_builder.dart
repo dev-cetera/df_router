@@ -157,6 +157,34 @@ class AnimationEffectBuilderState extends State<AnimationEffectBuilder>
     _hasTriggeredCompletion = false;
   }
 
+  /// Reverse every bundle's controller back to 0 and wait until they all
+  /// settle. Used by tentative-navigation abort flows in `RouteController`
+  /// so the controller can clear its tentative state only after the visible
+  /// animation has finished playing in reverse.
+  Future<void> reverseAndAwait() async {
+    if (!mounted || _bundles.isEmpty) return;
+    _hasTriggeredCompletion = false;
+    final futures = <Future<void>>[];
+    for (final bundle in _bundles) {
+      futures.add(bundle.controller.reverse().orCancel.catchError((_) {}));
+    }
+    await Future.wait(futures);
+  }
+
+  /// Forward every bundle's controller toward 1 and wait until they all
+  /// reach `completed`. Used by tentative-navigation commit flows so the
+  /// committing code can know exactly when the post-navigation cleanup
+  /// (`onComplete`) has fired.
+  Future<void> forwardAndAwait() async {
+    if (!mounted || _bundles.isEmpty) return;
+    _hasTriggeredCompletion = false;
+    final futures = <Future<void>>[];
+    for (final bundle in _bundles) {
+      futures.add(bundle.controller.forward().orCancel.catchError((_) {}));
+    }
+    await Future.wait(futures);
+  }
+
   void _handleAnimationStatus(AnimationStatus status) {
     if (status == AnimationStatus.completed && !_hasTriggeredCompletion) {
       final allCompleted = _bundles.every(

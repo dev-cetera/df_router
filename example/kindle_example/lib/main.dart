@@ -244,8 +244,7 @@ class LibraryScreen extends StatefulWidget with RouteWidgetMixin {
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen>
-    with _LifecycleLogged {
+class _LibraryScreenState extends State<LibraryScreen> with _LifecycleLogged {
   @override
   String get logTag => 'LIBRARY';
 
@@ -286,18 +285,18 @@ class _LibraryScreenState extends State<LibraryScreen>
                     children: [
                       _BookCover(
                         book: _kBooks[0],
-                        onTap: () => RouteController.of(context)
-                            .push(Book1Route()),
+                        onTap: () =>
+                            RouteController.of(context).push(Book1Route()),
                       ),
                       _BookCover(
                         book: _kBooks[1],
-                        onTap: () => RouteController.of(context)
-                            .push(Book2Route()),
+                        onTap: () =>
+                            RouteController.of(context).push(Book2Route()),
                       ),
                       _BookCover(
                         book: _kBooks[2],
-                        onTap: () => RouteController.of(context)
-                            .push(Book3Route()),
+                        onTap: () =>
+                            RouteController.of(context).push(Book3Route()),
                       ),
                     ],
                   ),
@@ -373,91 +372,100 @@ class _BookScreenState extends State<BookScreen> with _LifecycleLogged {
           current: '/book/${widget.book.id}',
         ),
         Expanded(
-          child: Container(
-            // Opaque sepia background. The page mounted *underneath* during a
-            // PaperTurnEffect transition would otherwise bleed through.
-            color: _kPaper,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32.0,
-                vertical: 24.0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // ── PAGE-TURN BUTTONS ────────────────────────────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _InkButton(
-                        icon: Icons.chevron_left,
-                        label: 'Previous book',
-                        // Override the route's default (forward) animation so
-                        // "Previous" plays the mirror-direction paper turn —
-                        // otherwise next/previous look identical and you
-                        // can't tell which direction you went.
-                        onPressed: () => RouteController.of(context).push(
-                          _previousBookRoute(),
-                          animationEffect: const PaperTurnBackEffect(),
+          // Horizontal drag anywhere on the page → tentative paper-turn
+          // navigation. The wrapped `SingleChildScrollView` only scrolls
+          // vertically so there's no gesture conflict.
+          child: DragNavigable(
+            forwardTarget: _nextBookRoute,
+            backwardTarget: _previousBookRoute,
+            forwardEffect: const PaperTurnEffect(),
+            backwardEffect: const PaperTurnBackEffect(),
+            child: Container(
+              // Opaque sepia background. The page mounted *underneath* during
+              // a PaperTurnEffect transition would otherwise bleed through.
+              color: _kPaper,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32.0,
+                  vertical: 24.0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── PAGE-TURN BUTTONS ────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _InkButton(
+                          icon: Icons.chevron_left,
+                          label: 'Previous book',
+                          // Override the route's default (forward) animation
+                          // so "Previous" plays the mirror-direction paper
+                          // turn — otherwise next/previous look identical
+                          // and you can't tell which direction you went.
+                          onPressed: () => RouteController.of(context).push(
+                            _previousBookRoute(),
+                            animationEffect: const PaperTurnBackEffect(),
+                          ),
+                        ),
+                        _InkButton(
+                          icon: Icons.chevron_right,
+                          label: 'Next book',
+                          onPressed: () => RouteController.of(context)
+                              .push(_nextBookRoute()),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24.0),
+                    // ── EXCERPT ──────────────────────────────────────
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 12.0,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color:
+                                widget.book.spineColor.withValues(alpha: 0.5),
+                            width: 3.0,
+                          ),
                         ),
                       ),
-                      _InkButton(
-                        icon: Icons.chevron_right,
-                        label: 'Next book',
-                        onPressed: () => RouteController.of(context)
-                            .push(_nextBookRoute()),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24.0),
-                  // ── EXCERPT ──────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 12.0,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: widget.book.spineColor.withValues(alpha: 0.5),
-                          width: 3.0,
+                      child: Text(
+                        'Chapter 1',
+                        style: TextStyle(
+                          color: widget.book.spineColor,
+                          fontSize: 12.0,
+                          letterSpacing: 2.0,
+                          fontWeight: FontWeight.w700,
                         ),
-                      ),
-                    ),
-                    child: Text(
-                      'Chapter 1',
-                      style: TextStyle(
-                        color: widget.book.spineColor,
-                        fontSize: 12.0,
-                        letterSpacing: 2.0,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16.0),
-                  for (final paragraph in widget.book.excerpt) ...[
-                    Text(
-                      paragraph,
-                      style: const TextStyle(
-                        color: _kInk,
-                        fontSize: 16.0,
-                        height: 1.7,
                       ),
                     ),
                     const SizedBox(height: 16.0),
+                    for (final paragraph in widget.book.excerpt) ...[
+                      Text(
+                        paragraph,
+                        style: const TextStyle(
+                          color: _kInk,
+                          fontSize: 16.0,
+                          height: 1.7,
+                        ),
+                      ),
+                      const SizedBox(height: 16.0),
+                    ],
+                    const SizedBox(height: 16.0),
+                    // ── PERSISTENCE PROOF ────────────────────────────
+                    _PersistenceCard(
+                      tag: 'BOOK ${widget.book.id}',
+                      counter: _bookmarks,
+                      counterLabel: 'Bookmarks in "${widget.book.title}"',
+                      initCount: initCount,
+                      buildCount: buildCount,
+                      onIncrement: () => setState(() => _bookmarks++),
+                    ),
                   ],
-                  const SizedBox(height: 16.0),
-                  // ── PERSISTENCE PROOF ────────────────────────────
-                  _PersistenceCard(
-                    tag: 'BOOK ${widget.book.id}',
-                    counter: _bookmarks,
-                    counterLabel:
-                        'Bookmarks in "${widget.book.title}"',
-                    initCount: initCount,
-                    buildCount: buildCount,
-                    onIncrement: () => setState(() => _bookmarks++),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -478,8 +486,7 @@ class SettingsScreen extends StatefulWidget with RouteWidgetMixin {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen>
-    with _LifecycleLogged {
+class _SettingsScreenState extends State<SettingsScreen> with _LifecycleLogged {
   @override
   String get logTag => 'SETTINGS';
 
@@ -576,9 +583,8 @@ class _TopBar extends StatelessWidget {
                       ? _kPaper
                       : _kPaper.withValues(alpha: 0.3),
                 ),
-                onPressed: controller.canGoForward
-                    ? controller.goForward
-                    : null,
+                onPressed:
+                    controller.canGoForward ? controller.goForward : null,
               ),
               const SizedBox(width: 12.0),
               Expanded(
@@ -614,14 +620,12 @@ class _TopBar extends StatelessWidget {
               _NavChip(
                 label: 'Library',
                 active: current == '/library',
-                onTap: () =>
-                    RouteController.of(context).push(LibraryRoute()),
+                onTap: () => RouteController.of(context).push(LibraryRoute()),
               ),
               _NavChip(
                 label: 'Settings',
                 active: current == '/settings',
-                onTap: () =>
-                    RouteController.of(context).push(SettingsRoute()),
+                onTap: () => RouteController.of(context).push(SettingsRoute()),
               ),
             ],
           ),
@@ -648,9 +652,8 @@ class _NavChip extends StatelessWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           foregroundColor: active ? _kPaper : _kPaper.withValues(alpha: 0.6),
-          backgroundColor: active
-              ? _kAccent.withValues(alpha: 0.45)
-              : Colors.transparent,
+          backgroundColor:
+              active ? _kAccent.withValues(alpha: 0.45) : Colors.transparent,
           padding: const EdgeInsets.symmetric(
             horizontal: 12.0,
             vertical: 4.0,

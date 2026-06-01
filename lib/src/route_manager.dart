@@ -31,6 +31,13 @@ class RouteManager extends StatefulWidget {
   // otherwise create — without this, those widgets crash on first interaction.
   // Set to `false` if you supply your own `Navigator`/`Overlay` higher up.
   final bool provideOverlay;
+  // How the navigation history maps to the browser URL. Default is `flat`
+  // (URL = top route only); set to `UrlStrategy.stacked` to encode the
+  // visible stack as `/route1+/route2+/route3?topQuery`. The stacked
+  // strategy is required for modals-as-routes to deep-link correctly —
+  // cold-booting a stacked URL rehydrates the base route along with the
+  // modal on top.
+  final UrlStrategy urlStrategy;
 
   const RouteManager({
     super.key,
@@ -42,6 +49,7 @@ class RouteManager extends StatefulWidget {
     this.clipToBounds = false,
     this.wrapper,
     this.provideOverlay = true,
+    this.urlStrategy = UrlStrategy.flat,
   });
 
   @override
@@ -65,6 +73,7 @@ class _RouteManagerState extends State<RouteManager> {
       fallbackRouteState: widget.fallbackRouteState,
       errorRouteState: widget.errorState,
       builders: widget.builders,
+      urlStrategy: widget.urlStrategy,
     );
     widget.onControllerCreated?.call(_controller);
     _entry = OverlayEntry(builder: _buildBody);
