@@ -723,23 +723,42 @@ class RouteController {
           outgoingForRender = _previousRouteForTransition;
         }
 
-        // Most effects animate the incoming layer on top (CupertinoEffect,
-        // FadeEffect, SlideUp, …), but page-turn effects let the OUTGOING
-        // page do the visible motion — it needs to be the top layer so the
-        // user sees it peel off. `AnimationEffect.previousOnTop` flips which
-        // route occupies slot 0 vs slot 1.
-        final List<int> indices;
+        // The top two slots are the active transition pair. Most effects
+        // animate the incoming layer on top (CupertinoEffect, FadeEffect,
+        // SlideUp, …), but page-turn effects let the OUTGOING page do the
+        // visible motion — it needs to be the top layer so the user sees
+        // it peel off. `AnimationEffect.previousOnTop` flips which route
+        // occupies slot 0 vs slot 1.
+        final RouteState topSlot;
+        final RouteState bottomSlot;
         if (_nextAnimationEffect.previousOnTop) {
-          indices = [
-            indexMap[outgoingForRender] ?? -1,
-            indexMap[incomingForRender] ?? -1,
-          ];
+          topSlot = outgoingForRender;
+          bottomSlot = incomingForRender;
         } else {
-          indices = [
-            indexMap[incomingForRender] ?? -1,
-            indexMap[outgoingForRender] ?? -1,
-          ];
+          topSlot = incomingForRender;
+          bottomSlot = outgoingForRender;
         }
+
+        // Beyond the active pair, paint every other route that's currently
+        // in the visible stack (`routes.take(index + 1)`). Without this,
+        // cold-booting to `/home+/sheet+/dialog` would only paint the top
+        // pair (dialog + sheet) and leave home invisible — the layerEffects
+        // array still only has 2 entries (from the active effect), so the
+        // deeper routes render with the default identity transform and
+        // appear as static layers beneath the transition.
+        final indices = <int>[
+          indexMap[topSlot] ?? -1,
+          indexMap[bottomSlot] ?? -1,
+        ];
+        final state = _pNavigationState.getValue();
+        for (var i = state.index; i >= 0; i--) {
+          final r = state.routes[i];
+          if (r != topSlot && r != bottomSlot) {
+            final idx = indexMap[r];
+            if (idx != null) indices.add(idx);
+          }
+        }
+
         return PrioritizedIndexedStack(
           indices: indices,
           layerEffects: layerEffects,
