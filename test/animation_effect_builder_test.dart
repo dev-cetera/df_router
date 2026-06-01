@@ -11,9 +11,13 @@ class _ProbeEffect extends AnimationEffect {
   });
 
   @override
-  get data => (context, size, value) {
-        return [AnimationLayerEffect(opacity: value)];
-      };
+  List<AnimationLayerEffect> data(
+    BuildContext context,
+    Size size,
+    double value,
+  ) {
+    return [AnimationLayerEffect(opacity: value)];
+  }
 }
 
 class _TwoLayerProbeEffect extends AnimationEffect {
@@ -24,12 +28,16 @@ class _TwoLayerProbeEffect extends AnimationEffect {
         );
 
   @override
-  get data => (context, size, value) {
-        return [
-          AnimationLayerEffect(opacity: value),
-          AnimationLayerEffect(opacity: 1.0 - value),
-        ];
-      };
+  List<AnimationLayerEffect> data(
+    BuildContext context,
+    Size size,
+    double value,
+  ) {
+    return [
+      AnimationLayerEffect(opacity: value),
+      AnimationLayerEffect(opacity: 1.0 - value),
+    ];
+  }
 }
 
 // Test harness that lets us read the latest LayerEffectResults from outside the

@@ -11,6 +11,8 @@
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 //.title~
 
+import 'dart:ui' as ui;
+
 import '/_common.dart';
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -284,88 +286,95 @@ class RenderPrioritizedIndexedStack extends RenderStack {
               ? _layerEffects![stackingOrder]
               : null;
 
-      final childStackLayoutOffset = childParentData.offset;
-      final absoluteChildPaintOrigin = offset + childStackLayoutOffset;
+      final opacity = effectData?.opacity;
 
-      final animationTransform = effectData?.transform;
-      final currentOpacity = effectData?.opacity;
-      final currentColorFilter = effectData?.colorFilter;
-      final currentImageFilter = effectData?.imageFilter;
-
-      final hasOpacity = currentOpacity != null && currentOpacity < 1.0;
-      final hasColorFilter = currentColorFilter != null;
-      final hasImageFilter = currentImageFilter != null;
-      final hasOnlyOpacity = hasOpacity && !hasColorFilter && !hasImageFilter;
-      final needsSaveLayer =
-          (hasOpacity || hasColorFilter || hasImageFilter) && !hasOnlyOpacity;
-
-      if (hasOnlyOpacity) {
-        // Use pushOpacity for opacity-only effects. This leverages Flutter's
-        // compositing layer system (OpacityLayer) which is GPU-accelerated
-        // and avoids the expensive offscreen buffer that saveLayer requires.
-        final alpha = (currentOpacity * 255.0).round().clamp(0, 255);
-        context.pushOpacity(absoluteChildPaintOrigin, alpha, (
-          PaintingContext opacityCtx,
-          Offset opacityOff,
-        ) {
-          _paintChildWithTransform(
-            opacityCtx,
-            opacityOff,
-            childToPaint,
-            animationTransform,
-          );
-        });
-      } else if (needsSaveLayer) {
-        // Full saveLayer needed when colorFilter or imageFilter is present.
-        final paint = Paint();
-        if (hasOpacity) {
-          paint.color = Color.fromRGBO(0, 0, 0, currentOpacity);
-        }
-        if (hasColorFilter) {
-          paint.colorFilter = currentColorFilter;
-        }
-        if (hasImageFilter) {
-          paint.imageFilter = currentImageFilter;
-        }
-        context.canvas.saveLayer(
-          absoluteChildPaintOrigin & childToPaint.size,
-          paint,
-        );
-        _paintChildWithTransform(
-          context,
-          Offset.zero,
-          childToPaint,
-          animationTransform,
-        );
-        context.canvas.restore();
-      } else {
-        // No visual effects — paint directly.
-        _paintChildWithTransform(
-          context,
-          absoluteChildPaintOrigin,
-          childToPaint,
-          animationTransform,
-        );
+      // Skip fully-transparent layers entirely — saves a no-op layer
+      // allocation and matches the behavior of `hitTestChildren`.
+      if (opacity != null && opacity <= 0.0) {
+        continue;
       }
+
+      final transform = effectData?.transform;
+      final colorFilter = effectData?.colorFilter;
+      final imageFilter = effectData?.imageFilter;
+
+      final hasOpacity = opacity != null && opacity < 1.0;
+      final hasColorFilter = colorFilter != null;
+      final hasImageFilter = imageFilter != null;
+      final hasTransform = transform != null && !transform.isIdentity();
+
+      final absoluteChildPaintOrigin = offset + childParentData.offset;
+
+      _paintLayered(
+        context,
+        absoluteChildPaintOrigin,
+        childToPaint,
+        transform: hasTransform ? transform : null,
+        imageFilter: hasImageFilter ? imageFilter : null,
+        colorFilter: hasColorFilter ? colorFilter : null,
+        opacityAlpha:
+            hasOpacity ? (opacity * 255.0).round().clamp(0, 255) : null,
+      );
     }
   }
 
-  void _paintChildWithTransform(
+  /// Paints [child] with the supplied effects composed as nested compositing
+  /// layers (innermost first: transform → imageFilter → colorFilter → opacity).
+  ///
+  /// Using `pushColorFilter` / `pushImageFilter` / `pushOpacity` (which create
+  /// real layers in the layer tree) is essential: the previous implementation
+  /// used `canvas.saveLayer + paint.colorFilter`, which silently failed to
+  /// tint any descendant that pushed its own compositing layer — Material
+  /// elevation, ink ripples, RepaintBoundary, Transform. Those children
+  /// rendered into sibling layers in the layer tree, *outside* the canvas-
+  /// level saveLayer, and so escaped the colorFilter entirely.
+  void _paintLayered(
     PaintingContext context,
     Offset offset,
-    RenderBox child,
+    RenderBox child, {
     Matrix4? transform,
-  ) {
-    if (transform != null && !transform.isIdentity()) {
-      context.pushTransform(child.needsCompositing, offset, transform, (
-        PaintingContext paintCtx,
-        Offset paintOff,
-      ) {
-        paintCtx.paintChild(child, paintOff);
-      });
-    } else {
-      context.paintChild(child, offset);
+    ui.ImageFilter? imageFilter,
+    ColorFilter? colorFilter,
+    int? opacityAlpha,
+  }) {
+    // ignore: omit_local_variable_types
+    PaintingContextCallback painter = (ctx, off) {
+      ctx.paintChild(child, off);
+    };
+
+    if (transform != null) {
+      final inner = painter;
+      painter = (PaintingContext ctx, Offset off) {
+        ctx.pushTransform(child.needsCompositing, off, transform, inner);
+      };
     }
+
+    if (imageFilter != null) {
+      final inner = painter;
+      painter = (PaintingContext ctx, Offset off) {
+        ctx.pushLayer(
+          ImageFilterLayer(imageFilter: imageFilter),
+          inner,
+          off,
+        );
+      };
+    }
+
+    if (colorFilter != null) {
+      final inner = painter;
+      painter = (PaintingContext ctx, Offset off) {
+        ctx.pushColorFilter(off, colorFilter, inner);
+      };
+    }
+
+    if (opacityAlpha != null) {
+      final inner = painter;
+      painter = (PaintingContext ctx, Offset off) {
+        ctx.pushOpacity(off, opacityAlpha, inner);
+      };
+    }
+
+    painter(context, offset);
   }
 
   @override
@@ -471,8 +480,10 @@ class _PrioritizedIndexedStackElement extends MultiChildRenderObjectElement {
     if (effectiveIndices.isEmpty) {
       return;
     }
-    // ignore: prefer_collection_literals
-    final visitedChildIndices = LinkedHashSet<int>();
+    // The `{}` literal already creates a LinkedHashSet, which preserves
+    // insertion order (matters here so the on-stage visit order matches the
+    // paint order set by `_indices`).
+    final visitedChildIndices = <int>{};
     for (final targetIndex in effectiveIndices) {
       if (targetIndex != null &&
           targetIndex >= 0 &&

@@ -32,6 +32,15 @@ class RouteBuilder<TExtra extends Object?> {
   // the route is only reachable programmatically (e.g. screens that require
   // internal parameters not available from a URL).
   final bool isRedirectable;
+  // When true, this route renders on top of its predecessor instead of
+  // replacing it — the previous history entry stays mounted underneath for
+  // the entire time this route is current. Use for modals, dialogs, bottom
+  // sheets, and overlay messages. The widget on this route is expected to
+  // be its own visual container (i.e. it sizes/positions itself and lets
+  // the base show through outside its bounds), and is typically combined
+  // with a draggable wrapper like `DraggableModalSheet` so the user can
+  // dismiss it by gesture.
+  final bool isOverlay;
   // Stored as the type-erased TRouteWidgetBuilder so the RouteController can
   // invoke it without knowing TExtra at call sites.
   late final TRouteWidgetBuilder builder;
@@ -44,6 +53,7 @@ class RouteBuilder<TExtra extends Object?> {
     this.shouldPreserve = false,
     this.shouldPrebuild = false,
     this.isRedirectable = true,
+    this.isOverlay = false,
     required TRouteWidgetBuilder<TExtra> builder,
     this.condition,
   }) {
@@ -57,6 +67,7 @@ class RouteBuilder<TExtra extends Object?> {
     bool? shouldPreserve,
     bool? shouldPrebuild,
     bool? isRedirectable,
+    bool? isOverlay,
     TRouteWidgetBuilder<TExtra>? builder,
     TRouteConditionFn? condition,
   }) {
@@ -65,6 +76,7 @@ class RouteBuilder<TExtra extends Object?> {
       shouldPreserve: shouldPreserve ?? this.shouldPreserve,
       shouldPrebuild: shouldPrebuild ?? this.shouldPrebuild,
       isRedirectable: isRedirectable ?? this.isRedirectable,
+      isOverlay: isOverlay ?? this.isOverlay,
       builder: builder ??
           (context, state) =>
               this.builder(context, state) as RouteWidgetMixin<TExtra>,
@@ -76,6 +88,7 @@ class RouteBuilder<TExtra extends Object?> {
     bool shouldPreserve = true,
     bool shouldPrebuild = true,
     bool isRedirectable = false,
+    bool isOverlay = true,
     bool condition = true,
   }) {
     return RouteBuilder<TExtra>(
@@ -83,6 +96,7 @@ class RouteBuilder<TExtra extends Object?> {
       shouldPreserve: shouldPreserve ? false : this.shouldPreserve,
       shouldPrebuild: shouldPrebuild ? false : this.shouldPrebuild,
       isRedirectable: isRedirectable ? false : this.isRedirectable,
+      isOverlay: isOverlay ? false : this.isOverlay,
       builder: (context, state) =>
           builder(context, state) as RouteWidgetMixin<TExtra>,
       condition: condition ? null : this.condition,

@@ -16,12 +16,16 @@ class _SlowEffect extends AnimationEffect {
         );
 
   @override
-  get data => (context, size, value) {
-        return [
-          AnimationLayerEffect(opacity: value),
-          AnimationLayerEffect(opacity: 1.0 - value, ignorePointer: true),
-        ];
-      };
+  List<AnimationLayerEffect> data(
+    BuildContext context,
+    Size size,
+    double value,
+  ) {
+    return [
+      AnimationLayerEffect(opacity: value),
+      AnimationLayerEffect(opacity: 1.0 - value, ignorePointer: true),
+    ];
+  }
 }
 
 void main() {

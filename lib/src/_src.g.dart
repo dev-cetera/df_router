@@ -13,6 +13,7 @@ export './prioritized_indexed_stack/animation_layer_effect.dart';
 export './prioritized_indexed_stack/effects.dart';
 export './prioritized_indexed_stack/layer_effect_result.dart';
 export './prioritized_indexed_stack/prioritized_indexed_stack.dart';
+export './draggable_modal_sheet.dart';
 export './route_builder.dart';
 export './route_contoller_provider.dart';
 export './route_controller.dart';

@@ -149,9 +149,10 @@ class RouteController {
   //
 
   bool get canGoBackward => _pNavigationState.getValue().index > 0;
-  bool get canGoForward =>
-      _pNavigationState.getValue().index <
-      _pNavigationState.getValue().routes.length - 1;
+  bool get canGoForward {
+    final state = _pNavigationState.getValue();
+    return state.index < state.routes.length - 1;
+  }
 
   RouteState getNavigatorOrFallbackRouteState() =>
       _requested ?? fallbackRouteState();
@@ -177,10 +178,7 @@ class RouteController {
       existingCacheKeys: _widgetCache.keys.toList(),
     );
 
-    _pNavigationState.set(
-      _NavigationState(routes: [currentRoute], index: 0),
-      notifyImmediately: true,
-    );
+    _pNavigationState.set(_NavigationState(routes: [currentRoute], index: 0));
   }
 
   void addToCache(Iterable<RouteState> routeStates) {
@@ -207,6 +205,12 @@ class RouteController {
       _preservationStrategy = preservationStrategy;
 
   void _maybeRemoveStaleRoute(RouteState routeState) {
+    // An overlay route (modal, dialog, bottom sheet) renders on top of its
+    // predecessor and expects that predecessor to remain visible underneath.
+    // Without this guard, the standard preservation policy would replace the
+    // base widget with a SizedBox.shrink the moment the overlay's forward
+    // transition completes, leaving empty space behind the modal.
+    if (_isBaseUnderCurrentOverlay(routeState)) return;
     final routeBuilder = _getBuilderByPath(
       routeState.uri,
     )?.copyWith(routeState: routeState);
@@ -226,6 +230,18 @@ class RouteController {
       _widgetCache.remove(routeState);
       _invalidateCachedViews();
     }
+  }
+
+  /// True if [routeState] is the entry immediately beneath the current route
+  /// and the current route's builder declares itself an overlay. Used to keep
+  /// the base widget alive (so a modal can render against it) regardless of
+  /// the base's own preservation flag.
+  bool _isBaseUnderCurrentOverlay(RouteState routeState) {
+    final state = _pNavigationState.getValue();
+    if (state.index == 0) return false;
+    final currentBuilder = _getBuilderByPath(currentRouteState.uri);
+    if (currentBuilder == null || !currentBuilder.isOverlay) return false;
+    return state.routes[state.index - 1] == routeState;
   }
 
   void _clearStaleRoutesFromCache({
@@ -385,7 +401,6 @@ class RouteController {
 
     _pNavigationState.set(
       _NavigationState(routes: newRoutes, index: newRoutes.length - 1),
-      notifyImmediately: true,
     );
 
     _maybePushBrowserState(uri);
@@ -472,7 +487,13 @@ class RouteController {
 
   bool _checkExtraTypeMismatch<TExtra extends Object?>(Uri path) {
     final builder = _builderMap[_normalizePath(path)];
-    return builder != null && builder is RouteBuilder<TExtra>;
+    // If the path isn't registered there's no type to mismatch — return true
+    // here so the subsequent `pathExists` check in `_validateRoute` reports
+    // the real cause. Otherwise the developer sees a confusing
+    // "Expected extra type X for route: /typo" message that points at the
+    // generic parameter instead of the missing builder.
+    if (builder == null) return true;
+    return builder is RouteBuilder<TExtra>;
   }
 
   RouteBuilder? _getBuilderByPath(Uri path) =>
@@ -514,11 +535,25 @@ class RouteController {
         final children = _childrenSnapshot();
         final indexMap = _indexMap();
         final layerEffects = results.isNotEmpty ? results.first.data : null;
-        return PrioritizedIndexedStack(
-          indices: [
+        // Most effects animate the incoming layer on top (CupertinoEffect,
+        // FadeEffect, SlideUp, …), but page-turn effects let the OUTGOING
+        // page do the visible motion — it needs to be the top layer so the
+        // user sees it peel off. `AnimationEffect.previousOnTop` flips which
+        // route occupies slot 0 vs slot 1.
+        final List<int> indices;
+        if (_nextAnimationEffect.previousOnTop) {
+          indices = [
+            indexMap[_previousRouteForTransition] ?? -1,
+            indexMap[routeState] ?? -1,
+          ];
+        } else {
+          indices = [
             indexMap[routeState] ?? -1,
             indexMap[_previousRouteForTransition] ?? -1,
-          ],
+          ];
+        }
+        return PrioritizedIndexedStack(
+          indices: indices,
           layerEffects: layerEffects,
           children: children,
         );
@@ -539,6 +574,7 @@ class RouteController {
     platformNavigator.removeStateCallback(_handlePopState);
     _pNavigationState.dispose();
     _widgetCache.clear();
+    _invalidateCachedViews();
   }
 }
 
@@ -549,13 +585,6 @@ class _NavigationState {
   final int index;
 
   const _NavigationState({required this.routes, required this.index});
-
-  _NavigationState copyWith({List<RouteState>? routes, int? index}) {
-    return _NavigationState(
-      routes: routes ?? this.routes,
-      index: index ?? this.index,
-    );
-  }
 }
 
 typedef _TPreservationStrategy = bool Function(RouteBuilder routeBuider);

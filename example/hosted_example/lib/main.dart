@@ -58,6 +58,13 @@ final class GridRoute extends RouteState {
   GridRoute() : super.parse('/grid', animationEffect: const PageFlapLeft());
 }
 
+final class ModalDemoRoute extends RouteState {
+  // The DraggableModalSheet owns its own slide-in animation, so the route
+  // itself transitions with NoEffect to avoid a double animation.
+  ModalDemoRoute()
+      : super.parse('/modal', animationEffect: const NoEffect());
+}
+
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 // APP
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -174,6 +181,19 @@ class MyApp extends StatelessWidget {
                 builder: (context, routeState) {
                   _log('RouteBuilder', '/grid builder called (preserved only)');
                   return GridScreen(routeState: routeState);
+                },
+              ),
+              // ── MODE 8: OVERLAY ──
+              // Draggable bottom-sheet modal. isOverlay keeps the previous
+              // route mounted underneath so the sheet renders against it
+              // (otherwise the post-transition cleanup would replace the
+              // base with a SizedBox.shrink and leave empty space).
+              RouteBuilder(
+                routeState: ModalDemoRoute(),
+                isOverlay: true,
+                builder: (context, routeState) {
+                  _log('RouteBuilder', '/modal builder called (overlay)');
+                  return ModalDemoScreen(routeState: routeState);
                 },
               ),
             ],
@@ -529,6 +549,21 @@ class _HomeScreenState extends State<HomeScreen>
                           label: const Text('Inc'),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _log('Home', 'opening modal demo');
+                        RouteController.of(context).push(ModalDemoRoute());
+                      },
+                      icon: const Icon(Icons.layers, color: Colors.white),
+                      label: const Text(
+                        'Open Draggable Modal',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white54),
+                      ),
                     ),
                   ],
                 ),
@@ -1674,6 +1709,63 @@ class _TransitionCard extends StatelessWidget {
 // 7. GRID — preserved only (NOT prebuilt)
 // Heavy grid of colored cells with selection. Scroll + selection preserved.
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+// 8. MODAL — overlay route, drag-to-dismiss
+// Demonstrates `isOverlay: true` keeping the previous route alive underneath
+// + `DraggableModalSheet` for the slide-up + drag-down-to-dismiss UX.
+// ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+class ModalDemoScreen extends StatelessWidget with RouteWidgetMixin {
+  @override
+  final RouteState? routeState;
+  const ModalDemoScreen({super.key, this.routeState});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableModalSheet(
+      maxHeightFraction: 0.6,
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Draggable Modal',
+              style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            Text(
+              'Drag the handle down or tap the scrim to dismiss. '
+              'The previous route stays mounted beneath this sheet — '
+              'check the page behind for the live shimmer + counter.',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 13.0,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24.0),
+            FilledButton.icon(
+              onPressed: () => DraggableModalSheet.dismiss(context),
+              icon: const Icon(Icons.close),
+              label: const Text('Dismiss programmatically'),
+            ),
+            const SizedBox(height: 12.0),
+            OutlinedButton.icon(
+              onPressed: () {
+                final controller = RouteController.of(context);
+                controller.push(GalleryRoute());
+              },
+              icon: const Icon(Icons.arrow_forward),
+              label: const Text('Push /gallery on top of this modal'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class GridScreen extends StatefulWidget with RouteWidgetMixin {
   @override

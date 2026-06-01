@@ -23,13 +23,27 @@ import '/_common.dart';
 abstract class AnimationEffect {
   final Duration duration;
   final Curve curve;
-  // Returns a function (not a value) so the effect can be const-constructed
-  // yet still produce context-dependent results (e.g. screen size for slides).
-  List<AnimationLayerEffect> Function(
+
+  const AnimationEffect({required this.duration, required this.curve});
+
+  // Called every animation frame during a transition (60–120 Hz). Implementors
+  // should return a fresh list each call — the framework does not require
+  // identity, only correct values.
+  List<AnimationLayerEffect> data(
     BuildContext context,
     Size size,
     double value,
-  ) get data;
+  );
 
-  const AnimationEffect({required this.duration, required this.curve});
+  /// When `true`, the router renders the OUTGOING route in the top slot
+  /// (slot 0) and the INCOMING route underneath (slot 1). Use this for
+  /// effects where the previous page does the visible movement — e.g. a
+  /// physical page peeling off the surface and flying away to reveal what
+  /// was behind it. Default `false`: incoming on top, previous behind.
+  ///
+  /// Regardless of this flag, the effect's `data()` should always describe
+  /// layers in slot order (`data[0]` for the top slot, `data[1]` for the
+  /// bottom slot), so the same list shape works for both conventions — the
+  /// flag only changes which route occupies each slot.
+  bool get previousOnTop => false;
 }

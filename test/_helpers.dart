@@ -69,6 +69,7 @@ RouteBuilder<TExtra> tagBuilder<TExtra extends Object?>(
   String path, {
   bool shouldPreserve = false,
   bool shouldPrebuild = false,
+  bool isOverlay = false,
   AnimationEffect animationEffect = const NoEffect(),
 }) {
   return RouteBuilder<TExtra>(
@@ -78,6 +79,7 @@ RouteBuilder<TExtra> tagBuilder<TExtra extends Object?>(
     ),
     shouldPreserve: shouldPreserve,
     shouldPrebuild: shouldPrebuild,
+    isOverlay: isOverlay,
     builder: (context, state) => TaggedScreen<TExtra>(
       tag: tag,
       routeState: state,
