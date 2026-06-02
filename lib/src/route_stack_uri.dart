@@ -78,7 +78,8 @@ class RouteStackUri {
         segments.add(route.path);
       } else {
         segments.add(
-            '${route.path}$querySeparator${_encodeMatrixQuery(route.queryParameters)}');
+          '${route.path}$querySeparator${_encodeMatrixQuery(route.queryParameters)}',
+        );
       }
     }
     final path = segments.join(delimiter);
