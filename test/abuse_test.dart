@@ -101,7 +101,8 @@ void main() {
       expect(find.text('first'), findsNothing);
     });
 
-    testWidgets('path normalization: with/without trailing slash collapse to '
+    testWidgets(
+        'path normalization: with/without trailing slash collapse to '
         'the same key', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -168,7 +169,8 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('RouteController abuse — rapid mutation', () {
-    testWidgets('100 sequential pushes without pump completes without '
+    testWidgets(
+        '100 sequential pushes without pump completes without '
         'exceptions and the final route is current', (tester) async {
       late RouteController controller;
       final builders = <RouteBuilder>[
@@ -231,7 +233,8 @@ void main() {
       expect(controller.currentRouteState.uri.path, '/r9');
     });
 
-    testWidgets('push then dispose immediately: no exception, controller is '
+    testWidgets(
+        'push then dispose immediately: no exception, controller is '
         'safe to call into after dispose (calls become silent no-ops)',
         (tester) async {
       late RouteController controller;
@@ -260,7 +263,8 @@ void main() {
       // No assertions to make — just survive without throwing.
     });
 
-    testWidgets('push during in-progress transition restarts the animation '
+    testWidgets(
+        'push during in-progress transition restarts the animation '
         'cleanly; only the final route ends up visible', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -291,7 +295,8 @@ void main() {
       expect(controller.currentRouteState.uri.path, '/c');
     });
 
-    testWidgets('addToCache then immediately removeFromCache same route: cache '
+    testWidgets(
+        'addToCache then immediately removeFromCache same route: cache '
         'returns to baseline', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -338,7 +343,8 @@ void main() {
       expect(controller.currentRouteState.uri.path, '/b');
     });
 
-    testWidgets('rapid setPreservationStrategy changes do not affect the '
+    testWidgets(
+        'rapid setPreservationStrategy changes do not affect the '
         'in-flight transition', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -370,7 +376,8 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('RouteController abuse — guards and conditions', () {
-    testWidgets('a condition that itself navigates (recursive push) does not '
+    testWidgets(
+        'a condition that itself navigates (recursive push) does not '
         'deadlock or stack-overflow', (tester) async {
       late RouteController controller;
       var conditionHits = 0;
@@ -410,7 +417,8 @@ void main() {
       expect(conditionHits, 1);
     });
 
-    testWidgets('a builder.condition that returns false blocks navigation '
+    testWidgets(
+        'a builder.condition that returns false blocks navigation '
         'without leaving an inconsistent state', (tester) async {
       late RouteController controller;
       var allowB = false;
@@ -441,7 +449,8 @@ void main() {
       expect(controller.currentRouteState.uri.path, '/b');
     });
 
-    testWidgets('initial-route condition false falls back even if path is '
+    testWidgets(
+        'initial-route condition false falls back even if path is '
         'registered', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -470,7 +479,8 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('Persistence invariant', () {
-    testWidgets('preserved-but-not-active route is NOT rebuilt during a '
+    testWidgets(
+        'preserved-but-not-active route is NOT rebuilt during a '
         'transition between two other routes (this is what makes "stateful '
         'routes" actually stateful)', (tester) async {
       late RouteController controller;
@@ -516,7 +526,8 @@ void main() {
       );
     });
 
-    testWidgets('the OUTGOING route during a transition does not rebuild '
+    testWidgets(
+        'the OUTGOING route during a transition does not rebuild '
         'per animation frame (the AnimatedBuilder only re-paints, not '
         're-builds, the cached widget subtrees)', (tester) async {
       late RouteController controller;
@@ -596,7 +607,8 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('PrioritizedIndexedStack abuse', () {
-    testWidgets('duplicate indices ([0, 0]) paint the same child twice but '
+    testWidgets(
+        'duplicate indices ([0, 0]) paint the same child twice but '
         'do not crash; hit testing returns on the first hit', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
@@ -619,7 +631,8 @@ void main() {
       expect(taps, 1, reason: 'Duplicate indices must not cause double-taps');
     });
 
-    testWidgets('out-of-range indices ([5, 6] with 2 children) render nothing '
+    testWidgets(
+        'out-of-range indices ([5, 6] with 2 children) render nothing '
         'and never crash', (tester) async {
       await tester.pumpWidget(
         wrapRouter(
@@ -656,7 +669,8 @@ void main() {
       expect(find.text('A'), findsNothing);
     });
 
-    testWidgets('layerEffects shorter than indices: extra layers paint with '
+    testWidgets(
+        'layerEffects shorter than indices: extra layers paint with '
         'default (no-effect) settings, no crash', (tester) async {
       await tester.pumpWidget(
         wrapRouter(
@@ -678,7 +692,8 @@ void main() {
       expect(find.text('B'), findsOneWidget);
     });
 
-    testWidgets('layerEffects longer than indices: extras are ignored '
+    testWidgets(
+        'layerEffects longer than indices: extras are ignored '
         'silently', (tester) async {
       await tester.pumpWidget(
         wrapRouter(
@@ -716,7 +731,8 @@ void main() {
       expect(find.text('A'), findsOneWidget);
     });
 
-    testWidgets('fully transparent layer (opacity=0): not painted AND not '
+    testWidgets(
+        'fully transparent layer (opacity=0): not painted AND not '
         'hit-tested', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
@@ -748,7 +764,8 @@ void main() {
       expect(taps, 1);
     });
 
-    testWidgets('combining opacity + imageFilter on the same layer: the layer '
+    testWidgets(
+        'combining opacity + imageFilter on the same layer: the layer '
         'is painted (not tinted black). This pins the paint.color RGB=white '
         'fix in the saveLayer branch.', (tester) async {
       // A real ImageFilter — identity matrix is the cheapest way to force the
@@ -776,7 +793,8 @@ void main() {
       expect(find.text('A'), findsOneWidget);
     });
 
-    testWidgets('rapid index churn (50 widget rebuilds with shifting indices) '
+    testWidgets(
+        'rapid index churn (50 widget rebuilds with shifting indices) '
         'survives without leaking children', (tester) async {
       final children = [
         for (var i = 0; i < 5; i++)
@@ -805,7 +823,8 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('Tree rebuild abuse', () {
-    testWidgets('unmounting RouteManager mid-transition disposes cleanly with '
+    testWidgets(
+        'unmounting RouteManager mid-transition disposes cleanly with '
         'no pending-timer leaks', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -829,7 +848,8 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('remounting a fresh RouteManager replaces the controller; the '
+    testWidgets(
+        'remounting a fresh RouteManager replaces the controller; the '
         'old one is gone and the new one navigates independently',
         (tester) async {
       RouteController? c1;
@@ -867,7 +887,8 @@ void main() {
       expect(c2!.currentRouteState.uri.path, '/y');
     });
 
-    testWidgets('rebuilding RouteManager with the SAME key does not '
+    testWidgets(
+        'rebuilding RouteManager with the SAME key does not '
         'reinitialize the controller', (tester) async {
       var controllerCreated = 0;
       await tester.pumpWidget(
@@ -902,7 +923,8 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('Animation effect edge inputs', () {
-    testWidgets('PaperTurnEffect with Size.zero does not crash and returns '
+    testWidgets(
+        'PaperTurnEffect with Size.zero does not crash and returns '
         'finite transform entries', (tester) async {
       const e = PaperTurnEffect();
       late List<AnimationLayerEffect> mid;
@@ -923,7 +945,8 @@ void main() {
       }
     });
 
-    testWidgets('PaperTurnEffect at exact value=0 and value=1 produces a '
+    testWidgets(
+        'PaperTurnEffect at exact value=0 and value=1 produces a '
         'transform whose entries are all finite', (tester) async {
       const e = PaperTurnEffect();
       late List<AnimationLayerEffect> at0;
@@ -948,7 +971,8 @@ void main() {
       }
     });
 
-    testWidgets('PaperTurnEffect mid-turn blur sigmaX is positive (negative '
+    testWidgets(
+        'PaperTurnEffect mid-turn blur sigmaX is positive (negative '
         'or NaN sigmas in ui.ImageFilter.blur would be undefined)',
         (tester) async {
       // Re-derive the sigma formula the effect uses internally: midPeak * 2.5.
@@ -969,7 +993,8 @@ void main() {
   // ─────────────────────────────────────────────────────────────────────────
 
   group('pushUri abuse', () {
-    testWidgets('pushUri with reordered query params jumps to existing entry '
+    testWidgets(
+        'pushUri with reordered query params jumps to existing entry '
         'instead of duplicating it', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -990,7 +1015,8 @@ void main() {
       expect(controller.pNavigationState.getValue().routes.length, 2);
     });
 
-    testWidgets('pushUri with errorFallback when path is invalid lands on the '
+    testWidgets(
+        'pushUri with errorFallback when path is invalid lands on the '
         'fallback', (tester) async {
       late RouteController controller;
       await tester.pumpWidget(
@@ -1033,4 +1059,3 @@ void main() {
     });
   });
 }
-

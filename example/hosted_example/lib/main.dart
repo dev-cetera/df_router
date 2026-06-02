@@ -61,8 +61,7 @@ final class GridRoute extends RouteState {
 final class ModalDemoRoute extends RouteState {
   // The DraggableModalSheet owns its own slide-in animation, so the route
   // itself transitions with NoEffect to avoid a double animation.
-  ModalDemoRoute()
-      : super.parse('/modal', animationEffect: const NoEffect());
+  ModalDemoRoute() : super.parse('/modal', animationEffect: const NoEffect());
 }
 
 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░

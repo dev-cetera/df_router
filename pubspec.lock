@@ -208,7 +208,7 @@ packages:
       path: "../df_type"
       relative: true
     source: path
-    version: "0.16.0"
+    version: "0.16.1"
   equatable:
     dependency: transitive
     description:

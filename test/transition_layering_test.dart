@@ -52,7 +52,8 @@ void main() {
     return controller;
   }
 
-  testWidgets('during a push transition, BOTH the incoming and outgoing '
+  testWidgets(
+      'during a push transition, BOTH the incoming and outgoing '
       'route widgets are mounted in the tree', (tester) async {
     final controller = await mount(
       tester,
@@ -81,7 +82,8 @@ void main() {
     expect(find.text('B', skipOffstage: false), findsOneWidget);
   });
 
-  testWidgets('during a pop (goBackward) transition with a preserved '
+  testWidgets(
+      'during a pop (goBackward) transition with a preserved '
       'destination, both the route being popped AND the route being revealed '
       'are mounted, and the destination is NOT re-initialized', (tester) async {
     // This is the user-facing "transitions show what is behind" invariant.
@@ -120,7 +122,8 @@ void main() {
     expect(find.text('A', skipOffstage: false), findsOneWidget);
   });
 
-  testWidgets('during a push transition with a preserved outgoing route, '
+  testWidgets(
+      'during a push transition with a preserved outgoing route, '
       'the outgoing route stays mounted (visible behind the incoming one)',
       (tester) async {
     final controller = await mount(
@@ -172,7 +175,8 @@ void main() {
     expect(TaggedScreenState.initCounts['A'], initA);
   });
 
-  testWidgets('non-preserved outgoing route is replaced with a SizedBox '
+  testWidgets(
+      'non-preserved outgoing route is replaced with a SizedBox '
       'placeholder after the transition completes (cache slot retained)',
       (tester) async {
     final controller = await mount(
@@ -193,7 +197,8 @@ void main() {
     expect(TaggedScreenState.disposeCounts['A'], 1);
   });
 
-  testWidgets('two consecutive pushes: only the most recent transition is '
+  testWidgets(
+      'two consecutive pushes: only the most recent transition is '
       'animating; the very first route is gone after both settle',
       (tester) async {
     final controller = await mount(
@@ -216,7 +221,8 @@ void main() {
     expect(find.text('A', skipOffstage: false), findsNothing);
   });
 
-  testWidgets('prebuilt route does NOT count as the rendered route — only '
+  testWidgets(
+      'prebuilt route does NOT count as the rendered route — only '
       'the active route is painted on top', (tester) async {
     final controller = await mount(
       tester,
@@ -272,7 +278,8 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('clearHistory does not tear down the current route', (tester) async {
+  testWidgets('clearHistory does not tear down the current route',
+      (tester) async {
     final controller = await mount(
       tester,
       builders: [

@@ -75,7 +75,8 @@ void main() {
       expect(TaggedScreenState.initCounts['contact'], isNull);
     });
 
-    testWidgets('initial cold-boot route falling outside the registered paths '
+    testWidgets(
+        'initial cold-boot route falling outside the registered paths '
         'falls back to fallbackRouteState', (tester) async {
       final controller = await mountController(
         tester,
@@ -86,7 +87,8 @@ void main() {
       expect(controller.currentRouteState.uri.path, '/home');
     });
 
-    testWidgets('initial cold-boot route whose condition returns false '
+    testWidgets(
+        'initial cold-boot route whose condition returns false '
         'falls back to fallbackRouteState', (tester) async {
       final controller = await mountController(
         tester,
@@ -164,7 +166,8 @@ void main() {
       expect(controller.pNavigationState.getValue().routes.length, 1);
     });
 
-    testWidgets('skipCurrent=false allows pushing the same uri', (tester) async {
+    testWidgets('skipCurrent=false allows pushing the same uri',
+        (tester) async {
       final controller = await mountController(
         tester,
         builders: [tagBuilder('home', '/home')],
@@ -297,7 +300,8 @@ void main() {
       expect(controller.canGoForward, isTrue);
     });
 
-    testWidgets('goBackward moves index -1, goForward moves +1', (tester) async {
+    testWidgets('goBackward moves index -1, goForward moves +1',
+        (tester) async {
       final controller = await mountController(
         tester,
         builders: [

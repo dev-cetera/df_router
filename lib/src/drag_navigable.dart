@@ -110,8 +110,7 @@ class _DragNavigableState extends State<DragNavigable> {
           _forward ? widget.forwardTarget() : widget.backwardTarget();
       if (target == null) return;
       final effect = _forward ? widget.forwardEffect : widget.backwardEffect;
-      final ok =
-          controller.beginTentativeNavigation(target, effect: effect);
+      final ok = controller.beginTentativeNavigation(target, effect: effect);
       if (!ok) return;
       _tentativeStarted = true;
     }

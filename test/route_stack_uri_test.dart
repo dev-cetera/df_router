@@ -213,6 +213,106 @@ void main() {
     );
   });
 
+  group('RouteStackUri.encodeSegments / decodeSegments', () {
+    test('empty list encodes to empty string', () {
+      expect(RouteStackUri.encodeSegments([]), isEmpty);
+    });
+
+    test('single route with no query encodes to just its path', () {
+      expect(
+        RouteStackUri.encodeSegments([Uri.parse('/dialog')]),
+        '/dialog',
+      );
+    });
+
+    test(
+      'multiple routes join with "+" and per-route queries use ";" matrix '
+      'clauses (no top-route "?" special case)',
+      () {
+        final encoded = RouteStackUri.encodeSegments([
+          Uri.parse('/dialog?confirm=y'),
+          Uri.parse('/toast'),
+        ]);
+        expect(encoded, '/dialog;confirm=y+/toast');
+      },
+    );
+
+    test('round-trips routes with per-route queries through the fragment', () {
+      final original = [
+        Uri.parse('/dialog?confirm=y'),
+        Uri.parse('/toast?msg=ok'),
+      ];
+      final decoded =
+          RouteStackUri.decodeSegments(RouteStackUri.encodeSegments(original));
+      expect(decoded[0].path, '/dialog');
+      expect(decoded[0].queryParameters, {'confirm': 'y'});
+      expect(decoded[1].path, '/toast');
+      expect(decoded[1].queryParameters, {'msg': 'ok'});
+    });
+
+    test('empty input decodes to empty list (no crash)', () {
+      expect(RouteStackUri.decodeSegments(''), isEmpty);
+    });
+
+    test(
+      'fragment URL round-trip — a controller emitting a forward-history '
+      'URL like "/home+/sheet#/dialog+/toast" reads back as visible=[home,sheet] '
+      'forward=[dialog,toast]',
+      () {
+        final url = Uri(
+          path: RouteStackUri.encode([Uri.parse('/home'), Uri.parse('/sheet')])
+              .path,
+          fragment: RouteStackUri.encodeSegments(
+            [Uri.parse('/dialog'), Uri.parse('/toast')],
+          ),
+        );
+        expect(url.toString(), '/home+/sheet#/dialog+/toast');
+        expect(
+          RouteStackUri.decode(url).map((u) => u.path).toList(),
+          ['/home', '/sheet'],
+        );
+        expect(
+          RouteStackUri.decodeSegments(url.fragment)
+              .map((u) => u.path)
+              .toList(),
+          ['/dialog', '/toast'],
+        );
+      },
+    );
+  });
+
+  group('Regression: real URL shapes', () {
+    test(
+      "the URL '/home+/sheet;hello=2&workd=2+/dialog+/toast' decodes to "
+      'four routes, with sheet carrying its matrix-clause queryParameters',
+      () {
+        final routes = RouteStackUri.decode(
+          Uri.parse('/home+/sheet;hello=2&workd=2+/dialog+/toast'),
+        );
+        expect(routes, hasLength(4));
+        expect(routes[0].path, '/home');
+        expect(routes[0].queryParameters, isEmpty);
+        expect(routes[1].path, '/sheet');
+        expect(routes[1].queryParameters, {'hello': '2', 'workd': '2'});
+        expect(routes[2].path, '/dialog');
+        expect(routes[2].queryParameters, isEmpty);
+        expect(routes[3].path, '/toast');
+        expect(routes[3].queryParameters, isEmpty);
+      },
+    );
+
+    test(
+      're-encoding the decoded 4-route stack reproduces the input URL '
+      'byte-for-byte (idempotent round-trip)',
+      () {
+        const input = '/home+/sheet;hello=2&workd=2+/dialog+/toast';
+        final routes = RouteStackUri.decode(Uri.parse(input));
+        final reEncoded = RouteStackUri.encode([for (final r in routes) r]);
+        expect(reEncoded.toString(), input);
+      },
+    );
+  });
+
   group('RouteStackUri.isStacked', () {
     test('detects + in the path', () {
       expect(RouteStackUri.isStacked(Uri.parse('/a+/b')), isTrue);

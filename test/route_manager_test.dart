@@ -101,7 +101,8 @@ void main() {
 
     testWidgets(
         'provideOverlay=true (default) installs an Overlay so widgets like '
-        'TextField / Slider / Tooltip work without a Navigator', (tester) async {
+        'TextField / Slider / Tooltip work without a Navigator',
+        (tester) async {
       await tester.pumpWidget(
         wrapRouter(
           RouteManager(

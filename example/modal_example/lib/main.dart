@@ -229,15 +229,14 @@ class _HomeScreenState extends State<HomeScreen>
                   title: 'Centered Dialog',
                   subtitle:
                       'Custom widget — fade+scale entry, tap scrim or button',
-                  onTap: () => RouteController.of(context)
-                      .push(ConfirmDialogRoute()),
+                  onTap: () =>
+                      RouteController.of(context).push(ConfirmDialogRoute()),
                 ),
                 const SizedBox(height: 12.0),
                 _ModalCard(
                   icon: Icons.notifications_active,
                   title: 'Auto-Dismiss Toast',
-                  subtitle:
-                      'Slides in from top, dismisses itself after 2.5s '
+                  subtitle: 'Slides in from top, dismisses itself after 2.5s '
                       '(or tap it)',
                   onTap: () => RouteController.of(context).push(ToastRoute()),
                 ),

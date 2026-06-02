@@ -26,7 +26,8 @@ class _ColorBox extends StatelessWidget {
 
 void main() {
   group('PrioritizedIndexedStack', () {
-    testWidgets('children at the supplied indices are rendered, others are '
+    testWidgets(
+        'children at the supplied indices are rendered, others are '
         'hidden via Visibility.maintain (and remain in the tree)',
         (tester) async {
       await tester.pumpWidget(
@@ -76,7 +77,8 @@ void main() {
       expect(visibilities[1].visible, isFalse);
     });
 
-    testWidgets('cached children identity is preserved across pumps when '
+    testWidgets(
+        'cached children identity is preserved across pumps when '
         'identical references are passed in', (tester) async {
       final cached = [
         const _ColorBox(color: Color(0xFFFF0000), label: 'A'),
@@ -179,7 +181,8 @@ void main() {
   });
 
   group('Hit testing', () {
-    testWidgets('AnimationLayerEffect.ignorePointer suppresses hits on '
+    testWidgets(
+        'AnimationLayerEffect.ignorePointer suppresses hits on '
         'that layer', (tester) async {
       var bottomTaps = 0;
       var topTaps = 0;

@@ -66,7 +66,8 @@ void main() {
     expect(at1[1].ignorePointer, isTrue);
   });
 
-  testWidgets('FadeEffectWeb: outgoing layer skips opacity on web', (tester) async {
+  testWidgets('FadeEffectWeb: outgoing layer skips opacity on web',
+      (tester) async {
     const e = FadeEffectWeb();
     final at1 = await _evaluate(tester, e, 1.0);
     expect(at1[0].opacity, 1.0);
@@ -115,7 +116,8 @@ void main() {
     expect(at1[0].transform!.storage[13], closeTo(0.0, 1e-9));
   });
 
-  testWidgets('CupertinoEffect and MaterialEffect share the slide-from-right '
+  testWidgets(
+      'CupertinoEffect and MaterialEffect share the slide-from-right '
       'family but with different durations', (tester) async {
     const c = CupertinoEffect();
     const m = MaterialEffect();
@@ -135,7 +137,8 @@ void main() {
     expect(at1[0].opacity, closeTo(1.0, 1e-9));
   });
 
-  testWidgets('PageFlapRight: incoming rotates from +90° to 0°', (tester) async {
+  testWidgets('PageFlapRight: incoming rotates from +90° to 0°',
+      (tester) async {
     const e = PageFlapRight();
     final at0 = await _evaluate(tester, e, 0.0);
     final at1 = await _evaluate(tester, e, 1.0);
@@ -145,7 +148,8 @@ void main() {
     expect(at1[0].opacity, closeTo(1.0, 1e-9));
   });
 
-  testWidgets('PaperTurnEffect: the static INCOMING layer (slot 1) carries '
+  testWidgets(
+      'PaperTurnEffect: the static INCOMING layer (slot 1) carries '
       'no transform at any value — the background page sits dead-flat '
       'underneath the rotating outgoing page from start to finish. This is '
       'the equivalent of the old "lands FLAT" invariant under the redesigned '
@@ -161,14 +165,16 @@ void main() {
     }
   });
 
-  testWidgets('PaperTurnEffect: previousOnTop is true (the outgoing page is '
+  testWidgets(
+      'PaperTurnEffect: previousOnTop is true (the outgoing page is '
       'the visible mover, so the router renders it in the top slot)',
       (tester) async {
     const e = PaperTurnEffect();
     expect(e.previousOnTop, isTrue);
   });
 
-  testWidgets('PaperTurnEffect: endpoints are clean (no blur, no scrim) and '
+  testWidgets(
+      'PaperTurnEffect: endpoints are clean (no blur, no scrim) and '
       'the mid-turn frame has all secondary effects active', (tester) async {
     const e = PaperTurnEffect();
     final at0 = await _evaluate(tester, e, 0.0);
@@ -208,7 +214,8 @@ void main() {
     );
   });
 
-  testWidgets('PaperTurnBackEffect plays PaperTurnEffect in REVERSE time: '
+  testWidgets(
+      'PaperTurnBackEffect plays PaperTurnEffect in REVERSE time: '
       'the incoming page is the visible mover (previousOnTop=false) and '
       'the layer effects at value=v match the forward effect at value=1-v, '
       'modulo the swapped slot roles', (tester) async {

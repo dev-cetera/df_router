@@ -52,7 +52,17 @@ class RouteController {
   //
   //
 
-  final _widgetCache = <RouteState, Widget>{};
+  // The widget cache and its index map use IDENTITY-based equality, not
+  // the value-equality `RouteState` inherits from `Equatable`. This lets
+  // the same URI appear multiple times in the navigation stack with each
+  // occurrence holding a distinct widget element. With value-equality,
+  // `[home, dialog, dialog, dialog]` would collapse to two cache entries
+  // and the three dialogs would share one widget instance — dismissing
+  // any of them would dismiss all of them.
+  final _widgetCache = LinkedHashMap<RouteState, Widget>(
+    equals: identical,
+    hashCode: identityHashCode,
+  );
   // Memoized derivatives of `_widgetCache`, invalidated by `_invalidateCache`.
   // `buildScreen`'s AnimatedBuilder builder fires on every animation frame
   // (60–120 Hz). Without these, every frame would allocate a new `List<Widget>`
@@ -70,7 +80,13 @@ class RouteController {
 
   Map<RouteState, int> _indexMap() {
     if (_cachedIndexMap != null) return _cachedIndexMap!;
-    final map = <RouteState, int>{};
+    // Identity-keyed to match `_widgetCache` — otherwise duplicate-URI
+    // RouteStates would collide in this lookup table and the second one
+    // would overwrite the first's index.
+    final map = LinkedHashMap<RouteState, int>(
+      equals: identical,
+      hashCode: identityHashCode,
+    );
     var i = 0;
     for (final key in _widgetCache.keys) {
       map[key] = i++;
@@ -98,24 +114,34 @@ class RouteController {
     required List<RouteBuilder> builders,
     this.urlStrategy = UrlStrategy.flat,
   }) {
-    assert(() {
-      final seen = <String>{};
-      for (final b in builders) {
-        final path = _normalizePath(b.routeState.uri);
-        if (!seen.add(path)) {
-          Log.err('Duplicate RouteBuilder for path "$path"');
-        }
-        if (urlStrategy == UrlStrategy.stacked &&
-            path.contains(RouteStackUri.delimiter)) {
-          Log.err(
-            'Route path "$path" contains the stacked-URL delimiter '
-            '"${RouteStackUri.delimiter}". Stacked URLs reserve this '
-            'character to separate routes in the path; rename the route.',
-          );
-        }
+    // Validation runs in BOTH debug and release. The previous version wrapped
+    // these checks in `assert(() { ... return true; }())`, which is stripped
+    // entirely in release builds — meaning misconfigurations could ship to
+    // production with no diagnostic. Duplicate paths log a loud warning
+    // (last-registration-wins is occasionally intentional). The `+`
+    // delimiter under `UrlStrategy.stacked` would silently corrupt URL
+    // encoding, so we throw immediately.
+    final seen = <String>{};
+    for (final b in builders) {
+      final path = _normalizePath(b.routeState.uri);
+      if (!seen.add(path)) {
+        Log.err(
+          'Duplicate RouteBuilder for path "$path" — last registration '
+          'wins. Each route path should appear at most once in the '
+          'builders list.',
+        );
       }
-      return true;
-    }());
+      if (urlStrategy == UrlStrategy.stacked &&
+          path.contains(RouteStackUri.delimiter)) {
+        throw ArgumentError.value(
+          path,
+          'builders',
+          'Route path contains "${RouteStackUri.delimiter}", which is '
+              'reserved as the stack delimiter under UrlStrategy.stacked. '
+              'Rename the route or switch to UrlStrategy.flat.',
+        );
+      }
+    }
 
     _builderMap = {
       for (var builder in builders)
@@ -125,35 +151,37 @@ class RouteController {
     platformNavigator.addStateCallback(_handlePopState);
     resetState();
 
-    final initialRoutes = _resolveInitialRoutes(initialRouteState);
+    final resolved = _resolveInitialRoutes(initialRouteState);
 
     _pNavigationState.set(
       _NavigationState(
-        routes: initialRoutes,
-        index: initialRoutes.length - 1,
+        routes: resolved.routes,
+        index: resolved.currentIndex,
       ),
     );
-    // When cold-booting directly into a stack of two or more routes (typical
-    // for `UrlStrategy.stacked` deep links like `/home+/sheet`), prime the
-    // "previous for transition" slot with the entry directly below the top.
+    // When cold-booting into a stack of two or more routes (typical for
+    // `UrlStrategy.stacked` deep links like `/home+/sheet`), prime the
+    // "previous for transition" slot with the entry directly below the
+    // CURRENT index — not below the top of the list, because under
+    // forward-history-aware decoding the list can extend past the current.
     // Without this, the `late` initializer on `_previousRouteForTransition`
-    // assigns `currentRouteState` — i.e. the TOP — on first read, so
-    // `buildScreen` produces `indices = [top, top]` and the base never gets
-    // painted even though it's already in the cache.
-    if (initialRoutes.length >= 2) {
-      _previousRouteForTransition = initialRoutes[initialRoutes.length - 2];
+    // assigns `currentRouteState` — i.e. the active route — on first read,
+    // so `buildScreen` produces `indices = [top, top]` and the base under
+    // the active route never paints.
+    if (resolved.currentIndex >= 1) {
+      _previousRouteForTransition = resolved.routes[resolved.currentIndex - 1];
     }
-    addToCache(initialRoutes);
+    addToCache(resolved.routes);
     // Canonicalize the browser URL to whatever stack we actually resolved.
     platformNavigator.replaceState(_encodeBrowserUri());
   }
 
-  /// Decides what `pNavigationState.routes` should look like at construction
-  /// time. Honors `initialRouteState` first; otherwise falls back to the
-  /// browser URL — which, under `UrlStrategy.stacked`, can rehydrate an
-  /// entire stack (cold-booting `/home+/sheet` lands you with the sheet on
-  /// top of the home page).
-  List<RouteState> _resolveInitialRoutes(
+  /// Decides what `pNavigationState.routes` and `index` should look like at
+  /// construction time. Honors `initialRouteState` first; otherwise falls
+  /// back to the browser URL — which, under `UrlStrategy.stacked`, can
+  /// rehydrate the entire navigation history including forward routes (the
+  /// URL fragment carries any routes beyond the active one).
+  ({List<RouteState> routes, int currentIndex}) _resolveInitialRoutes(
     RouteState Function()? initialRouteState,
   ) {
     if (initialRouteState != null) {
@@ -161,39 +189,95 @@ class RouteController {
       if (!_isRouteValidForBoot(rs)) {
         rs = errorRouteState?.call() ?? fallbackRouteState();
       }
-      return [rs];
+      return (routes: [_reuseFromPrebuilt(rs)], currentIndex: 0);
     }
     if (urlStrategy == UrlStrategy.stacked) {
       final stack = _readStackFromUrl();
-      if (stack != null && stack.isNotEmpty) return stack;
+      if (stack != null && stack.routes.isNotEmpty) {
+        return (
+          routes: stack.routes.map(_reuseFromPrebuilt).toList(),
+          currentIndex: stack.currentIndex,
+        );
+      }
     }
     _requested = current;
     var rs = _requested ?? fallbackRouteState();
     if (!_isRouteValidForBoot(rs)) {
       rs = errorRouteState?.call() ?? fallbackRouteState();
     }
-    return [rs];
+    return (routes: [_reuseFromPrebuilt(rs)], currentIndex: 0);
   }
 
-  /// Reads the browser URL, decodes it as a stacked URI, and returns the
-  /// VALID prefix of route states (segments whose paths are registered AND
-  /// whose conditions all pass). Returns null when the URL isn't shaped
-  /// like a stacked URI; returns an empty list when nothing in the stack
-  /// validates — callers treat both as "fall back to single-route boot."
-  List<RouteState>? _readStackFromUrl() {
+  /// If [target] matches (by value) one of the routes registered with
+  /// `shouldPrebuild: true`, return the BUILDER's canonical `RouteState`
+  /// instance instead of [target]. That canonical instance is what
+  /// `resetState()` adds to the cache at construction time, so reusing it
+  /// here avoids creating a second Builder for the same prebuilt route
+  /// (which would fire `initState` twice and double-mount the screen).
+  ///
+  /// Unlike the broader `_findReusableInCacheByValue`, this method does
+  /// NOT touch arbitrary preserved entries — so cold-boot stacks like
+  /// `/home+/dialog+/dialog` don't accidentally collapse the two
+  /// `/dialog` segments into one shared widget.
+  RouteState _reuseFromPrebuilt(RouteState target) {
+    for (final b in _builderMap.values) {
+      if (!b.shouldPrebuild) continue;
+      if (b.routeState == target) return b.routeState;
+    }
+    return target;
+  }
+
+  /// Reads the browser URL, decodes it as a stacked URI (path + fragment),
+  /// and returns the VALID route states plus the index of the active one.
+  ///
+  /// URL layout under `UrlStrategy.stacked`:
+  ///   - **Path** holds the *visible* stack (`routes[0..currentIndex]`),
+  ///     joined by `+`. The active route's queryParameters ride in the
+  ///     standard `?` clause.
+  ///   - **Fragment** holds the *forward* stack (`routes[currentIndex+1..]`),
+  ///     joined by `+`, with each segment's queryParameters in a `;` matrix
+  ///     clause. Browsers don't send fragments to servers, so this is a
+  ///     SPA-friendly place to stash forward history that survives reloads
+  ///     without affecting server routing.
+  ///
+  /// Returns null when the URL isn't shaped like a stacked URI AND has no
+  /// fragment; returns null when nothing validates — callers treat both
+  /// as "fall back to single-route boot."
+  ({List<RouteState> routes, int currentIndex})? _readStackFromUrl() {
     final browserUrl = platformNavigator.getCurrentUrl();
     if (browserUrl == null) return null;
     final appRelativeUrl = platformNavigator.stripBaseHref(browserUrl);
-    if (!RouteStackUri.isStacked(appRelativeUrl)) return null;
 
-    final segments = RouteStackUri.decode(appRelativeUrl);
-    final valid = <RouteState>[];
-    for (final segUri in segments) {
+    final hasStackedPath = RouteStackUri.isStacked(appRelativeUrl);
+    final hasFragment = appRelativeUrl.fragment.isNotEmpty;
+    if (!hasStackedPath && !hasFragment) return null;
+
+    final visible = <RouteState>[];
+    for (final segUri in RouteStackUri.decode(appRelativeUrl)) {
       final rs = _routeStateForSegment(segUri);
-      if (rs == null) continue;
-      valid.add(rs);
+      if (rs != null) visible.add(rs);
     }
-    return valid.isEmpty ? null : valid;
+    final forward = <RouteState>[];
+    if (hasFragment) {
+      for (final segUri
+          in RouteStackUri.decodeSegments(appRelativeUrl.fragment)) {
+        final rs = _routeStateForSegment(segUri);
+        if (rs != null) forward.add(rs);
+      }
+    }
+
+    if (visible.isEmpty && forward.isEmpty) return null;
+
+    // No valid visible portion but valid forward portion: promote the first
+    // forward entry to be the active route (better than a blank screen).
+    if (visible.isEmpty) {
+      return (routes: forward, currentIndex: 0);
+    }
+
+    return (
+      routes: [...visible, ...forward],
+      currentIndex: visible.length - 1,
+    );
   }
 
   /// Resolves a single URL segment (path + optional query) into a
@@ -211,18 +295,33 @@ class RouteController {
   }
 
   /// The current authoritative URL representation — what we send to
-  /// `pushState` / `replaceState`. For `UrlStrategy.flat` this is just the
-  /// current route's URI; for `UrlStrategy.stacked` it's the encoded
-  /// visible stack (`routes.take(index + 1)`).
+  /// `pushState` / `replaceState`.
+  ///
+  /// For `UrlStrategy.flat` this is just the active route's URI.
+  ///
+  /// For `UrlStrategy.stacked` the visible stack lives in the path (with
+  /// the active route's query in the standard `?` clause), and any
+  /// forward-history routes (`routes[index+1..]`) are encoded into the
+  /// URL fragment. The fragment ride-along means a reload of a "stepped
+  /// back" page recovers BOTH directions of history — `goForward` /
+  /// browser-forward still work after a refresh.
   Uri _encodeBrowserUri() {
     if (urlStrategy == UrlStrategy.flat) {
       return currentRouteState.uri;
     }
     final state = _pNavigationState.getValue();
-    final visibleRoutes = [
+    final visible = [
       for (var i = 0; i <= state.index; i++) state.routes[i].uri,
     ];
-    return RouteStackUri.encode(visibleRoutes);
+    final base = RouteStackUri.encode(visible);
+    if (state.index >= state.routes.length - 1) return base;
+    final forward = [
+      for (var i = state.index + 1; i < state.routes.length; i++)
+        state.routes[i].uri,
+    ];
+    return base.replace(
+      fragment: RouteStackUri.encodeSegments(forward),
+    );
   }
 
   bool _isRouteValidForBoot(RouteState routeState) {
@@ -242,7 +341,8 @@ class RouteController {
   void _handlePopState(Uri uri) {
     _suppressBrowserSync = true;
     try {
-      if (urlStrategy == UrlStrategy.stacked && RouteStackUri.isStacked(uri)) {
+      if (urlStrategy == UrlStrategy.stacked &&
+          (RouteStackUri.isStacked(uri) || uri.fragment.isNotEmpty)) {
         _syncStackFromPopState(uri);
       } else {
         pushUri(uri);
@@ -253,26 +353,33 @@ class RouteController {
   }
 
   /// Reconciles the in-memory navigation history with a stacked URI that
-  /// just arrived via browser popstate. If the URL is a strict prefix of
-  /// the existing routes (e.g., `/A+/B` while we hold `[A, B, C]`) we keep
-  /// the routes intact and just move the index back, preserving the
-  /// forward stack so `canGoForward` / `goForward` still work after a
-  /// browser back. Otherwise the URL describes a stack we haven't seen
-  /// (e.g., a freshly typed URL), so we rebuild routes from the URL.
+  /// just arrived via browser popstate.
+  ///
+  /// The URL carries the FULL navigation timeline: visible routes in the
+  /// path, forward-history routes in the fragment. If the URL's full
+  /// stack matches our existing `routes` exactly (by URI), we just move
+  /// the index — preserving cached widgets so `goForward` / browser
+  /// forward still snap back to the same instances. Otherwise we rebuild
+  /// `routes` from the URL.
   void _syncStackFromPopState(Uri uri) {
-    final newStack = RouteStackUri.decode(uri);
+    final visibleUris = RouteStackUri.decode(uri);
+    final forwardUris = uri.fragment.isEmpty
+        ? const <Uri>[]
+        : RouteStackUri.decodeSegments(uri.fragment);
+    final allUris = [...visibleUris, ...forwardUris];
+    final newIndex = visibleUris.length - 1;
+
     final state = _pNavigationState.getValue();
 
-    final isPrefix = newStack.length <= state.routes.length &&
+    final routesMatch = allUris.length == state.routes.length &&
         () {
-          for (var i = 0; i < newStack.length; i++) {
-            if (!_urisMatch(state.routes[i].uri, newStack[i])) return false;
+          for (var i = 0; i < allUris.length; i++) {
+            if (!_urisMatch(state.routes[i].uri, allUris[i])) return false;
           }
           return true;
         }();
 
-    if (isPrefix) {
-      final newIndex = newStack.length - 1;
+    if (routesMatch) {
       if (newIndex == state.index) return;
       _previousRouteForTransition = currentRouteState;
       _pNavigationState.set(
@@ -284,7 +391,7 @@ class RouteController {
     }
 
     final validRoutes = <RouteState>[];
-    for (final segUri in newStack) {
+    for (final segUri in allUris) {
       final rs = _routeStateForSegment(segUri);
       if (rs == null) continue;
       validRoutes.add(rs);
@@ -299,11 +406,12 @@ class RouteController {
       existingCacheKeys: _widgetCache.keys.toList(),
     );
     addToCache(validRoutes);
+    // Index = end of the visible portion (number of valid visible routes
+    // minus 1), clamped into bounds so a hand-typed URL with only forward
+    // segments still lands somewhere sensible.
+    final clampedIndex = newIndex.clamp(0, validRoutes.length - 1);
     _pNavigationState.set(
-      _NavigationState(
-        routes: validRoutes,
-        index: validRoutes.length - 1,
-      ),
+      _NavigationState(routes: validRoutes, index: clampedIndex),
     );
     _globalKey.currentState?.setEffects([_nextAnimationEffect]);
     _globalKey.currentState?.restart();
@@ -389,8 +497,8 @@ class RouteController {
     // If this route is still referenced (current or pending transition), keep
     // it as a placeholder so PrioritizedIndexedStack indices stay stable.
     // Otherwise drop it entirely to let GC reclaim the widget tree.
-    final stillReferenced = routeState == currentRouteState ||
-        routeState == _previousRouteForTransition;
+    final stillReferenced = identical(routeState, currentRouteState) ||
+        identical(routeState, _previousRouteForTransition);
     if (stillReferenced) {
       _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
       // The map order/keys are unchanged but the widget at this slot is now a
@@ -411,14 +519,20 @@ class RouteController {
     if (state.index == 0) return false;
     final currentBuilder = _getBuilderByPath(currentRouteState.uri);
     if (currentBuilder == null || !currentBuilder.isOverlay) return false;
-    return state.routes[state.index - 1] == routeState;
+    // Identity check — under the new identity-keyed cache, equal-by-value
+    // RouteStates (same uri+extra) at different stack positions are
+    // distinct entries and must not be conflated here.
+    return identical(state.routes[state.index - 1], routeState);
   }
 
   void _clearStaleRoutesFromCache({
     required List<RouteState> newRouteTimeline,
     required List<RouteState> existingCacheKeys,
   }) {
-    final newRouteSet = Set.of(newRouteTimeline);
+    // Identity set so duplicate-URI entries in the new timeline don't all
+    // collapse into one "kept" key. Each cached RouteState instance is
+    // compared by identity against the new timeline.
+    final newRouteSet = Set<RouteState>.identity()..addAll(newRouteTimeline);
     for (final cachedRoute in existingCacheKeys) {
       if (!newRouteSet.contains(cachedRoute)) {
         _maybeRemoveStaleRoute(cachedRoute);
@@ -431,8 +545,8 @@ class RouteController {
     for (final routeState in routeStates) {
       final builder = _getBuilderByPath(routeState.uri);
       if (builder == null) continue;
-      final stillReferenced = routeState == currentRouteState ||
-          routeState == _previousRouteForTransition;
+      final stillReferenced = identical(routeState, currentRouteState) ||
+          identical(routeState, _previousRouteForTransition);
       if (stillReferenced) {
         if (_widgetCache[routeState] is SizedBox) continue;
         _widgetCache[routeState] = SizedBox.shrink(key: routeState.key);
@@ -467,6 +581,20 @@ class RouteController {
     AnimationEffect forwardAnimationEffect = const NoEffect(),
     AnimationEffect backwardAnimationEffect = const NoEffect(),
   }) {
+    // If [uri] is a stack-encoded URL (path contains `+`), treat it as a
+    // multi-route push: decode into segments and append all of them above
+    // the current top, running a single transition into the new topmost
+    // route. Lets callers do `controller.pushUri(Uri.parse('/sheet+/dialog'))`
+    // and end up with both routes added in one call.
+    if (RouteStackUri.isStacked(uri)) {
+      _pushStack(
+        RouteStackUri.decode(uri),
+        errorFallback: errorFallback,
+        animationEffect: forwardAnimationEffect,
+      );
+      return;
+    }
+
     final state = _pNavigationState.getValue();
     final indexInHistory = state.routes.indexWhere(
       (r) => _urisMatch(r.uri, uri),
@@ -494,6 +622,64 @@ class RouteController {
         animationEffect: forwardAnimationEffect,
       );
     }
+  }
+
+  /// Appends every valid route in [segmentUris] to the current visible stack
+  /// in a single update, animating only the final transition into the new
+  /// topmost route. Used by `pushUri` (and `push`, indirectly) when the
+  /// incoming URI is stack-encoded — `/sheet+/dialog+/toast` becomes three
+  /// pushes that share one pNavigationState mutation and one URL update.
+  void _pushStack(
+    List<Uri> segmentUris, {
+    RouteState? errorFallback,
+    AnimationEffect animationEffect = const NoEffect(),
+  }) {
+    final resolved = <RouteState>[];
+    for (final seg in segmentUris) {
+      final rs = _routeStateForSegment(seg);
+      if (rs == null) {
+        // Loud — silent dropping of segments was previously hiding URL
+        // typos and registry mismatches. Callers landing in this branch
+        // typically have a typo'd path or a builder condition that's
+        // returning false during cold-boot.
+        Log.alert(
+          'Stack segment "$seg" was dropped: path is unregistered or a '
+          'route/builder condition returned false. The remaining segments '
+          'will still be pushed.',
+        );
+        continue;
+      }
+      resolved.add(_reuseFromPrebuilt(rs));
+    }
+    if (resolved.isEmpty) {
+      Log.alert(
+        'Stack push resolved to zero routes — all segments failed '
+        'validation. Falling back to errorFallback if provided.',
+      );
+      if (errorFallback != null) push(errorFallback);
+      return;
+    }
+
+    _nextAnimationEffect = animationEffect;
+    _previousRouteForTransition = currentRouteState;
+
+    final state = _pNavigationState.getValue();
+    final newRoutes = state.routes.sublist(0, state.index + 1)
+      ..addAll(resolved);
+
+    _clearStaleRoutesFromCache(
+      newRouteTimeline: newRoutes,
+      existingCacheKeys: _widgetCache.keys.toList(),
+    );
+    addToCache(resolved);
+
+    _pNavigationState.set(
+      _NavigationState(routes: newRoutes, index: newRoutes.length - 1),
+    );
+
+    _maybePushBrowserState(resolved.last.uri);
+    _globalKey.currentState?.setEffects([_nextAnimationEffect]);
+    _globalKey.currentState?.restart();
   }
 
   @Deprecated('Renamed to goBackward')
@@ -550,24 +736,59 @@ class RouteController {
     AnimationEffect? animationEffect,
   }) {
     final uri = routeState.uri;
+    // If the caller hands us a stack-encoded URI (e.g.
+    // `RouteState(Uri.parse('/sheet+/dialog'))`), expand it into multiple
+    // routes and push them all in one go. The per-route registered builders
+    // own the animationEffect / condition for each segment; the
+    // [animationEffect] arg here applies to the final transition.
+    if (RouteStackUri.isStacked(uri)) {
+      _pushStack(
+        RouteStackUri.decode(uri),
+        errorFallback: errorFallback,
+        animationEffect: animationEffect ?? routeState.animationEffect,
+      );
+      return;
+    }
     if (routeState.skipCurrent && currentRouteState.uri == uri) return;
     if (!_validateRoute<TExtra>(uri, routeState, errorFallback)) return;
 
     _nextAnimationEffect = animationEffect ?? routeState.animationEffect;
     _previousRouteForTransition = currentRouteState;
 
+    // Decide whether to dedup against the cache. Two modes:
+    //
+    //   skipCurrent=true (default) — the caller is saying "navigate to
+    //   this route." If there's a live preserved widget with the same
+    //   `(uri, extra)`, reuse it so `shouldPreserve` actually preserves
+    //   State across re-visits (matches the controller's flat-strategy
+    //   behavior before identity keying).
+    //
+    //   skipCurrent=false — the caller is saying "push this as a distinct
+    //   stack entry, even if the same URI is already on top or below."
+    //   Skip the cache lookup so each call produces its own widget (the
+    //   modal-stacking case: dismissing one doesn't dismiss the others).
+    //   Prebuilt routes still dedup so we don't accidentally double-mount
+    //   a prebuilt widget.
+    final RouteState effectiveRouteState;
+    if (routeState.skipCurrent) {
+      effectiveRouteState =
+          _findReusableInCacheByValue(routeState) ?? routeState;
+    } else {
+      effectiveRouteState = _reuseFromPrebuilt(routeState);
+    }
+
     final state = _pNavigationState.getValue();
     final currentCacheKeys = _widgetCache.keys.toList();
 
     final newRoutes = state.routes.sublist(0, state.index + 1);
-    newRoutes.add(routeState);
+    newRoutes.add(effectiveRouteState);
 
     _clearStaleRoutesFromCache(
       newRouteTimeline: newRoutes,
       existingCacheKeys: currentCacheKeys,
     );
 
-    addToCache([routeState]);
+    addToCache([effectiveRouteState]);
 
     _pNavigationState.set(
       _NavigationState(routes: newRoutes, index: newRoutes.length - 1),
@@ -576,6 +797,23 @@ class RouteController {
     _maybePushBrowserState(uri);
     _globalKey.currentState?.setEffects([_nextAnimationEffect]);
     _globalKey.currentState?.restart();
+  }
+
+  /// Walk the cache and return any key that's `==` to [target] AND still
+  /// holds a live `Builder` widget (not a placeholder `SizedBox.shrink`
+  /// from prior eviction). Returns null if no reusable entry exists.
+  ///
+  /// Used by `push` to honor the `shouldPreserve` contract under the new
+  /// identity-keyed cache: an explicit re-push of an equivalent route
+  /// rejoins its preserved widget element instead of being treated as a
+  /// brand-new push that allocates a fresh widget (and resets State).
+  RouteState? _findReusableInCacheByValue(RouteState target) {
+    for (final entry in _widgetCache.entries) {
+      if (entry.key == target && entry.value is Builder) {
+        return entry.key;
+      }
+    }
+    return null;
   }
 
   //

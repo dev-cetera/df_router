@@ -77,7 +77,8 @@ class RouteStackUri {
       } else if (route.queryParameters.isEmpty) {
         segments.add(route.path);
       } else {
-        segments.add('${route.path}$querySeparator${_encodeMatrixQuery(route.queryParameters)}');
+        segments.add(
+            '${route.path}$querySeparator${_encodeMatrixQuery(route.queryParameters)}');
       }
     }
     final path = segments.join(delimiter);
@@ -140,6 +141,54 @@ class RouteStackUri {
   /// delimiter in its path). Used by `RouteController` to decide whether
   /// a given URL is a flat single-route URL or a stack URL.
   static bool isStacked(Uri uri) => uri.path.contains(delimiter);
+
+  /// Encodes [routes] as a `+`-separated string with each route's
+  /// queryParameters serialized inline via the matrix-style `;` clause
+  /// (no standard `?` top-route special-case).
+  ///
+  /// Used by `RouteController` to serialize forward-history routes into
+  /// a URL fragment when `UrlStrategy.stacked` is enabled — the path
+  /// holds the visible-stack via [encode], the fragment holds the forward
+  /// portion via this method, so a reload reconstructs the full history.
+  static String encodeSegments(List<Uri> routes) {
+    final segments = <String>[];
+    for (final route in routes) {
+      if (route.queryParameters.isEmpty) {
+        segments.add(route.path);
+      } else {
+        segments.add(
+          '${route.path}$querySeparator'
+          '${_encodeMatrixQuery(route.queryParameters)}',
+        );
+      }
+    }
+    return segments.join(delimiter);
+  }
+
+  /// Inverse of [encodeSegments]. Parses a `+`-separated route list (with
+  /// `;`-prefixed per-route matrix queries) into a list of `Uri`s. Empty
+  /// input yields an empty list; empty segments are defensively skipped.
+  static List<Uri> decodeSegments(String input) {
+    if (input.isEmpty) return const [];
+    final routes = <Uri>[];
+    for (final segment in input.split(delimiter)) {
+      if (segment.isEmpty) continue;
+      final semiIdx = segment.indexOf(querySeparator);
+      if (semiIdx == -1) {
+        routes.add(Uri(path: segment));
+      } else {
+        final segPath = segment.substring(0, semiIdx);
+        final segQuery = _decodeMatrixQuery(segment.substring(semiIdx + 1));
+        routes.add(
+          Uri(
+            path: segPath,
+            queryParameters: segQuery.isNotEmpty ? segQuery : null,
+          ),
+        );
+      }
+    }
+    return routes;
+  }
 
   /// Encodes a `{key: value}` map as `k1=v1&k2=v2` with each component
   /// percent-encoded so `&` / `=` / `;` / `+` / spaces inside a value

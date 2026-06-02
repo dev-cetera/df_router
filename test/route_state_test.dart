@@ -31,7 +31,8 @@ void main() {
       expect(r.uri.hasQuery, isFalse);
     });
 
-    test('defaults: skipCurrent=true, shouldPreserve=false, '
+    test(
+        'defaults: skipCurrent=true, shouldPreserve=false, '
         'animationEffect=NoEffect, condition=null, extra=null', () {
       final r = RouteState(Uri.parse('/x'));
       expect(r.skipCurrent, isTrue);
@@ -103,7 +104,8 @@ void main() {
       expect(a, isNot(equals(b)));
     });
 
-    test('equality ignores skipCurrent / animationEffect / condition / '
+    test(
+        'equality ignores skipCurrent / animationEffect / condition / '
         'shouldPreserve (they are not in props)', () {
       final a = RouteState(
         Uri.parse('/x'),
@@ -117,16 +119,30 @@ void main() {
   });
 
   group('RouteState.key', () {
-    test('returns a ValueKey of the uri string', () {
+    test('returns an ObjectKey wrapping the RouteState instance', () {
       final r = RouteState(Uri.parse('/foo?x=1'));
-      expect(r.key, ValueKey(r.uri.toString()));
+      expect(r.key, ObjectKey(r));
     });
 
-    test('two RouteStates with the same uri produce equal keys', () {
-      final a = RouteState(Uri.parse('/x?a=1'));
-      final b = RouteState(Uri.parse('/x?a=1'));
-      expect(a.key, b.key);
-    });
+    test(
+      'two RouteStates with the same uri have DIFFERENT keys '
+      "(they're distinct instances by identity — required so duplicate-URI "
+      'stack entries get separate widget elements)',
+      () {
+        final a = RouteState(Uri.parse('/x?a=1'));
+        final b = RouteState(Uri.parse('/x?a=1'));
+        expect(a.key, isNot(b.key));
+      },
+    );
+
+    test(
+      'the SAME RouteState instance always produces equal keys (re-accessing '
+      'the same instance, e.g. via `go(index)`, reuses the element)',
+      () {
+        final a = RouteState(Uri.parse('/x?a=1'));
+        expect(a.key, a.key);
+      },
+    );
   });
 
   group('RouteState.copyWith', () {
@@ -183,7 +199,8 @@ void main() {
       expect(b.extra, 7);
     });
 
-    test('uri:false wipes the path but query is carried over by '
+    test(
+        'uri:false wipes the path but query is carried over by '
         'the queryParameters:true default', () {
       final a = RouteState(Uri.parse('/x?a=1'));
       final b = a.copyWithout(uri: false);

@@ -28,7 +28,8 @@ class NoEffect extends AnimationEffect {
   const NoEffect() : super(duration: Duration.zero, curve: Curves.linear);
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     return const [AnimationLayerEffect(), AnimationLayerEffect()];
   }
 }
@@ -41,7 +42,8 @@ class FadeEffectWeb extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     return [
       AnimationLayerEffect(opacity: value),
       // Web version is simple for performance reasons.
@@ -61,7 +63,8 @@ class FadeEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     return [
       AnimationLayerEffect(opacity: value),
       AnimationLayerEffect(opacity: 1.0 - value * 0.5, ignorePointer: true),
@@ -77,7 +80,8 @@ class BackwardEffectWeb extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final w = size.width * value;
     return [
       AnimationLayerEffect(
@@ -104,7 +108,8 @@ class BackwardEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final w = size.width * value;
     return [
       AnimationLayerEffect(
@@ -127,7 +132,8 @@ class ForwardEffectWeb extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final w = size.width * value;
     return [
       AnimationLayerEffect(
@@ -154,7 +160,8 @@ class ForwardEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final w = size.width * value;
     return [
       AnimationLayerEffect(
@@ -177,7 +184,8 @@ class SlideUpEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final h = size.height * value;
     return [
       AnimationLayerEffect(
@@ -200,7 +208,8 @@ class SlideDownEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final h = size.height * value;
     return [
       AnimationLayerEffect(
@@ -223,7 +232,8 @@ class CupertinoEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final w = size.width * value;
     return [
       AnimationLayerEffect(
@@ -246,7 +256,8 @@ class MaterialEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     final w = size.width * value;
     return [
       AnimationLayerEffect(
@@ -272,7 +283,8 @@ class PageFlapLeft extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     // value goes 0 → 1. At 0 the page is fully "closed" (rotated -90° around
     // the left hinge). At 1 the page is fully "open" (flat, facing the user).
     final angle = (1.0 - value) * (-math.pi / 2.0);
@@ -303,7 +315,8 @@ class PageFlapRight extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     // value goes 0 → 1. At 0 the page is rotated 90° around the right hinge.
     // At 1 the page is fully open (flat, facing the user).
     final angle = (1.0 - value) * (math.pi / 2.0);
@@ -371,7 +384,8 @@ class PaperTurnEffect extends AnimationEffect {
   bool get previousOnTop => true;
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     // POSITIVE rotation around the left-edge Y axis: the right side of the
     // page swings TOWARD the viewer (negative Z under Flutter's perspective)
     // mid-turn, giving the "lifts off the surface and away" feel. The page
@@ -430,8 +444,7 @@ class PaperTurnEffect extends AnimationEffect {
     // abruptly when the next animation starts, which reads as a flicker.
     // Fade opacity to 0 over the last 20% so the page is fully gone before
     // it's edge-on.
-    final endFade =
-        value < 0.8 ? 1.0 : 1.0 - (value - 0.8) / 0.2;
+    final endFade = value < 0.8 ? 1.0 : 1.0 - (value - 0.8) / 0.2;
 
     return [
       // Slot 0 = OUTGOING (top): the page peeling off and flying away.
@@ -482,7 +495,8 @@ class PaperTurnBackEffect extends AnimationEffect {
         );
 
   @override
-  List<AnimationLayerEffect> data(BuildContext context, Size size, double value) {
+  List<AnimationLayerEffect> data(
+      BuildContext context, Size size, double value) {
     // Delegate to the forward effect at the time-reversed progress, then
     // re-tag `ignorePointer` for the swapped slot roles. PaperTurnEffect
     // returns [transform-layer, dim-layer]; in forward those map to

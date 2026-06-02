@@ -209,7 +209,8 @@ void main() {
     expect(capture.first.data, hasLength(2));
   });
 
-  testWidgets('reuse path: many same-length setEffects calls still apply the '
+  testWidgets(
+      'reuse path: many same-length setEffects calls still apply the '
       'latest curve on each animation', (tester) async {
     // Pins the in-place-mutation reuse path (same length effects). Each call
     // updates the existing CurvedAnimation's `curve` field rather than

@@ -1,151 +1,26 @@
 # Changelog
 
-## [0.5.8]
+## [0.6.0]
 
-- Released @ 2/2026 (UTC)
-- Fix deepLink issie
-
-## [0.5.7]
-
-- Released @ 2/2026 (UTC)
-- Performance updates, better examples
-
-## [0.5.6]
-
-- Released @ 2/2026 (UTC)
-- Bump version
-
-## [0.5.5]
-
-- Released @ 2/2026 (UTC)
-- Fix critical bugs and simplify docs
-
-## [0.5.4]
-
-- Released @ 11/2025 (UTC)
-- Simplify setPreservationStrategy
-
-## [0.5.3]
-
-- Released @ 11/2025 (UTC)
-- Add preservation strategy function
-
-## [0.5.2]
-
-- Released @ 11/2025 (UTC)
-- Rename canGoBack to canGoBackward for consistency
-
-## [0.5.1]
-
-- Released @ 11/2025 (UTC)
-- Add checkRouteFromIndex, checkRouteFromStep, checkBackwardRoute and checkForwardRoute functions
-
-## [0.5.0]
-
-- Released @ 11/2025 (UTC)
-- Implement proper backward and forward routing
-
-## [0.4.16]
-
-- Released @ 11/2025 (UTC)
-- Make RouteManger stateful
-
-## [0.4.15]
-
-- Released @ 7/2025 (UTC)
-- Update dependencies
-
-## [0.4.14]
-
-- Released @ 6/2025 (UTC)
-- Update dependencies
-
-## [0.4.13]
-
-- Released @ 6/2025 (UTC)
-- Update dependencies
-
-## [0.4.12]
-
-- Released @ 6/2025 (UTC)
-- Update dependencies
-
-## [0.4.11]
-
-- Released @ 6/2025 (UTC)
-- Update dependencies
-
-## [0.4.9]
-
-- Released @ 6/2025 (UTC)
-- docs: Fix link in readme
-
-## [0.4.8]
-
-- Released @ 6/2025 (UTC)
-- chore: Update dependencies
-
-## [0.4.7]
-
-- Released @ 6/2025 (UTC)
-- chore: Update dendendencies
-
-## [0.4.6]
-
-- Released @ 6/2025 (UTC)
-- chore: Update dependencies
-
-## [0.4.5]
-
-- Released @ 6/2025 (UTC)
-- chore: Update dependencies
-
-## [0.4.4]
-
-- Released @ 6/2025 (UTC)
-- update: Web performance updates
-
-## [0.4.3]
-
-- Released @ 6/2025 (UTC)
-- bug: Animation bugfix
-
-## [0.4.2]
-
-- Released @ 6/2025 (UTC)
-- chore: Minor performance updates
-
-## [0.4.1]
-
-- Released @ 6/2025 (UTC)
-- update: Changed ValueNotifier to Pod, and added some logs
-
-## [0.4.0]
-
-- Released @ 6/2025 (UTC)
-- breaking: Major updates and fixes
-
-## [0.3.1]
-
-- Released @ 5/2025 (UTC)
-- chore: Update readme for clarity
-
-## [0.3.0]
-
-- Released @ 5/2025 (UTC)
-- breaking: Lots of major updates
-
-## [0.2.1]
-
-- Released @ 5/2025 (UTC)
-- docs: Update documentation
-
-## [0.2.0]
-
-- Released @ 5/2025 (UTC)
-- breaking: Improve a few things
-
-## [0.1.0]
-
-- Released @ 5/2025 (UTC)
-- Inital commit
+- Released @ 6/2026 (UTC)
+- breaking: `AnimationEffect.data` is now a method (`List<AnimationLayerEffect> data(BuildContext, Size, double)`) — custom subclasses must replace their `get data => (ctx, sz, v) => [...]` override with a regular method.
+- breaking: `setPreservationStrategy` callback signature is now `(RouteBuilder) => bool`; read `builder.routeState` for the previous second argument.
+- breaking: `RouteState.key` returns `ObjectKey(this)` instead of `ValueKey(uri.toString())` — two same-URI instances no longer share a Flutter element.
+- breaking: widget cache is identity-keyed; an explicit `push(rs.copyWith(skipCurrent: false))` now creates a distinct widget per call (modal stacking). `skipCurrent: true` (default) still dedups against preserved cache entries.
+- breaking: `PaperTurnEffect` is visually rewritten — outgoing page peels off the surface with size-aware perspective; use the unchanged `PageFlapLeft` / `PageFlapRight` for the previous behavior.
+- breaking: `push` / `pushUri` interpret `+` in the URI path as a stack delimiter under `UrlStrategy.stacked`; registering a route path containing `+` under that strategy throws `ArgumentError` at construction.
+- feat: `UrlStrategy.stacked` opt-in for deep-linkable route stacks — URLs like `/home+/sheet?tab=2` round-trip across reloads.
+- feat: forward-history survives reloads under `UrlStrategy.stacked` — routes beyond the active one are encoded in the URL fragment (`/home+/sheet#/dialog+/toast`), so reloading after a `goBackward` still leaves `goForward` / browser-forward reachable.
+- feat: `RouteStackUri` codec for encoding / decoding stack URIs with matrix-style `;` clauses for per-route queryParameters; plus `RouteStackUri.encodeSegments` / `decodeSegments` for the fragment portion.
+- feat: `DraggableModalSheet` — drag-down-to-dismiss bottom-sheet modals as first-class routes.
+- feat: `DragNavigable` — horizontal swipe to navigate forward / back, drives the standard route animation via tentative-navigation hooks.
+- feat: `RouteBuilder.isOverlay` flag keeps the previous route mounted beneath modals so the base actually paints behind.
+- feat: tentative-navigation API on `RouteController` (`beginTentativeNavigation`, `updateTentativeProgress`, `commitTentative`, `abortTentative`, `isTentativeActive`) for gesture-driven transitions.
+- feat: `PaperTurnBackEffect` mirror of `PaperTurnEffect` for backward page turns.
+- feat: `AnimationEffect.previousOnTop` getter for effects where the outgoing layer is the visible mover.
+- feat: `AnimationEffectBuilderState.reverseAndAwait` / `forwardAndAwait` for awaiting transition completion.
+- fix: stacked-layer `ColorFilter` / `ImageFilter` now reaches Material / ink / `RepaintBoundary` children (previously silently dropped by the canvas-level `saveLayer` path).
+- fix: cold-booting into a multi-route stack URL now paints the base route below the top.
+- fix: `buildScreen` paints every route in the visible stack as a static layer beneath the active transition pair.
+- fix: page-turn effects compute perspective from the active viewport size so wide screens no longer lose pixels to negative-W clipping.
+- fix: duplicate path registrations log a warning in release builds (previously a debug-only `assert`).

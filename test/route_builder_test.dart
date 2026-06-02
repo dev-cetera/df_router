@@ -14,7 +14,8 @@ class _StubScreen<TExtra extends Object?> extends StatelessWidget
 
 void main() {
   group('RouteBuilder defaults', () {
-    test('shouldPreserve=false, shouldPrebuild=false, isRedirectable=true, '
+    test(
+        'shouldPreserve=false, shouldPrebuild=false, isRedirectable=true, '
         'condition=null', () {
       final b = RouteBuilder<Object?>(
         routeState: RouteState(Uri.parse('/x')),

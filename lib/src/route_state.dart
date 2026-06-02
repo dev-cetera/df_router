@@ -42,9 +42,15 @@ class RouteState<TExtra extends Object?> extends Equatable {
   // preservation decisions.
   final bool shouldPreserve;
 
-  // Uses URI string as the ValueKey so Flutter can reconcile widgets across
-  // cache rebuilds without creating duplicate Elements.
-  Key get key => ValueKey(uri.toString());
+  // Identity-based key: each RouteState instance gets a distinct Flutter
+  // element so duplicate stack entries (same `uri`+`extra`) don't share
+  // state. Using a `ValueKey(uri.toString())` would collapse `/dialog`
+  // pushed three times into a single element — dismissing one would
+  // dismiss all of them. `ObjectKey` keys on `identityHashCode`, so two
+  // separate `RouteState` instances with the same URI get separate
+  // elements, while re-visiting the SAME instance (via `go(index)`)
+  // continues to reuse its element.
+  Key get key => ObjectKey(this);
 
   RouteState(
     Uri uri, {
