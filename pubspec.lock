@@ -166,14 +166,14 @@ packages:
       path: "../df_log"
       relative: true
     source: path
-    version: "0.5.1"
+    version: "0.6.1"
   df_pod:
     dependency: "direct main"
     description:
       path: "../df_pod"
       relative: true
     source: path
-    version: "0.20.0"
+    version: "0.20.1"
   df_pwa_utils:
     dependency: "direct main"
     description:
@@ -198,9 +198,10 @@ packages:
   df_safer_dart_lints:
     dependency: "direct dev"
     description:
-      path: "../df_safer_dart_lints"
-      relative: true
-    source: path
+      name: df_safer_dart_lints
+      sha256: "92154c9b732b0902dae5f5b14ffb059f8ed526289c40e79c5d9612852a79dc09"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.5.2"
   df_type:
     dependency: "direct overridden"
@@ -208,7 +209,7 @@ packages:
       path: "../df_type"
       relative: true
     source: path
-    version: "0.16.1"
+    version: "0.16.2"
   equatable:
     dependency: transitive
     description:
